@@ -129,3 +129,42 @@ class Article(Horodate):
 
     def __str__(self):
         return f"{self.code} - {self.designation}"
+
+
+class CompteCharge(models.Model):
+    """Compte comptable d'imputation des achats (frais généraux, sous-traitance, immobilisations)."""
+
+    numero = models.CharField("n° de compte", max_length=10, unique=True)
+    libelle = models.CharField("libellé", max_length=100)
+    article_ng = models.CharField("article NG", max_length=40, blank=True)
+    actif = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "compte de charge"
+        verbose_name_plural = "comptes de charge"
+        ordering = ["numero"]
+
+    def __str__(self):
+        return f"{self.numero} - {self.libelle}"
+
+
+class Projet(models.Model):
+    """Projet ou contrat client, avec son code analytique."""
+
+    class Type(models.TextChoices):
+        CONTRATS = "CONTRATS", "Contrats"
+        SPOT = "SPOT", "Spot"
+
+    numero = models.PositiveIntegerField("n° de projet")
+    nom = models.CharField("projet / client", max_length=100)
+    code_analytique = models.CharField(max_length=20)
+    activite = models.CharField("activité", max_length=30, blank=True)
+    type = models.CharField(max_length=10, choices=Type.choices, blank=True)
+    actif = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["activite", "numero", "nom"]
+        constraints = [models.UniqueConstraint(fields=["numero", "nom"], name="projet_unique")]
+
+    def __str__(self):
+        return f"{self.nom} ({self.code_analytique})"

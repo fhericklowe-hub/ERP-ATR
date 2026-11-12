@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Article, Contact, Emplacement, FamilleArticle, Tiers, Unite
+from .models import CompteCharge, Projet, Article, Contact, Emplacement, FamilleArticle, Tiers, Unite
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -49,3 +49,15 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ["id", "code", "designation", "nature", "famille", "unite", "gere_en_stock", "actif"]
+
+
+class CompteChargeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompteCharge
+        fields = ["id", "numero", "libelle", "article_ng", "actif"]
+
+
+class ProjetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Projet
+        fields = ["id", "numero", "nom", "code_analytique", "activite", "type", "actif"]

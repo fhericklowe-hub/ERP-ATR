@@ -58,7 +58,7 @@ export default function ListeCommandes() {
                   <td>{dateFr(b.date)}</td>
                   <td>{b.fournisseur_nom}</td>
                   <td>{b.objet}</td>
-                  <td><a href={`#/demandes/${b.demande}`}>{b.demande_numero}</a></td>
+                  <td><a href={b.demande ? `#/demandes/${b.demande}` : `#/budget/${b.demande_budget}`}>{b.demande_numero}</a></td>
                   <td>{b.acheteur_nom}</td>
                   <td className="nombre">{montant(b.totaux.total_ttc, b.devise)}{b.devise !== 'XOF' && ` ${b.devise}`}</td>
                   <td>

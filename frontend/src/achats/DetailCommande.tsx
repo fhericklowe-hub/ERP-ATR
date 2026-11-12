@@ -50,7 +50,7 @@ export default function DetailCommande({ id }: { id: number }) {
 
       <dl>
         <dt>Fournisseur</dt><dd>{b.fournisseur_nom}{b.reference_fournisseur && ` · devis ${b.reference_fournisseur}`}</dd>
-        <dt>Demande d'achat</dt><dd><a href={`#/demandes/${b.demande}`}>{b.demande_numero}</a></dd>
+        <dt>Demande</dt><dd><a href={b.demande ? `#/demandes/${b.demande}` : `#/budget/${b.demande_budget}`}>{b.demande_numero}</a></dd>
         <dt>Date</dt><dd>{dateFr(b.date)}{b.date_livraison && ` · livraison pour le ${dateFr(b.date_livraison)}`}</dd>
         {b.objet && <><dt>Objet</dt><dd>{b.objet}</dd></>}
         <dt>Imputation</dt><dd>{b.site_nom} · {b.service_nom}{b.activite_libelle && ` · ${b.activite_libelle}`}</dd>

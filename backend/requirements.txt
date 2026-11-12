@@ -10,3 +10,4 @@ django-environ>=0.14
 gunicorn>=27
 reportlab>=5,<6
 Pillow>=11
+openpyxl>=3.1,<4

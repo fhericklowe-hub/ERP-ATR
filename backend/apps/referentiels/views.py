@@ -2,8 +2,9 @@ from rest_framework import viewsets
 
 from apps.core.api import VueMetier
 
-from .models import Article, Contact, Emplacement, FamilleArticle, Tiers, Unite
+from .models import Article, CompteCharge, Projet, Contact, Emplacement, FamilleArticle, Tiers, Unite
 from .serializers import (
+    CompteChargeSerializer, ProjetSerializer,
     ArticleSerializer, ContactSerializer, EmplacementSerializer, FamilleArticleSerializer,
     TiersSerializer, UniteSerializer,
 )
@@ -46,3 +47,19 @@ class ArticleViewSet(VueMetier):
     serializer_class = ArticleSerializer
     filterset_fields = ["nature", "famille", "gere_en_stock", "actif"]
     search_fields = ["code", "designation"]
+
+
+class CompteChargeViewSet(viewsets.ModelViewSet):
+    queryset = CompteCharge.objects.all()
+    serializer_class = CompteChargeSerializer
+    filterset_fields = ["actif"]
+    search_fields = ["numero", "libelle", "article_ng"]
+    pagination_class = None
+
+
+class ProjetViewSet(viewsets.ModelViewSet):
+    queryset = Projet.objects.all()
+    serializer_class = ProjetSerializer
+    filterset_fields = ["actif", "activite", "type"]
+    search_fields = ["nom", "code_analytique"]
+    pagination_class = None

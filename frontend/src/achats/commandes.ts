@@ -30,7 +30,8 @@ export type Commande = {
   statut: string
   statut_libelle: string
   date: string
-  demande: number
+  demande: number | null
+  demande_budget: number | null
   demande_numero: string
   fournisseur: number | ''
   fournisseur_nom: string

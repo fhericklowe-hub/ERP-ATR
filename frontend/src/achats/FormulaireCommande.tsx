@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, type Page, type Service, type Site, type Tiers } from '../api'
 import { arrondi, type Commande, DEVISES, type LigneCommande, montant } from './commandes'
+import type { DemandeBudget } from './budget'
 import type { Demande } from './types'
 
 const ligneVide = (): LigneCommande => ({ reference: '', designation: '', quantite: '1', prix_unitaire: '', remise: '0', taux_tva: '18' })
@@ -9,12 +10,12 @@ type Saisie = Pick<Commande, 'fournisseur' | 'reference_fournisseur' | 'objet' |
   | 'transport' | 'adresse_livraison' | 'devise' | 'taux_change' | 'activite' | 'activite_autre' | 'echeance' | 'mode_reglement' | 'ancien_numero' | 'lignes'>
 
 
-/** Création depuis une demande d'achat (demandeId) ou correction d'un brouillon (id). */
-export default function FormulaireCommande({ demandeId, id }: { demandeId?: number; id?: number }) {
+/** Création depuis une demande d'achat (demandeId) ou une demande liée au budget (budgetId), ou correction d'un brouillon (id). */
+export default function FormulaireCommande({ demandeId, budgetId, id }: { demandeId?: number; budgetId?: number; id?: number }) {
   const [fournisseurs, setFournisseurs] = useState<Tiers[]>([])
   const [sites, setSites] = useState<Site[]>([])
   const [services, setServices] = useState<Service[]>([])
-  const [demande, setDemande] = useState<{ id: number; numero: string } | null>(null)
+  const [demande, setDemande] = useState<{ id: number; numero: string; budget: boolean } | null>(null)
   const [c, setC] = useState<Saisie>({
     fournisseur: '', reference_fournisseur: '', objet: '', site: '', service: '', date_livraison: null,
     transport: 'PAR VOS SOINS', adresse_livraison: '', devise: 'XOF', taux_change: null, activite: '', activite_autre: '', echeance: '30 JOURS FIN DE MOIS', mode_reglement: 'CHEQUE',
@@ -30,17 +31,18 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
       api<Page<Service>>('/services/?actif=true'),
       id ? api<Commande>(`/achats/bons-commande/${id}/`) : null,
       demandeId ? api<Demande>(`/achats/demandes/${demandeId}/`) : null,
+      budgetId ? api<DemandeBudget>(`/achats/demandes-budget/${budgetId}/`) : null,
     ])
-      .then(([fo, si, se, bon, da]) => {
+      .then(([fo, si, se, bon, da, db]) => {
         setFournisseurs(fo.results)
         setSites(si.results)
         setServices(se.results)
         if (bon) {
           setC(bon)
-          setDemande({ id: bon.demande, numero: bon.demande_numero })
+          setDemande({ id: (bon.demande ?? bon.demande_budget)!, numero: bon.demande_numero, budget: bon.demande === null })
         } else if (da) {
           // Le bon reprend le service, le site et les articles de la demande ; l'acheteur complète les prix.
-          setDemande({ id: da.id, numero: da.numero })
+          setDemande({ id: da.id, numero: da.numero, budget: false })
           setC((x) => ({
             ...x, site: da.site, service: da.service, activite: da.activite, activite_autre: da.activite_autre,
             objet: da.equipement_designation || da.lignes[0]?.designation || '',
@@ -48,10 +50,19 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
               ...ligneVide(), reference: l.reference_constructeur, designation: l.designation, quantite: String(Number(l.quantite)),
             })),
           }))
+        } else if (db) {
+          // Demande liée au budget : le fournisseur et le montant sont ceux du devis retenu.
+          const retenu = db.devis.find((x) => x.retenu)
+          setDemande({ id: db.id, numero: db.numero, budget: true })
+          setC((x) => ({
+            ...x, site: db.site, service: db.service_impute ?? db.service, activite: db.activite, activite_autre: db.activite_autre,
+            objet: db.intitule, fournisseur: retenu?.fournisseur ?? '', reference_fournisseur: retenu?.numero ?? '',
+            lignes: [{ ...ligneVide(), designation: db.intitule, prix_unitaire: retenu ? String(Number(retenu.montant)) : '' }],
+          }))
         }
       })
       .catch((e: Error) => setErreur(e.message))
-  }, [id, demandeId])
+  }, [id, demandeId, budgetId])
 
   const champ = <K extends keyof Saisie>(k: K, v: Saisie[K]) => setC((x) => ({ ...x, [k]: v }))
   const ligne = (i: number, k: keyof LigneCommande, v: string) =>
@@ -69,7 +80,7 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
     setEnCours(true)
     setErreur('')
     try {
-      const corps = JSON.stringify({ ...c, demande: demande.id, date_livraison: c.date_livraison || null, taux_change: d === 'USD' ? c.taux_change : null })
+      const corps = JSON.stringify({ ...c, demande: demande.budget ? null : demande.id, demande_budget: demande.budget ? demande.id : null, date_livraison: c.date_livraison || null, taux_change: d === 'USD' ? c.taux_change : null })
       const r = await api<Commande>(id ? `/achats/bons-commande/${id}/` : '/achats/bons-commande/', { method: id ? 'PUT' : 'POST', body: corps })
       location.hash = `#/commandes/${r.id}`
     } catch (err) {
@@ -81,7 +92,7 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
   return (
     <form className="fiche" onSubmit={enregistrer}>
       <h2>{id ? 'Modifier le bon de commande' : 'Nouveau bon de commande'}</h2>
-      {demande && <p>Pour la demande d'achat <a href={`#/demandes/${demande.id}`}>{demande.numero}</a></p>}
+      {demande && <p>Pour la demande <a href={`#/${demande.budget ? 'budget' : 'demandes'}/${demande.id}`}>{demande.numero}</a></p>}
 
       <fieldset>
         <legend>Fournisseur</legend>
@@ -211,7 +222,7 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
       {erreur && <p className="erreur" role="alert">{erreur}</p>}
       <div className="actions">
         <button disabled={enCours || !demande}>{enCours ? 'Enregistrement…' : 'Enregistrer le brouillon'}</button>
-        <a href={id ? `#/commandes/${id}` : demande ? `#/demandes/${demande.id}` : '#/commandes'}>Annuler</a>
+        <a href={id ? `#/commandes/${id}` : demande ? `#/${demande.budget ? 'budget' : 'demandes'}/${demande.id}` : '#/commandes'}>Annuler</a>
       </div>
     </form>
   )

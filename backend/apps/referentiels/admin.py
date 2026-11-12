@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.core.admin import AdminMetier
 
-from .models import Article, Contact, Emplacement, FamilleArticle, Tiers, Unite
+from .models import Article, CompteCharge, Projet, Contact, Emplacement, FamilleArticle, Tiers, Unite
 
 
 class ContactInline(admin.TabularInline):
@@ -34,3 +34,16 @@ class ArticleAdmin(AdminMetier):
 
 admin.site.register(Unite)
 admin.site.register(FamilleArticle)
+
+
+@admin.register(CompteCharge)
+class CompteChargeAdmin(admin.ModelAdmin):
+    list_display = ["numero", "libelle", "article_ng", "actif"]
+    search_fields = ["numero", "libelle", "article_ng"]
+
+
+@admin.register(Projet)
+class ProjetAdmin(admin.ModelAdmin):
+    list_display = ["numero", "nom", "code_analytique", "activite", "type", "actif"]
+    list_filter = ["activite", "type", "actif"]
+    search_fields = ["nom", "code_analytique"]
