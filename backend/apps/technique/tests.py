@@ -1,7 +1,9 @@
 import datetime
+import io
 from decimal import Decimal
 
 from django.contrib.auth.models import Group
+from openpyxl import Workbook
 from rest_framework.test import APITestCase
 
 from apps.core.models import Site, Utilisateur
@@ -247,3 +249,62 @@ class TechniqueTests(APITestCase):
         self.assertEqual(self.client.patch(f"{PLANS}{p['id']}/", {"intervalle_mois": None, "intervalle_km": None},
                                            format="json").status_code, 400)
         self.assertIn(self.client.delete(f"{PLANS}{p['id']}/").status_code, (403, 405))
+
+    # ----- fiche du matériel et import du parc
+
+    def test_historique_du_materiel(self):
+        ReglageAtelier.objects.create(taux_horaire=Decimal("2000"))
+        for heures in ("1.5", "2"):
+            id = self.ouvrir().data["id"]
+            self.agir(self.mecano, id, "demarrer")
+            self.agir(self.mecano, id, "saisir_temps", heures=heures)
+        annule = self.ouvrir().data["id"]
+        self.agir(self.chef, annule, "annuler", commentaire="Doublon")
+        self.client.force_authenticate(self.chef)
+        h = self.client.get(f"{MATERIELS}{self.chariot.id}/historique/").data
+        self.assertEqual((h["nombre"], h["heures"], h["couts"]["total"]), (2, Decimal("3.5"), Decimal("7000")))
+        self.assertEqual([o["cout"] for o in h["ordres"]], [Decimal("4000"), Decimal("3000")])   # le plus récent d'abord
+        self.client.force_authenticate(self.mecano)
+        h = self.client.get(f"{MATERIELS}{self.chariot.id}/historique/").data
+        self.assertEqual((h["couts"], {o["cout"] for o in h["ordres"]}, h["heures"]), (None, {None}, Decimal("3.5")))
+        self.client.force_authenticate(self.magasinier)
+        self.assertEqual(self.client.get(f"{MATERIELS}{self.chariot.id}/historique/").status_code, 403)
+
+    def classeur(self, *lignes):
+        wb = Workbook()
+        for ligne in lignes:
+            wb.active.append(ligne)
+        f = io.BytesIO()
+        wb.save(f)
+        f.seek(0)
+        f.name = "parc.xlsx"
+        return f
+
+    def importer(self, par, *lignes, **champs):
+        self.client.force_authenticate(par)
+        return self.client.post(f"{MATERIELS}importer/", {"fichier": self.classeur(*lignes), **champs}, format="multipart")
+
+    def test_import_du_parc(self):
+        titres = ["N° de parc", "Désignation", "Type", "Site", "Immatriculation", "Année", "Compteur heures", "Mise en service"]
+        lignes = [titres,
+                  ["GR-001", "Grue mobile 50 t", "Grue", "Siège", None, 2018, "3 250,5", datetime.date(2018, 3, 1)],
+                  ["TR-007", "Tracteur 6x4", "tracteur routier", "SIEGE", "1234 AB 01", None, None, "15/06/2020"],
+                  ["ch-012", None, None, None, None, None, 4300, None]]          # déjà connu : seul le compteur change
+        self.assertEqual(self.importer(self.mecano, *lignes).status_code, 403)
+        r = self.importer(self.chef, *lignes, simuler="1")
+        self.assertEqual((r.data["crees"], r.data["modifies"], r.data["ecrit"], Materiel.objects.count()), (2, 1, False, 1))
+        r = self.importer(self.chef, *lignes)
+        self.assertEqual((r.data["crees"], r.data["modifies"], r.data["ecrit"]), (2, 1, True))
+        grue = Materiel.objects.get(code="GR-001")
+        self.assertEqual((grue.type, grue.site, grue.annee, grue.compteur_heures, grue.date_mise_en_service),
+                         ("GRUE", self.site, 2018, Decimal("3250.5"), datetime.date(2018, 3, 1)))
+        self.assertEqual(Materiel.objects.get(code="TR-007").date_mise_en_service, datetime.date(2020, 6, 15))
+        self.chariot.refresh_from_db()
+        self.assertEqual((self.chariot.compteur_heures, self.chariot.designation), (Decimal("4300"), "Chariot 3,5 t"))
+        self.assertEqual(self.importer(self.chef, *lignes).data["inchanges"], 3)            # rejouer ne change rien
+        # une ligne fausse : rien n'est écrit, chaque erreur est située
+        r = self.importer(self.chef, titres, ["NA-001", "Nacelle 12 m", "Nacelle", "Siège"], ["XX-1", "Engin", "Soucoupe", "Siège"],
+                          ["XX-2", "Engin", "Grue", "Lune"], ["XX-3", "Sans type ni site"], ["NA-001", "Doublon", "Nacelle", "Siège"])
+        self.assertEqual((r.data["ecrit"], len(r.data["erreurs"]), Materiel.objects.filter(code="NA-001").exists()), (False, 4, False))
+        self.assertIn("Ligne 3", r.data["erreurs"][0])
+        self.assertEqual(self.importer(self.chef, ["Colonne", "Autre"], ["a", "b"]).status_code, 400)

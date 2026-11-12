@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
+import HistoriqueMateriel from './Historique'
 import { ACTIVITES, ETATS_MATERIEL, type Materiel, TYPES_MATERIEL, pastilleEtat } from './types'
 
 type Saisie = Pick<Materiel, 'code' | 'type' | 'designation' | 'marque' | 'modele' | 'numero_serie' | 'immatriculation' | 'annee' | 'capacite'
@@ -111,6 +112,7 @@ export default function Parc({ peutModifier }: { peutModifier: boolean }) {
             <button type="button" className="secondaire" onClick={() => { setM(null); setErreur('') }}>{m.id ? 'Retour' : 'Annuler'}</button>
           </div>
         </form>
+        {m.id && <HistoriqueMateriel id={m.id} />}
         {m.id && <PiecesJointes modele="technique.materiel" objet={m.id} aide="Joignez ici la carte grise, l'assurance, le rapport de vérification." />}
       </div>
     )
@@ -122,6 +124,7 @@ export default function Parc({ peutModifier }: { peutModifier: boolean }) {
         <h2>Parc de matériels</h2>
         <div className="actions">
           <a className="bouton secondaire" href="#/ordres">Ordres de réparation</a>
+          {peutModifier && <a className="bouton secondaire" href="#/parc/import">Importer depuis Excel</a>}
           {peutModifier && <button onClick={() => setM(vide())}>Nouveau matériel</button>}
         </div>
       </div>
@@ -158,7 +161,7 @@ export default function Parc({ peutModifier }: { peutModifier: boolean }) {
             <tbody>
               {liste.map((x) => (
                 <tr key={x.id}>
-                  <td>{x.code}</td>
+                  <td><a href={`#/parc/${x.id}`}>{x.code}</a></td>
                   <td>{x.designation}<br /><span className="aide">{[x.type_libelle, x.marque, x.modele, x.immatriculation, x.capacite].filter(Boolean).join(' · ')}</span></td>
                   <td>{x.site_nom}{x.emplacement_nom && x.emplacement_nom !== x.site_nom && <><br /><span className="aide">chez {x.emplacement_nom}</span></>}</td>
                   <td>{[x.compteur_heures && `${Number(x.compteur_heures).toLocaleString('fr-FR')} h`, x.compteur_km && `${x.compteur_km.toLocaleString('fr-FR')} km`].filter(Boolean).join(' · ')}</td>

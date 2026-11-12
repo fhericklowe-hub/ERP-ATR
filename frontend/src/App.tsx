@@ -16,6 +16,8 @@ import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demande
 import ImportStock from './stock/ImportStock'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
 import Entretien from './technique/Entretien'
+import HistoriqueMateriel from './technique/Historique'
+import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
 import Stock from './stock/Stock'
 import Biens from './moyens/Biens'
@@ -122,6 +124,9 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const [chemin, requete] = route.split('?')
   const param = (nom: string) => new URLSearchParams(requete ?? '').get(nom) ?? undefined
   if (chemin === '/parc') return <Parc peutModifier={a('technique.change_materiel')} />
+  if (chemin === '/parc/import') return <ImportParc />
+  const materiel = chemin.match(/^\/parc\/(\d+)$/)
+  if (materiel) return <HistoriqueMateriel seul id={Number(materiel[1])} />
   if (chemin === '/entretien') return <Entretien peutModifier={a('technique.change_planentretien')} peutOuvrir={a('technique.add_ordrereparation')} />
   if (chemin === '/ordres') return <ListeOrdres key={route} materiel={param('materiel')} peutCreer={a('technique.add_ordrereparation')} />
   if (chemin === '/ordres/nouveau') return <FormulaireOrdre materiel={param('materiel')} />
