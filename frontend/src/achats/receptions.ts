@@ -29,6 +29,7 @@ export type Reception = {
   devise: string
   activite_libelle: string
   numero_livraison: string
+  magasin_nom: string
   receptionnaire_nom: string
   observations: string
   valide_le: string | null

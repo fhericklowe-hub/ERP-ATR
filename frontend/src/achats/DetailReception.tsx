@@ -52,6 +52,7 @@ export default function DetailReception({ id }: { id: number }) {
         <dt>Fournisseur</dt><dd>{b.fournisseur_nom}</dd>
         <dt>Date de réception</dt><dd>{dateFr(b.date)}</dd>
         <dt>N° de livraison</dt><dd>{b.numero_livraison || '--'}</dd>
+        {b.magasin_nom && <><dt>Mise en stock</dt><dd>Magasin {b.magasin_nom}</dd></>}
         <dt>Imputation</dt><dd>{b.site_nom} · {b.service_nom}{b.activite_libelle && ` · ${b.activite_libelle}`}</dd>
         <dt>Réceptionnaire</dt><dd>{b.receptionnaire_nom}</dd>
         {b.observations && <><dt>Observations</dt><dd>{b.observations}</dd></>}

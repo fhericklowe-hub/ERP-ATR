@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "apps.referentiels",
     "apps.achats",
     "apps.moyens",
+    "apps.stock",
 ]
 
 MIDDLEWARE = [
