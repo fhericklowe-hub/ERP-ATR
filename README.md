@@ -191,3 +191,24 @@ Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasi
   magasin » ouvre une demande de sortie déjà remplie. Les OR ouverts sont proposés à la saisie du n° d'OR.
 
 Rôles créés à l'installation : « Technique - Consultation », « Technique - Mécanicien », « Technique - Chef d'atelier ».
+
+## Rappels par e-mail
+
+Du lundi au samedi à 7 h 30, chaque personne qui a une adresse e-mail sur sa fiche utilisateur reçoit ce qui attend
+son action, selon ses droits :
+
+- les échéances des moyens généraux en retard ou dans leur délai de rappel (qui traite les échéances) ;
+- les entretiens préventifs à faire ou bientôt à faire, et les ordres de réparation à clôturer (chef d'atelier) ;
+- les articles au seuil d'alerte ou en dessous (responsable du stock).
+
+Celui qui n'a rien à traiter ne reçoit rien. L'envoi est fait par le service `worker`.
+
+Réglages, dans le fichier `.env` du serveur : `EMAIL_HOST`, `EMAIL_PORT` (587), `EMAIL_HOST_USER`,
+`EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` (true), `DEFAULT_FROM_EMAIL` (expéditeur) et `ADRESSE_ERP` (adresse de
+l'application, rappelée en bas du message). Tant que `EMAIL_HOST` est vide, rien ne part : les messages s'écrivent
+dans le journal du service `worker`. Ne mettez jamais ces valeurs dans le dépôt.
+
+Pour voir qui recevrait quoi sans rien envoyer : `python manage.py envoyer_rappels --simuler`. Sans `--simuler`, la
+commande envoie tout de suite.
+
+Un module ajoute ses rappels avec `rappels.declarer(fonction)` dans son `apps.py` (voir `apps/core/rappels.py`).

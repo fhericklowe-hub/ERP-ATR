@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
@@ -109,3 +110,18 @@ SPECTACULAR_SETTINGS = {"TITLE": "ERP", "VERSION": "0.1.0", "SERVE_INCLUDE_SCHEM
 CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TIMEZONE = TIME_ZONE
+# Rappel par e-mail de ce qui attend chacun : du lundi au samedi à 7 h 30.
+CELERY_BEAT_SCHEDULE = {
+    "rappels-du-matin": {"task": "apps.core.tasks.envoyer_rappels", "schedule": crontab(hour=7, minute=30, day_of_week="1-6")},
+}
+
+# E-mail. Sans EMAIL_HOST, les messages s'écrivent dans le journal au lieu de partir.
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST else "django.core.mail.backends.console.EmailBackend"
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_TIMEOUT = 20
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="ERP <erp@localhost>")
+ADRESSE_ERP = env("ADRESSE_ERP", default="")   # adresse de l'application, rappelée en bas des messages

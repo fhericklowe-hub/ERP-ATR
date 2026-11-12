@@ -20,3 +20,8 @@ class StockConfig(AppConfig):
         signaux.reception_annulee.connect(receptions.annuler_entree, dispatch_uid="stock.annulation_reception")
         pieces.declarer(BonSortieViewSet)
         pieces.declarer(DemandeSortieViewSet)
+        from apps.core import rappels as rappels_du_jour
+
+        from .rappels import sous_le_seuil
+
+        rappels_du_jour.declarer(sous_le_seuil)
