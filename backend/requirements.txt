@@ -1,0 +1,10 @@
+Django>=5.1,<5.2
+djangorestframework>=3.17,<4
+djangorestframework-simplejwt>=5.5,<6
+django-filter>=25.1
+drf-spectacular>=0.30,<1
+psycopg[binary]>=3.3,<4
+celery>=5.7,<6
+redis>=8,<9
+django-environ>=0.14
+gunicorn>=27
