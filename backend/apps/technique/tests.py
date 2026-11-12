@@ -1,3 +1,4 @@
+import datetime
 from decimal import Decimal
 
 from django.contrib.auth.models import Group
@@ -11,6 +12,7 @@ from .models import Materiel, ReglageAtelier
 
 MATERIELS = "/api/technique/materiels/"
 ORDRES = "/api/technique/ordres/"
+PLANS = "/api/technique/plans/"
 
 
 class TechniqueTests(APITestCase):
@@ -196,3 +198,52 @@ class TechniqueTests(APITestCase):
         self.assertIsNone(d["couts"])
         self.assertEqual({p["prix_unitaire"] for p in d["pieces"]} | {t["montant"] for t in d["temps"]}, {None})
         self.assertEqual(len(d["temps"]), 2)
+
+    # ----- entretien préventif
+
+    def plan(self, **champs):
+        self.client.force_authenticate(self.chef)
+        return self.client.post(PLANS, {"materiel": self.chariot.id, "intitule": "Vidange moteur", **champs}, format="json")
+
+    def test_plan_d_entretien_par_compteur(self):
+        self.assertEqual(self.plan().status_code, 400)                              # aucune périodicité
+        self.client.force_authenticate(self.mecano)
+        self.assertEqual(self.client.post(PLANS, {"materiel": self.chariot.id, "intitule": "x", "intervalle_mois": 6},
+                                          format="json").status_code, 403)
+        p = self.plan(intervalle_heures="250").data                                # part du compteur actuel : 4200 h
+        self.assertEqual((p["dernier_heures"], p["prochaines_heures"], p["situation"]), ("4200.0", "4450.0", "A_VENIR"))
+        lire = lambda: self.client.get(f"{PLANS}{p['id']}/").data
+        self.chariot.compteur_heures = Decimal("4430")
+        self.chariot.save()
+        self.assertEqual(lire()["situation"], "PROCHE")
+        self.chariot.compteur_heures = Decimal("4460")
+        self.chariot.save()
+        self.assertEqual((lire()["situation"], lire()["restes"]), ("RETARD", [{"reste": "-10.0", "unite": "h"}]))
+        # le mécanicien ouvre l'OR d'entretien ; un seul à la fois ; le matériel n'est pas immobilisé
+        r = self.client.post(f"{PLANS}{p['id']}/ouvrir_ordre/")
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(self.client.post(f"{PLANS}{p['id']}/ouvrir_ordre/").status_code, 400)
+        ordre = self.client.get(f"{ORDRES}{r.data['id']}/").data
+        self.assertEqual((ordre["type"], ordre["immobilisant"], ordre["plan_intitule"]), ("PREVENTIF", False, "Vidange moteur"))
+        self.assertEqual((self.etat(), lire()["ordre_en_cours"]["numero"]), ("DISPONIBLE", ordre["numero"]))
+        # la fin des travaux repousse l'échéance à partir du compteur relevé
+        self.agir(self.mecano, ordre["id"], "demarrer")
+        self.agir(self.mecano, ordre["id"], "terminer", travaux="Vidange faite", compteur_heures="4465")
+        d = lire()
+        self.assertEqual((d["dernier_heures"], d["prochaines_heures"], d["situation"], d["ordre_en_cours"]),
+                         ("4465.0", "4715.0", "A_VENIR", None))
+        self.assertEqual(d["dernier_le"], str(datetime.date.today()))
+
+    def test_plan_d_entretien_par_date(self):
+        il_y_a = lambda jours: str(datetime.date.today() - datetime.timedelta(days=jours))
+        self.assertEqual(self.plan(intervalle_mois=6, dernier_le="2999-01-01").status_code, 400)
+        self.assertEqual(self.plan(intervalle_mois=6, dernier_le=il_y_a(30)).data["situation"], "A_VENIR")
+        self.assertEqual(self.plan(intervalle_mois=6, dernier_le=il_y_a(175)).data["situation"], "PROCHE")
+        p = self.plan(intervalle_mois=6, intervalle_km=10000, dernier_le=il_y_a(200)).data   # le premier atteint l'emporte
+        self.assertEqual((p["situation"], p["dernier_km"], p["prochain_km"]), ("RETARD", 0, 10000))
+        # un plan abandonné ne s'ouvre plus
+        self.client.patch(f"{PLANS}{p['id']}/", {"actif": False}, format="json")
+        self.assertEqual(self.client.post(f"{PLANS}{p['id']}/ouvrir_ordre/").status_code, 400)
+        self.assertEqual(self.client.patch(f"{PLANS}{p['id']}/", {"intervalle_mois": None, "intervalle_km": None},
+                                           format="json").status_code, 400)
+        self.assertIn(self.client.delete(f"{PLANS}{p['id']}/").status_code, (403, 405))

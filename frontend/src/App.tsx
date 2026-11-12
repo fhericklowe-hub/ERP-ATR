@@ -15,6 +15,7 @@ import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
 import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demandes'
 import ImportStock from './stock/ImportStock'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
+import Entretien from './technique/Entretien'
 import Parc from './technique/Parc'
 import Stock from './stock/Stock'
 import Biens from './moyens/Biens'
@@ -81,6 +82,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Technique', liens: [
     { chemin: '/parc', texte: 'Parc de matériels', droit: 'technique.view_materiel' },
     { chemin: '/ordres', texte: 'Ordres de réparation', droit: 'technique.view_ordrereparation' },
+    { chemin: '/entretien', texte: 'Entretien préventif', droit: 'technique.view_planentretien' },
   ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
@@ -120,6 +122,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const [chemin, requete] = route.split('?')
   const param = (nom: string) => new URLSearchParams(requete ?? '').get(nom) ?? undefined
   if (chemin === '/parc') return <Parc peutModifier={a('technique.change_materiel')} />
+  if (chemin === '/entretien') return <Entretien peutModifier={a('technique.change_planentretien')} peutOuvrir={a('technique.add_ordrereparation')} />
   if (chemin === '/ordres') return <ListeOrdres key={route} materiel={param('materiel')} peutCreer={a('technique.add_ordrereparation')} />
   if (chemin === '/ordres/nouveau') return <FormulaireOrdre materiel={param('materiel')} />
   const ordre = chemin.match(/^\/ordres\/(\d+)$/)

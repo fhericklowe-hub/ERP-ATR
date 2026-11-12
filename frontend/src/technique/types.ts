@@ -37,6 +37,8 @@ export type Ordre = {
   type_libelle: string
   immobilisant: boolean
   description: string
+  plan: number | null
+  plan_intitule: string
   demandeur_nom: string
   mecanicien: number | null
   mecanicien_nom: string
@@ -55,6 +57,30 @@ export type Ordre = {
   peut_saisir_temps: boolean
   peut_travailler: boolean
   peut_piloter: boolean
+}
+export type Plan = {
+  id: number
+  materiel: number
+  materiel_nom: string
+  site_nom: string
+  compteur_heures: string | null
+  compteur_km: number | null
+  intitule: string
+  consignes: string
+  intervalle_heures: string | null
+  intervalle_km: number | null
+  intervalle_mois: number | null
+  dernier_le: string
+  dernier_heures: string | null
+  dernier_km: number | null
+  actif: boolean
+  situation: 'RETARD' | 'PROCHE' | 'A_VENIR'
+  situation_libelle: string
+  prochaine_date: string | null
+  prochaines_heures: string | null
+  prochain_km: number | null
+  restes: { reste: string; unite: string }[]
+  ordre_en_cours: { id: number; numero: string } | null
 }
 export const TYPES_MATERIEL = [
   ['CHARIOT', 'Chariot élévateur'], ['GRUE', 'Grue'], ['NACELLE', 'Nacelle'], ['CAMION', 'Camion'], ['TRACTEUR', 'Tracteur routier'],

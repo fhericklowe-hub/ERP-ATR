@@ -177,8 +177,8 @@ export function DetailOrdre({ id, peutDemanderPieces }: { id: number; peutDemand
       <p className="statut">{o.statut_libelle}</p>
       <dl>
         <dt>Matériel</dt><dd><strong>{o.materiel_nom}</strong> · {o.site_nom}</dd>
-        <dt>Type</dt><dd>{o.type_libelle}{o.immobilisant ? ' · matériel immobilisé' : ''}</dd>
-        <dt>Demande</dt><dd>{o.description}</dd>
+        <dt>Type</dt><dd>{o.type_libelle}{o.immobilisant ? ' · matériel immobilisé' : ''}{o.plan_intitule && <> · <a href="#/entretien">plan d'entretien</a></>}</dd>
+        <dt>Demande</dt><dd style={{ whiteSpace: 'pre-line' }}>{o.description}</dd>
         <dt>Ouvert par</dt><dd>{o.demandeur_nom}, le {dateHeureFr(o.cree_le)}</dd>
         {o.mecanicien_nom && <><dt>Mécanicien</dt><dd>{o.mecanicien_nom}</dd></>}
         {o.diagnostic && <><dt>Diagnostic</dt><dd>{o.diagnostic}</dd></>}

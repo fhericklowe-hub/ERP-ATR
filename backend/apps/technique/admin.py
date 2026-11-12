@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.core.admin import AdminMetier
 
-from .models import Materiel, OrdreReparation, ReglageAtelier, TempsPasse
+from .models import Materiel, OrdreReparation, PlanEntretien, ReglageAtelier, TempsPasse
 
 
 @admin.register(Materiel)
@@ -41,3 +41,11 @@ class OrdreReparationAdmin(admin.ModelAdmin):
     readonly_fields = ["numero", "statut", "demarre_le", "termine_le", "cloture_le"]
     autocomplete_fields = ["materiel", "demandeur", "mecanicien"]
     inlines = [TempsInline]
+
+
+@admin.register(PlanEntretien)
+class PlanEntretienAdmin(AdminMetier):
+    list_display = ["materiel", "intitule", "intervalle_heures", "intervalle_km", "intervalle_mois", "dernier_le", "actif"]
+    list_filter = ["actif"]
+    search_fields = ["intitule", "materiel__code", "materiel__designation"]
+    autocomplete_fields = ["materiel"]

@@ -94,6 +94,8 @@ class OrdreReparation(Horodate):
     type = models.CharField(max_length=9, choices=Type.choices, default=Type.CORRECTIF)
     immobilisant = models.BooleanField("le matériel est immobilisé", default=True)
     description = models.TextField("panne constatée ou travaux demandés")
+    plan = models.ForeignKey("technique.PlanEntretien", null=True, blank=True, editable=False, on_delete=models.SET_NULL,
+                             related_name="ordres", verbose_name="plan d'entretien")
     demandeur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="ordres_demandes")
     mecanicien = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT,
                                    related_name="ordres_confies", verbose_name="mécanicien")
@@ -193,6 +195,8 @@ class OrdreReparation(Horodate):
         self._relever(heures, km)
         self.modifie_par = utilisateur
         self.save()
+        if self.plan_id:
+            self.plan.enregistrer_realisation(self)
 
     def cloturer(self, utilisateur):
         if not self.pilote(utilisateur):
@@ -272,3 +276,4 @@ class OrdreReparation(Horodate):
 
 
 from .couts import ReglageAtelier, TempsPasse  # noqa: E402,F401  (modèles déclarés dans couts.py)
+from .entretien import PlanEntretien  # noqa: E402,F401
