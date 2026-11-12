@@ -155,6 +155,7 @@ export default function Stock() {
           <a className="bouton secondaire" href="#/stock/sorties">Bons de sortie</a>
           {etat?.peut_sortir && <a className="bouton" href="#/stock/sorties/nouvelle">Sortir des pièces</a>}
           {etat?.peut_ajuster && <button className="secondaire" onClick={() => ouvrir({ genre: 'entree' })}>Mettre un article en stock</button>}
+          {etat?.peut_ajuster && <a className="bouton secondaire" href="#/stock/import">Importer depuis Excel</a>}
         </div>
       </div>
       <div className="grille filtres large">
