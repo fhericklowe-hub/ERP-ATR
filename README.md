@@ -63,8 +63,9 @@ l'administration), validation par le directeur technique si l'urgence est de niv
 par les achats. Les achats peuvent renvoyer une fiche incomplète au demandeur.
 
 Le délai d'émission du bon de commande (4 h ouvrées, 2 ou 3 jours ouvrés selon l'urgence) démarre à la
-réception de la fiche complète par les achats. Temps ouvré : du lundi au vendredi, de 8 h à 17 h, hors
-jours fériés (voir `backend/apps/achats/delais.py`).
+réception de la fiche complète par les achats. Horaires de travail : du lundi au vendredi de 8 h à 12 h
+et de 13 h à 17 h, le samedi de 8 h à 12 h, hors jours fériés. Les délais en jours ne comptent pas le
+samedi (voir `backend/apps/achats/delais.py`).
 
 Trois rôles sont créés à l'installation : « Achats - Demandeur », « Achats - Directeur technique » et
 « Achats - Responsable achats ».

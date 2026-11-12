@@ -13,16 +13,26 @@ from .models import DemandeAchat
 
 
 class DelaisTests(SimpleTestCase):
-    def test_quatre_heures_dans_la_journee(self):
-        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 12, 9, 0), 4), datetime(2026, 11, 12, 13, 0))
+    def test_quatre_heures_dans_la_matinee(self):
+        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 12, 8, 0), 4), datetime(2026, 11, 12, 12, 0))
 
-    def test_quatre_heures_a_cheval_sur_le_week_end(self):
-        # vendredi 15 h : 2 h vendredi, puis 2 h lundi matin
-        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 13, 15, 0), 4), datetime(2026, 11, 16, 10, 0))
+    def test_la_pause_de_midi_ne_compte_pas(self):
+        # jeudi 9 h : 3 h le matin, puis 1 h après la pause
+        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 12, 9, 0), 4), datetime(2026, 11, 12, 14, 0))
 
-    def test_demande_recue_hors_horaires(self):
-        # samedi : le délai démarre lundi 8 h
-        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 14, 11, 0), 4), datetime(2026, 11, 16, 12, 0))
+    def test_demande_recue_pendant_la_pause(self):
+        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 12, 12, 30), 4), datetime(2026, 11, 12, 17, 0))
+
+    def test_le_samedi_matin_est_travaille(self):
+        # vendredi 15 h : 2 h vendredi, puis 2 h samedi matin
+        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 13, 15, 0), 4), datetime(2026, 11, 14, 10, 0))
+
+    def test_samedi_puis_lundi(self):
+        # samedi 11 h : 1 h samedi, puis 3 h lundi matin
+        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 14, 11, 0), 4), datetime(2026, 11, 16, 11, 0))
+
+    def test_demande_recue_le_samedi_apres_midi(self):
+        self.assertEqual(delais.ajouter_heures_ouvrees(datetime(2026, 11, 14, 15, 0), 4), datetime(2026, 11, 16, 12, 0))
 
     def test_deux_jours_ouvres_sautent_le_week_end(self):
         self.assertEqual(delais.ajouter_jours_ouvres(datetime(2026, 11, 12, 10, 0), 2), datetime(2026, 11, 16, 10, 0))
