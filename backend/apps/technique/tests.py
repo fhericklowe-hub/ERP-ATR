@@ -7,7 +7,7 @@ from apps.core.models import Site, Utilisateur
 from apps.referentiels.models import Article, Emplacement, Unite
 from apps.stock.models import BonSortie, Mouvement
 
-from .models import Materiel
+from .models import Materiel, ReglageAtelier
 
 MATERIELS = "/api/technique/materiels/"
 ORDRES = "/api/technique/ordres/"
@@ -138,3 +138,61 @@ class TechniqueTests(APITestCase):
         self.client.force_authenticate(self.lecteur)
         self.assertEqual((self.client.get(ORDRES).data["count"], self.client.get(ORDRES, {"ouvert": 1}).data["count"]), (2, 1))
         self.assertEqual(self.ouvrir(par=self.lecteur).status_code, 403)
+
+    # ----- temps passé et coûts
+
+    def test_temps_passe(self):
+        id = self.ouvrir().data["id"]
+        self.assertEqual(self.agir(self.mecano, id, "saisir_temps", heures="2").status_code, 400)   # pas encore démarré
+        self.agir(self.mecano, id, "demarrer")
+        self.assertEqual(self.agir(self.lecteur, id, "saisir_temps", heures="2").status_code, 403)
+        self.assertEqual(self.agir(self.mecano, id, "saisir_temps", heures="0").status_code, 400)
+        self.assertEqual(self.agir(self.mecano, id, "saisir_temps", heures="2", date="2999-01-01").status_code, 400)
+        r = self.agir(self.mecano, id, "saisir_temps", heures="2.5", commentaire="Dépose du mât")
+        self.assertEqual([(t["mecanicien_nom"], t["heures"]) for t in r.data["temps"]], [(str(self.mecano), "2.50")])
+        # un collègue aide et saisit ses heures, mais pas celles d'un autre ; le chef saisit pour tous
+        self.assertEqual(self.agir(self.collegue, id, "saisir_temps", heures="1").status_code, 200)
+        self.assertEqual(self.agir(self.collegue, id, "saisir_temps", heures="1", mecanicien=self.mecano.id).status_code, 403)
+        r = self.agir(self.chef, id, "saisir_temps", heures="3", mecanicien=self.mecano.id)
+        self.assertEqual(len(r.data["temps"]), 3)
+        self.assertEqual(self.agir(self.chef, id, "saisir_temps", heures="20", mecanicien=self.mecano.id).status_code, 400)
+        # chacun retire sa saisie, le chef toutes ; plus rien après la clôture
+        la_mienne, du_collegue = r.data["temps"][0]["id"], r.data["temps"][1]["id"]
+        self.assertEqual(self.agir(self.mecano, id, "retirer_temps", temps=du_collegue).status_code, 403)
+        self.assertEqual(len(self.agir(self.mecano, id, "retirer_temps", temps=la_mienne).data["temps"]), 2)
+        self.agir(self.mecano, id, "terminer", travaux="Fait")
+        self.assertEqual(self.agir(self.mecano, id, "saisir_temps", heures="1").status_code, 200)  # oubli rattrapé
+        self.agir(self.chef, id, "cloturer")
+        self.assertEqual(self.agir(self.chef, id, "saisir_temps", heures="1").status_code, 400)
+        self.assertEqual(self.agir(self.chef, id, "retirer_temps", temps=du_collegue).status_code, 400)
+
+    def test_cout_de_l_ordre(self):
+        ordre = self.ouvrir().data
+        id = ordre["id"]
+        self.agir(self.mecano, id, "demarrer")
+        self.agir(self.mecano, id, "saisir_temps", heures="1")                       # avant tout taux : non chiffrée
+        ReglageAtelier.objects.create(taux_horaire=Decimal("3000"))
+        self.agir(self.mecano, id, "saisir_temps", heures="2.5")
+        ReglageAtelier.objects.update(taux_horaire=Decimal("9999"))                  # ne touche pas les heures saisies
+        unite = Unite.objects.get(code="U")
+        flexible = Article.objects.create(code="FLX-01", designation="Flexible hydraulique", unite=unite)
+        joint = Article.objects.create(code="JNT-01", designation="Joint", unite=unite)
+        magasin = Emplacement.objects.get(type="SITE", site=self.site)
+        Mouvement.objects.create(article=flexible, magasin=magasin, type="INVENTAIRE", quantite=5, prix_unitaire=Decimal("10000"))
+        Mouvement.objects.create(article=flexible, magasin=magasin, type="INVENTAIRE", quantite=5, prix_unitaire=Decimal("12000"))
+        Mouvement.objects.create(article=joint, magasin=magasin, type="INVENTAIRE", quantite=5)   # prix inconnu
+        BonSortie.enregistrer(self.magasinier, [(flexible, Decimal(2)), (joint, Decimal(1))], magasin=magasin,
+                              numero_or=ordre["numero"], remis_a=self.mecano)
+        self.client.force_authenticate(self.chef)
+        d = self.client.get(f"{ORDRES}{id}/").data
+        c = d["couts"]
+        self.assertEqual((c["heures"], c["main_oeuvre"], c["pieces"], c["total"]),
+                         (Decimal("3.5"), Decimal("7500"), Decimal("24000"), Decimal("31500")))
+        self.assertEqual((c["heures_non_chiffrees"], c["pieces_sans_prix"]), (Decimal("1"), 1))
+        self.assertEqual([p["montant"] for p in d["pieces"]], [Decimal("24000"), None])
+        # le mécanicien voit les heures et les pièces, pas les montants
+        self.client.force_authenticate(self.mecano)
+        d = self.client.get(f"{ORDRES}{id}/").data
+        self.assertIsNone(d["couts"])
+        self.assertEqual({p["prix_unitaire"] for p in d["pieces"]} | {t["montant"] for t in d["temps"]}, {None})
+        self.assertEqual(len(d["temps"]), 2)

@@ -49,7 +49,10 @@ export type Ordre = {
   cloture_par_nom: string
   cloture_le: string | null
   motif_annulation: string
-  pieces: { bon: number; bon_numero: string; date: string; code: string; designation: string; quantite: string; unite: string }[]
+  pieces: { bon: number; bon_numero: string; date: string; code: string; designation: string; quantite: string; unite: string; prix_unitaire: string | null; montant: string | null }[]
+  temps: { id: number; date: string; mecanicien: number; mecanicien_nom: string; heures: string; commentaire: string; montant: string | null; peut_retirer: boolean }[]
+  couts: { heures: string; main_oeuvre: string; pieces: string; total: string; heures_non_chiffrees: string; pieces_sans_prix: number } | null
+  peut_saisir_temps: boolean
   peut_travailler: boolean
   peut_piloter: boolean
 }

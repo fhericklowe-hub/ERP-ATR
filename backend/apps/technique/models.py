@@ -112,7 +112,8 @@ class OrdreReparation(Horodate):
         verbose_name = "ordre de réparation"
         verbose_name_plural = "ordres de réparation"
         ordering = ["-cree_le"]
-        permissions = [("piloter_ordrereparation", "Peut affecter, clôturer, rouvrir et annuler un ordre de réparation")]
+        permissions = [("piloter_ordrereparation", "Peut affecter, clôturer, rouvrir et annuler un ordre de réparation"),
+                       ("voir_couts_ordrereparation", "Peut voir le coût d'un ordre de réparation")]
 
     def __str__(self):
         return self.numero
@@ -226,8 +227,48 @@ class OrdreReparation(Horodate):
         self.statut, self.motif_annulation, self.modifie_par = self.Statut.ANNULE, commentaire.strip(), utilisateur
         self.save()
 
+    # ----- temps passé
+
+    def peut_saisir_temps(self, u) -> bool:
+        """Tant que l'ordre n'est pas clôturé : tout mécanicien pour ses heures, le chef d'atelier pour tous."""
+        return self.statut in (self.Statut.EN_COURS, self.Statut.TERMINE) and u.has_perm("technique.change_ordrereparation")
+
+    def saisir_temps(self, utilisateur, heures, date=None, mecanicien=None, commentaire=""):
+        from .couts import ReglageAtelier, TempsPasse
+
+        if self.statut not in (self.Statut.EN_COURS, self.Statut.TERMINE):
+            raise ValidationError("Le temps se saisit sur un ordre démarré et pas encore clôturé.")
+        if not self.peut_saisir_temps(utilisateur):
+            raise PermissionDenied("Vous ne pouvez pas saisir de temps sur cet ordre de réparation.")
+        mecanicien = mecanicien or utilisateur
+        if mecanicien != utilisateur and not self.pilote(utilisateur):
+            raise PermissionDenied("Seul le chef d'atelier saisit le temps d'un autre mécanicien.")
+        date = date or timezone.localdate()
+        if date > timezone.localdate():
+            raise ValidationError("La date ne peut pas être dans le futur.")
+        if date < timezone.localtime(self.cree_le).date():
+            raise ValidationError("La date est antérieure à l'ouverture de l'ordre.")
+        temps = TempsPasse(ordre=self, mecanicien=mecanicien, date=date, heures=heures, taux_horaire=ReglageAtelier.taux(),
+                           commentaire=commentaire.strip()[:200], saisi_par=utilisateur)
+        temps.full_clean()
+        deja = sum(t.heures for t in self.temps.model.objects.filter(mecanicien=mecanicien, date=date))
+        if deja + heures > 24:
+            raise ValidationError(f"{mecanicien} aurait plus de 24 heures saisies le {date:%d/%m/%Y}.")
+        temps.save()
+        return temps
+
+    def retirer_temps(self, utilisateur, temps):
+        if self.statut == self.Statut.CLOTURE:
+            raise ValidationError("L'ordre est clôturé : le temps saisi ne se modifie plus.")
+        if not (self.pilote(utilisateur) or (temps.saisi_par_id == utilisateur.id and self.peut_saisir_temps(utilisateur))):
+            raise PermissionDenied("Seuls l'auteur de la saisie et le chef d'atelier peuvent la retirer.")
+        temps.delete()
+
     def sorties(self):
         """Bons de sortie validés qui portent ce numéro d'OR."""
         from apps.stock.models import BonSortie
 
         return BonSortie.objects.filter(numero_or__iexact=self.numero, statut=BonSortie.Statut.VALIDE)
+
+
+from .couts import ReglageAtelier, TempsPasse  # noqa: E402,F401  (modèles déclarés dans couts.py)
