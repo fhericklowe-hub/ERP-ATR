@@ -93,6 +93,10 @@ class Societe(models.Model):
     logo = models.ImageField(upload_to="societe/", blank=True)
     devise = models.CharField(max_length=5, default="XOF")
     taux_tva = models.DecimalField("taux de TVA par défaut (%)", max_digits=5, decimal_places=2, default=18)
+    seuil_validation_dg = models.DecimalField(
+        "seuil de validation par la direction générale", max_digits=14, decimal_places=0, default=1000000,
+        help_text="Au-dessus de ce montant, une demande d'achat liée au budget est aussi validée par la direction générale.",
+    )
 
     class Meta:
         verbose_name = "société"

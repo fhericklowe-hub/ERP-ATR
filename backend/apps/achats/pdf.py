@@ -103,7 +103,7 @@ def pdf_bon_commande(bon) -> bytes:
           Paragraph(f"Date : {date_fr(bon.date)}", ParagraphStyle("d", parent=TITRE, alignment=TA_RIGHT))]],
         colWidths=[largeur * 0.47, largeur * 0.28, largeur * 0.25],
     ))
-    sous = [f"Demande d'achat : {bon.demande.numero}"]
+    sous = [f"Demande : {bon.origine.numero}"]
     if bon.reference_fournisseur:
         sous.append(f"N° commande fournisseur : {bon.reference_fournisseur}")
     if bon.ancien_numero:
@@ -234,7 +234,7 @@ def pdf_bon_reception(bon) -> bytes:
     infos = [
         ["N° commande", Paragraph(f"<b>{commande.numero}</b>", BASE), "Libellé", commande.objet or "--"],
         ["Succ. débitée", commande.site.nom, "Service", f"{commande.service.code} - {commande.service.nom}"],
-        ["Réceptionnaire", str(bon.receptionnaire).upper(), "Demande", commande.demande.numero],
+        ["Réceptionnaire", str(bon.receptionnaire).upper(), "Demande", commande.origine.numero],
     ]
     if commande.activite:
         infos.append(["Activité", commande.activite_libelle, "", ""])

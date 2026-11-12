@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .commande import BonCommande, EvenementCommande, LigneBonCommande
+from .budget import DemandeBudget
 from .models import DemandeAchat
 from .pdf import pdf_bon_commande
 from .views import executer_transition
@@ -39,7 +40,7 @@ class BonCommandeSerializer(serializers.ModelSerializer):
     evenements = EvenementCommandeSerializer(many=True, read_only=True)
     statut_libelle = serializers.CharField(source="get_statut_display", read_only=True)
     mode_reglement_libelle = serializers.CharField(source="get_mode_reglement_display", read_only=True)
-    demande_numero = serializers.CharField(source="demande.numero", read_only=True)
+    demande_numero = serializers.CharField(source="origine.numero", read_only=True)
     fournisseur_nom = serializers.CharField(source="fournisseur.raison_sociale", read_only=True)
     acheteur_nom = serializers.CharField(source="acheteur.__str__", read_only=True)
     site_nom = serializers.CharField(source="site.nom", read_only=True)
@@ -58,7 +59,7 @@ class BonCommandeSerializer(serializers.ModelSerializer):
     class Meta:
         model = BonCommande
         fields = [
-            "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "demande", "demande_numero",
+            "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "demande", "demande_budget", "demande_numero",
             "fournisseur", "fournisseur_nom", "reference_fournisseur", "objet", "site", "site_nom",
             "service", "service_nom", "activite", "activite_autre", "activite_libelle", "acheteur", "acheteur_nom", "date_livraison", "transport",
             "adresse_livraison", "devise", "taux_change", "echeance", "mode_reglement", "mode_reglement_libelle", "transmis_le", "totaux",
@@ -92,10 +93,17 @@ class BonCommandeSerializer(serializers.ModelSerializer):
         return obj.statut != obj.Statut.ANNULE and self._utilisateur().has_perm("achats.valider_responsable_boncommande")
 
     def validate_demande(self, demande):
-        if self.instance and self.instance.demande_id != demande.id:
+        if self.instance and self.instance.demande_id != (demande and demande.id):
             raise serializers.ValidationError("La demande d'achat d'un bon de commande ne peut pas être changée.")
-        if not self.instance and demande.statut != DemandeAchat.Statut.VALIDEE:
+        if not self.instance and demande and demande.statut != DemandeAchat.Statut.VALIDEE:
             raise serializers.ValidationError("Le bon de commande se crée à partir d'une demande d'achat validée.")
+        return demande
+
+    def validate_demande_budget(self, demande):
+        if self.instance and self.instance.demande_budget_id != (demande and demande.id):
+            raise serializers.ValidationError("La demande d'un bon de commande ne peut pas être changée.")
+        if not self.instance and demande and demande.statut != DemandeBudget.Statut.VALIDEE:
+            raise serializers.ValidationError("Le bon de commande se crée à partir d'une demande validée.")
         return demande
 
     def validate_fournisseur(self, fournisseur):
@@ -108,6 +116,8 @@ class BonCommandeSerializer(serializers.ModelSerializer):
         cours = attrs.get("taux_change", self.instance.taux_change if self.instance else None)
         if devise == "USD" and not cours:
             raise serializers.ValidationError({"taux_change": "Indiquez le cours du dollar en francs CFA."})
+        if not self.instance and bool(attrs.get("demande")) == bool(attrs.get("demande_budget")):
+            raise serializers.ValidationError("Le bon de commande se crée à partir d'une demande validée, et d'une seule.")
         if self.instance and not self.instance.modifiable and set(attrs) - {"ancien_numero"}:
             raise serializers.ValidationError("Ce bon de commande a été soumis et ne peut plus être modifié.")
         return attrs
@@ -134,12 +144,12 @@ class BonCommandeViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mix
     """Bons de commande. Pas de suppression : un bon se corrige ou s'annule."""
 
     serializer_class = BonCommandeSerializer
-    queryset = BonCommande.objects.select_related("demande", "fournisseur", "site", "service", "acheteur").prefetch_related(
+    queryset = BonCommande.objects.select_related("demande", "demande_budget", "fournisseur", "site", "service", "acheteur").prefetch_related(
         "lignes", "evenements__auteur", "receptions"
     )
-    filterset_fields = ["statut", "fournisseur", "site", "service", "activite", "acheteur", "demande"]
+    filterset_fields = ["statut", "fournisseur", "site", "service", "activite", "demande_budget", "acheteur", "demande"]
     search_fields = ["numero", "ancien_numero", "objet", "reference_fournisseur", "fournisseur__raison_sociale",
-                     "demande__numero"]
+                     "demande__numero", "demande_budget__numero"]
     ordering_fields = ["cree_le", "date", "date_livraison"]
 
     def perform_create(self, serializer):

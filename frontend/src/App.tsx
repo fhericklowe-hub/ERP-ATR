@@ -1,5 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import Detail from './achats/Detail'
+import DetailBudget from './achats/DetailBudget'
+import FormulaireBudget from './achats/FormulaireBudget'
+import ListeBudget from './achats/ListeBudget'
 import DetailCommande from './achats/DetailCommande'
 import FormulaireCommande from './achats/FormulaireCommande'
 import ListeCommandes from './achats/ListeCommandes'
@@ -68,6 +71,14 @@ function Page({ moi }: { moi: Utilisateur }) {
   if (detail) return <Detail id={Number(detail[1])} moiId={moi.id} droits={moi.droits} />
   if (route.split('?')[0] === '/commandes') return <ListeCommandes key={route} />
   if (route === '/receptions') return <ListeReceptions />
+  if (route === '/budget') return <ListeBudget />
+  if (route === '/budget/nouvelle') return <FormulaireBudget moi={moi} />
+  const modifBudget = route.match(/^\/budget\/(\d+)\/modifier$/)
+  if (modifBudget) return <FormulaireBudget moi={moi} id={Number(modifBudget[1])} />
+  const bonBudget = route.match(/^\/budget\/(\d+)\/commander$/)
+  if (bonBudget) return <FormulaireCommande budgetId={Number(bonBudget[1])} />
+  const budget = route.match(/^\/budget\/(\d+)$/)
+  if (budget) return <DetailBudget id={Number(budget[1])} />
   const recevoir = route.match(/^\/commandes\/(\d+)\/recevoir$/)
   if (recevoir) return <FormulaireReception commandeId={Number(recevoir[1])} />
   const modifBr = route.match(/^\/receptions\/(\d+)\/modifier$/)
@@ -108,6 +119,7 @@ export default function App() {
         <a href="#/" className="marque"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
         <nav>
           <a href="#/">Demandes d'achat</a>
+          <a href="#/budget">Demandes budget</a>
           <a href="#/commandes">Bons de commande</a>
           <a href="#/receptions">Bons de réception</a>
         </nav>

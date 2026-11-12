@@ -39,8 +39,14 @@ class BonCommande(Horodate):
     statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.BROUILLON, editable=False)
     date = models.DateField(default=timezone.localdate)
 
+    # Un bon de commande vient soit d'une demande d'achat de pièces, soit d'une demande liée au budget.
     demande = models.ForeignKey(
-        "achats.DemandeAchat", on_delete=models.PROTECT, related_name="bons_commande", verbose_name="demande d'achat"
+        "achats.DemandeAchat", null=True, blank=True, on_delete=models.PROTECT, related_name="bons_commande",
+        verbose_name="demande d'achat",
+    )
+    demande_budget = models.ForeignKey(
+        "achats.DemandeBudget", null=True, blank=True, on_delete=models.PROTECT, related_name="bons_commande",
+        verbose_name="demande liée au budget",
     )
     fournisseur = models.ForeignKey(
         Tiers, on_delete=models.PROTECT, related_name="bons_commande", limit_choices_to={"est_fournisseur": True}
@@ -68,6 +74,13 @@ class BonCommande(Horodate):
         verbose_name = "bon de commande"
         verbose_name_plural = "bons de commande"
         ordering = ["-cree_le"]
+        constraints = [
+            models.CheckConstraint(
+                name="bon_commande_une_seule_origine",
+                condition=models.Q(demande__isnull=False, demande_budget__isnull=True)
+                | models.Q(demande__isnull=True, demande_budget__isnull=False),
+            )
+        ]
         permissions = [
             ("valider_responsable_boncommande", "Peut valider les bons de commande (responsable achats)"),
             ("valider_controle_boncommande", "Peut valider les bons de commande (contrôle de gestion)"),
@@ -87,6 +100,11 @@ class BonCommande(Horodate):
                 self.numero = f"BC-{annee}-{Compteur.suivant(f'BC-{annee}'):04d}"
                 return super().save(*args, **kwargs)
         return super().save(*args, **kwargs)
+
+    @property
+    def origine(self):
+        """La demande dont vient le bon."""
+        return self.demande or self.demande_budget
 
     @property
     def activite_libelle(self) -> str:

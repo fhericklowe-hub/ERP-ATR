@@ -326,3 +326,4 @@ class Evenement(models.Model):
 # Les modèles du bon de commande et du bon de réception vivent dans leurs propres fichiers.
 from .commande import BonCommande, EvenementCommande, LigneBonCommande  # noqa: E402,F401
 from .reception import BonReception, LigneBonReception  # noqa: E402,F401
+from .budget import DemandeBudget, DevisDemande, EvenementBudget, LigneBudgetaire  # noqa: E402,F401

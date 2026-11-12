@@ -87,3 +87,16 @@ logo imprimés se renseignent dans l'administration (Socle > Société). Les fou
 l'administration (Référentiels > Tiers).
 
 Rôle supplémentaire : « Achats - Contrôleur de gestion ».
+
+## Achats : demandes liées au budget
+
+Frais généraux, sous-traitance et investissements suivent un circuit plus long que les pièces techniques :
+responsable du service, accord de la direction générale (investissement ou hors budget), consultation des
+fournisseurs par les achats, puis responsable achats, contrôle de gestion, direction financière et, selon le
+cas, direction générale (investissement, montant au-dessus du seuil, hors budget ou dépassement de la ligne).
+
+- Le seuil (1 000 000 par défaut) se règle dans l'administration, fiche Société.
+- Les lignes budgétaires se saisissent dans l'administration ou par l'API (rôle contrôleur de gestion).
+- Les comptes de charge sont créés à l'installation. Les projets et codes analytiques se chargent depuis le
+  classeur de l'entreprise, qui ne doit pas être ajouté au dépôt :
+  `python manage.py importer_projets chemin/vers/le-classeur.xlsx`

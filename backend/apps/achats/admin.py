@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Acheteur, BonCommande, BonReception, LigneBonReception, DemandeAchat, LigneBonCommande, Evenement, LigneDemandeAchat, PieceJointe
+from .models import Acheteur, DemandeBudget, DevisDemande, LigneBudgetaire, BonCommande, BonReception, LigneBonReception, DemandeAchat, LigneBonCommande, Evenement, LigneDemandeAchat, PieceJointe
 
 
 class LigneInline(admin.TabularInline):
@@ -50,11 +50,11 @@ class LigneBonCommandeInline(admin.TabularInline):
 class BonCommandeAdmin(admin.ModelAdmin):
     """Consultation et correction. Les validations se font dans l'application."""
 
-    list_display = ["numero", "date", "fournisseur", "demande", "service", "acheteur", "statut"]
+    list_display = ["numero", "date", "fournisseur", "origine", "service", "acheteur", "statut"]
     list_filter = ["statut", "site", "service", "activite"]
     search_fields = ["numero", "ancien_numero", "objet", "fournisseur__raison_sociale"]
     readonly_fields = ["numero", "statut", "transmis_le"]
-    autocomplete_fields = ["fournisseur", "demande", "acheteur"]
+    autocomplete_fields = ["fournisseur", "demande", "demande_budget", "acheteur"]
     inlines = [LigneBonCommandeInline]
 
 
@@ -73,3 +73,29 @@ class BonReceptionAdmin(admin.ModelAdmin):
     readonly_fields = ["numero", "statut", "valide_le", "annule_par", "annule_le", "motif_annulation"]
     autocomplete_fields = ["commande", "receptionnaire"]
     inlines = [LigneBonReceptionInline]
+
+
+@admin.register(LigneBudgetaire)
+class LigneBudgetaireAdmin(admin.ModelAdmin):
+    """Budget annuel par service, saisi par le contrôle de gestion."""
+
+    list_display = ["exercice", "service", "intitule", "compte", "montant", "actif"]
+    list_filter = ["exercice", "service", "actif"]
+    search_fields = ["intitule"]
+    autocomplete_fields = ["compte"]
+
+
+class DevisDemandeInline(admin.TabularInline):
+    model = DevisDemande
+    extra = 0
+
+
+@admin.register(DemandeBudget)
+class DemandeBudgetAdmin(admin.ModelAdmin):
+    """Consultation et correction. Le circuit de validation se fait dans l'application."""
+
+    list_display = ["numero", "type", "date", "demandeur", "service", "intitule", "montant", "statut"]
+    list_filter = ["type", "statut", "service", "prevu_budget"]
+    search_fields = ["numero", "ancien_numero", "intitule"]
+    readonly_fields = ["numero", "statut", "acheteur", "montant"]
+    inlines = [DevisDemandeInline]
