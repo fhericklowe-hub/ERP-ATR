@@ -134,6 +134,36 @@ class BonCommandeTests(SocleCommande):
         self.assertEqual(self.client.get("/api/achats/bons-commande/?activite=TRANSPORT").data["count"], 1)
         self.assertTrue(self.client.get(f"/api/achats/bons-commande/{r.data['id']}/pdf/").content.startswith(b"%PDF"))
 
+    def test_signatures_imprimees_apres_les_deux_validations(self):
+        import tempfile
+        from unittest import mock
+
+        from django.core.files.base import ContentFile
+        from django.test import override_settings
+        from PIL import Image as Pil
+
+        from . import pdf
+
+        with tempfile.TemporaryDirectory() as dossier, override_settings(MEDIA_ROOT=dossier):
+            for u in (self.responsable, self.controleur):
+                tampon = __import__("io").BytesIO()
+                Pil.new("RGB", (300, 100), "white").save(tampon, "PNG")
+                u.signature.save("signature.png", ContentFile(tampon.getvalue()))
+                self.assertNotIn("signature.png", u.signature.name)  # nom imprévisible
+            bon = self.creer().data
+            url = f"/api/achats/bons-commande/{bon['id']}/pdf/"
+            self.agir(self.acheteur, bon["id"], "soumettre")
+            self.agir(self.responsable, bon["id"], "valider")
+            with mock.patch.object(pdf, "Image", wraps=pdf.Image) as image:
+                self.client.get(url)
+                # une seule validation : aucune signature, seulement le logo
+                self.assertEqual([a.args[0] for a in image.call_args_list if "signatures" in a.args[0]], [])
+            self.agir(self.controleur, bon["id"], "valider")
+            with mock.patch.object(pdf, "Image", wraps=pdf.Image) as image:
+                self.assertTrue(self.client.get(url).content.startswith(b"%PDF"))
+                signatures = [a.args[0] for a in image.call_args_list if "signatures" in a.args[0]]
+                self.assertEqual(signatures, [self.responsable.signature.path, self.controleur.signature.path])
+
     def test_demande_non_validee_refusee(self):
         brouillon = DemandeAchat.objects.create(demandeur=self.demandeur, service=self.service, site=self.site)
         self.assertEqual(self.creer(demande=brouillon.id).status_code, 400)

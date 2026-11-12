@@ -171,14 +171,31 @@ def pdf_bon_commande(bon) -> bytes:
                                  ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black)]))
     elements.append(Spacer(1, 8 * mm))
 
-    # Validations enregistrées dans le système, puis emplacement de la signature manuscrite
-    validations = [e for e in bon.evenements.all() if e.action == "VALIDATION"]
-    visas = [f"Validé par {e.auteur} le {date_fr(timezone.localtime(e.date))}" for e in validations[-2:]] if bon.definitif else []
+    # Signatures : dès que le bon a ses deux validations, la signature de chaque valideur s'imprime d'elle-même.
+    validations = [e for e in bon.evenements.all() if e.action == "VALIDATION"][-2:] if bon.definitif else []
+    centre = ParagraphStyle("s", parent=BASE, alignment=TA_CENTER)
+    petit = ParagraphStyle("v", parent=centre, fontSize=7, leading=9)
+    cadres = []
+    for i, titre in enumerate(["Le Responsable Achats", "Le Contrôleur de Gestion"]):
+        cadre = [Paragraph(f"<b>{titre}</b>", centre)]
+        if i < len(validations):
+            e = validations[i]
+            if e.auteur.signature:
+                image = Image(e.auteur.signature.path, width=45 * mm, height=16 * mm, kind="proportional")
+                image.hAlign = "CENTER"
+                cadre.append(image)
+            else:
+                cadre.append(Spacer(1, 16 * mm))
+            moment = timezone.localtime(e.date)
+            cadre.append(Paragraph(f"{e.auteur}<br/>Validé dans l'ERP le {date_fr(moment)} à {moment:%H:%M}", petit))
+        else:
+            cadre.append(Spacer(1, 16 * mm))
+            cadre.append(Paragraph("En attente de validation", petit))
+        cadres.append(cadre)
     elements.append(Table(
-        [[Paragraph("<br/>".join(visas) or "En attente de validation", ParagraphStyle("v", parent=BASE, fontSize=8)),
-          Paragraph("<b>Signature et cachet</b>", ParagraphStyle("s", parent=BASE, alignment=TA_CENTER))]],
-        colWidths=[largeur * 0.55, largeur * 0.45], rowHeights=[28 * mm],
-        style=[("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOX", (1, 0), (1, 0), 0.5, colors.grey)],
+        [cadres], colWidths=[largeur * 0.5, largeur * 0.5], rowHeights=[32 * mm],
+        style=[("VALIGN", (0, 0), (-1, -1), "TOP"), ("BOX", (0, 0), (0, 0), 0.5, colors.grey),
+               ("BOX", (1, 0), (1, 0), 0.5, colors.grey)],
     ))
 
     doc.build(elements, onFirstPage=decor, onLaterPages=decor)
