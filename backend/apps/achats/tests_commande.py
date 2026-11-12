@@ -30,7 +30,9 @@ class LettresTests(SimpleTestCase):
             self.assertEqual(montant_en_lettres(montant), attendu)
 
 
-class BonCommandeTests(APITestCase):
+class SocleCommande(APITestCase):
+    """Utilisateurs, demande validée et aides communes aux tests des bons de commande et de réception."""
+
     def setUp(self):
         def utilisateur(nom, role):
             u = Utilisateur.objects.create_user(nom, password="x", first_name=nom.capitalize())
@@ -74,6 +76,8 @@ class BonCommandeTests(APITestCase):
         self.client.force_authenticate(utilisateur)
         return self.client.post(f"/api/achats/bons-commande/{id}/{action}/", donnees, format="json")
 
+
+class BonCommandeTests(SocleCommande):
     def test_totaux_identiques_au_bon_modele(self):
         r = self.creer()
         self.assertEqual(r.status_code, 201, r.data)

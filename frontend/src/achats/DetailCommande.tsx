@@ -31,6 +31,7 @@ export default function DetailCommande({ id }: { id: number }) {
 
   if (!b) return erreur ? <p className="erreur">{erreur}</p> : <p>Chargement…</p>
   const t = b.totaux
+  const recu = b.etat_reception !== ''
 
   return (
     <div className="fiche">
@@ -39,7 +40,10 @@ export default function DetailCommande({ id }: { id: number }) {
         <h2>{b.numero}</h2>
         <button className="secondaire" onClick={pdf}>{b.definitif ? 'Imprimer le bon (PDF)' : 'Aperçu PDF (projet)'}</button>
       </div>
-      <p className="statut">{b.statut_libelle}{b.transmis_le && ` le ${dateFr(b.transmis_le)}`}</p>
+      <p className="statut">
+        {b.statut_libelle}{b.statut === 'TRANSMIS' && b.transmis_le && ` le ${dateFr(b.transmis_le)}`}
+        {b.etat_reception && <> <span className={`pastille ${b.etat_reception.toLowerCase()}`}>{b.etat_reception_libelle}</span></>}
+      </p>
       {b.statut === 'VALIDE' && (
         <p>Le bon a ses deux validations : imprimez-le, faites-le signer par le responsable achats, puis transmettez-le au fournisseur.</p>
       )}
@@ -60,7 +64,7 @@ export default function DetailCommande({ id }: { id: number }) {
         <table>
           <thead>
             <tr>
-              <th>Référence</th><th>Désignation</th><th className="nombre">Qté</th><th className="nombre">Prix unit. HT</th>
+              <th>Référence</th><th>Désignation</th><th className="nombre">Qté</th>{recu && <th className="nombre">Reçu</th>}<th className="nombre">Prix unit. HT</th>
               <th className="nombre">Remise</th><th className="nombre">TVA</th><th className="nombre">Montant HT</th>
             </tr>
           </thead>
@@ -69,6 +73,7 @@ export default function DetailCommande({ id }: { id: number }) {
               <tr key={l.id}>
                 <td>{l.reference}</td><td>{l.designation}</td>
                 <td className="nombre">{Number(l.quantite)}</td>
+                {recu && <td className="nombre">{Number(l.quantite_recue ?? 0)}</td>}
                 <td className="nombre">{montant(l.prix_unitaire)}</td>
                 <td className="nombre">{Number(l.remise) ? `${Number(l.remise)} %` : ''}</td>
                 <td className="nombre">{Number(l.taux_tva)} %</td>
@@ -91,6 +96,37 @@ export default function DetailCommande({ id }: { id: number }) {
           <a className="bouton secondaire" href={`#/commandes/${b.id}/modifier`}>Modifier</a>
         </div>
       )}
+      {recu && (
+        <>
+          <h3>Réceptions</h3>
+          {b.receptions.length === 0 && <p className="aide">Aucune réception enregistrée.</p>}
+          <ul>
+            {b.receptions.map((r) => (
+              <li key={r.id}>
+                <a href={`#/receptions/${r.id}`}>{r.numero}</a> du {dateFr(r.date)}
+                {r.numero_livraison && ` · livraison ${r.numero_livraison}`} · {r.statut_libelle}
+              </li>
+            ))}
+          </ul>
+          <div className="actions">
+            {b.statut === 'TRANSMIS' && b.etat_reception !== 'COMPLETE' && (
+              <a className="bouton" href={`#/commandes/${b.id}/recevoir`}>Saisir une réception</a>
+            )}
+            {b.statut === 'TRANSMIS' && b.peut_preparer && (
+              <button className="secondaire" disabled={enCours} onClick={() => agir('cloturer', { commentaire: texte })}>Clôturer la commande</button>
+            )}
+            {b.statut === 'CLOTURE' && b.peut_preparer && (
+              <button className="secondaire" disabled={enCours} onClick={() => agir('decloturer', { commentaire: texte })}>Rouvrir la commande</button>
+            )}
+          </div>
+          {b.statut === 'TRANSMIS' && b.peut_preparer && b.etat_reception !== 'COMPLETE' && (
+            <label>Motif de la clôture (obligatoire si tout n'est pas reçu)
+              <input value={texte} onChange={(e) => setTexte(e.target.value)} />
+            </label>
+          )}
+        </>
+      )}
+
       {b.statut === 'VALIDE' && b.peut_preparer && (
         <div className="actions">
           <button disabled={enCours} onClick={() => agir('transmettre')}>Marquer comme transmis au fournisseur</button>

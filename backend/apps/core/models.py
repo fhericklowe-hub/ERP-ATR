@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -100,6 +102,13 @@ class Societe(models.Model):
     def save(self, *args, **kwargs):
         self.pk = 1
         super().save(*args, **kwargs)
+
+    @property
+    def chemin_logo(self) -> str:
+        """Logo chargé dans l'administration, sinon celui fourni avec l'application."""
+        if self.logo:
+            return self.logo.path
+        return str(Path(__file__).parent / "static" / "core" / "logo.png")
 
     @classmethod
     def courante(cls):

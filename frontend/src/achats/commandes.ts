@@ -10,6 +10,7 @@ export type LigneCommande = {
   taux_tva: string
   prix_net?: string
   montant_ht?: string
+  quantite_recue?: string
 }
 
 export type Totaux = {
@@ -51,6 +52,9 @@ export type Commande = {
   peut_valider: boolean
   peut_preparer: boolean
   peut_annuler: boolean
+  etat_reception: '' | 'AUCUNE' | 'PARTIELLE' | 'COMPLETE'
+  etat_reception_libelle: string
+  receptions: { id: number; numero: string; date: string; statut: string; statut_libelle: string; numero_livraison: string }[]
   lignes: LigneCommande[]
   evenements: Evenement[]
 }

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Acheteur, BonCommande, DemandeAchat, LigneBonCommande, Evenement, LigneDemandeAchat, PieceJointe
+from .models import Acheteur, BonCommande, BonReception, LigneBonReception, DemandeAchat, LigneBonCommande, Evenement, LigneDemandeAchat, PieceJointe
 
 
 class LigneInline(admin.TabularInline):
@@ -56,3 +56,20 @@ class BonCommandeAdmin(admin.ModelAdmin):
     readonly_fields = ["numero", "statut", "transmis_le"]
     autocomplete_fields = ["fournisseur", "demande", "acheteur"]
     inlines = [LigneBonCommandeInline]
+
+
+class LigneBonReceptionInline(admin.TabularInline):
+    model = LigneBonReception
+    extra = 0
+
+
+@admin.register(BonReception)
+class BonReceptionAdmin(admin.ModelAdmin):
+    """Consultation et correction. La validation se fait dans l'application."""
+
+    list_display = ["numero", "date", "commande", "numero_livraison", "receptionnaire", "statut"]
+    list_filter = ["statut"]
+    search_fields = ["numero", "ancien_numero", "numero_livraison", "commande__numero"]
+    readonly_fields = ["numero", "statut", "valide_le", "annule_par", "annule_le", "motif_annulation"]
+    autocomplete_fields = ["commande", "receptionnaire"]
+    inlines = [LigneBonReceptionInline]

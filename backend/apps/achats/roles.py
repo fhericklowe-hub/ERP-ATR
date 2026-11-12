@@ -6,6 +6,10 @@ COMMANDE = [
     "achats.view_boncommande", "achats.add_boncommande", "achats.change_boncommande",
     "referentiels.view_tiers", "referentiels.add_tiers", "referentiels.change_tiers",
 ]
+RECEPTION = [
+    "achats.view_boncommande", "achats.view_bonreception", "achats.add_bonreception", "achats.change_bonreception",
+    "referentiels.view_tiers",
+]
 SAISIE = ["achats.view_demandeachat", "achats.add_demandeachat", "achats.change_demandeachat"]
 
 ROLES = {
@@ -14,12 +18,14 @@ ROLES = {
         "achats.view_demandeachat", "achats.voir_toutes_demandeachat",
         "achats.valider_direction_technique_demandeachat",
     ],
-    "Achats - Acheteur": LECTURE + SAISIE + COMMANDE + ["achats.voir_toutes_demandeachat", "achats.view_acheteur"],
+    "Achats - Magasinier": LECTURE + RECEPTION,
+    "Achats - Acheteur": LECTURE + SAISIE + COMMANDE + RECEPTION + ["achats.voir_toutes_demandeachat", "achats.view_acheteur"],
     "Achats - Contrôleur de gestion": LECTURE + [
         "achats.view_demandeachat", "achats.voir_toutes_demandeachat",
-        "achats.view_boncommande", "achats.valider_controle_boncommande",
+        "achats.view_boncommande", "achats.valider_controle_boncommande", "achats.view_bonreception",
     ],
-    "Achats - Responsable achats": LECTURE + SAISIE + COMMANDE + [
+    "Achats - Responsable achats": LECTURE + SAISIE + COMMANDE + RECEPTION + [
+        "achats.annuler_bonreception",
         "achats.valider_responsable_boncommande",
         "achats.voir_toutes_demandeachat", "achats.valider_achats_demandeachat",
         "achats.view_acheteur", "achats.change_acheteur",
@@ -40,3 +46,11 @@ def creer_roles(sender, **kwargs):
             app, code = droit.split(".")
             filtre |= Q(content_type__app_label=app, codename=code)
         groupe.permissions.set(Permission.objects.filter(filtre))
+
+
+# Droits du bon de réception à donner aux rôles créés avant lui (voir la migration 0005).
+DROITS_RECEPTION = {
+    "Achats - Acheteur": RECEPTION,
+    "Achats - Contrôleur de gestion": ["achats.view_bonreception"],
+    "Achats - Responsable achats": RECEPTION + ["achats.annuler_bonreception"],
+}

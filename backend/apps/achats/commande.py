@@ -26,6 +26,7 @@ class BonCommande(Horodate):
         ATTENTE_CONTROLE = "ATT_CDG", "En attente du contrôleur de gestion"
         VALIDE = "VALIDE", "Validé, à signer et transmettre"
         TRANSMIS = "TRANSMIS", "Transmis au fournisseur"
+        CLOTURE = "CLOTURE", "Clôturé"
         ANNULE = "ANNULE", "Annulé"
 
     class Reglement(models.TextChoices):
@@ -95,6 +96,32 @@ class BonCommande(Horodate):
         return {"ventilation": ventilation, "total_ht": ht, "total_tva": tva, "total_ttc": ht + tva,
                 "en_lettres": montant_en_lettres(ht + tva)}
 
+    # ----- réception
+
+    class Reception(models.TextChoices):
+        SANS_OBJET = "", "--"
+        AUCUNE = "AUCUNE", "Rien reçu"
+        PARTIELLE = "PARTIELLE", "Reçu en partie"
+        COMPLETE = "COMPLETE", "Reçu en totalité"
+
+    def quantites_recues(self) -> dict:
+        from .reception import quantites_recues
+
+        return quantites_recues(self)
+
+    @property
+    def etat_reception(self) -> str:
+        if self.statut not in (self.Statut.TRANSMIS, self.Statut.CLOTURE):
+            return self.Reception.SANS_OBJET
+        recues = self.quantites_recues()
+        if not recues:
+            return self.Reception.AUCUNE
+        complet = all(recues.get(l.id, 0) >= l.quantite for l in self.lignes.all())
+        return self.Reception.COMPLETE if complet else self.Reception.PARTIELLE
+
+    def get_etat_reception_display(self) -> str:
+        return self.Reception(self.etat_reception).label
+
     # ----- circuit
 
     @property
@@ -104,7 +131,7 @@ class BonCommande(Horodate):
     @property
     def definitif(self) -> bool:
         """Vrai quand le bon a ses deux validations et peut être imprimé pour signature."""
-        return self.statut in (self.Statut.VALIDE, self.Statut.TRANSMIS)
+        return self.statut in (self.Statut.VALIDE, self.Statut.TRANSMIS, self.Statut.CLOTURE)
 
     def peut_valider(self, utilisateur) -> bool:
         S = self.Statut
@@ -165,6 +192,31 @@ class BonCommande(Horodate):
         self._journal(utilisateur, EvenementCommande.Action.TRANSMISSION)
 
     @transaction.atomic
+    def cloturer(self, utilisateur, commentaire=""):
+        """Solde la commande : plus rien n'est attendu du fournisseur, même si tout n'a pas été reçu."""
+        if self.statut != self.Statut.TRANSMIS:
+            raise ValidationError("Seul un bon de commande transmis au fournisseur peut être clôturé.")
+        if not self.peut_preparer(utilisateur):
+            raise PermissionDenied("Seul l'acheteur du bon ou le responsable achats peut le clôturer.")
+        if self.etat_reception != self.Reception.COMPLETE and not commentaire.strip():
+            raise ValidationError("La commande n'est pas reçue en totalité : indiquez le motif de la clôture.")
+        if self.receptions.filter(statut="BROUILLON").exists():
+            raise ValidationError("Un bon de réception est en brouillon sur cette commande : validez-le ou annulez-le d'abord.")
+        self.statut = self.Statut.CLOTURE
+        self.save()
+        self._journal(utilisateur, EvenementCommande.Action.CLOTURE, commentaire)
+
+    @transaction.atomic
+    def decloturer(self, utilisateur, commentaire=""):
+        if self.statut != self.Statut.CLOTURE:
+            raise ValidationError("Ce bon de commande n'est pas clôturé.")
+        if not self.peut_preparer(utilisateur):
+            raise PermissionDenied("Seul l'acheteur du bon ou le responsable achats peut le rouvrir.")
+        self.statut = self.Statut.TRANSMIS
+        self.save()
+        self._journal(utilisateur, EvenementCommande.Action.DECLOTURE, commentaire)
+
+    @transaction.atomic
     def annuler(self, utilisateur, commentaire):
         if self.statut == self.Statut.ANNULE:
             raise ValidationError("Ce bon de commande est déjà annulé.")
@@ -172,6 +224,8 @@ class BonCommande(Horodate):
             raise PermissionDenied("Seul le responsable achats peut annuler un bon de commande.")
         if not commentaire.strip():
             raise ValidationError("Indiquez le motif de l'annulation.")
+        if self.quantites_recues():
+            raise ValidationError("Ce bon de commande a des réceptions validées : annulez-les d'abord.")
         self.statut = self.Statut.ANNULE
         self.save()
         self._journal(utilisateur, EvenementCommande.Action.ANNULATION, commentaire)
@@ -215,6 +269,10 @@ class EvenementCommande(models.Model):
         REFUS = "REFUS", "Refus, à corriger"
         TRANSMISSION = "TRANSMISSION", "Transmission au fournisseur"
         ANNULATION = "ANNULATION", "Annulation"
+        CLOTURE = "CLOTURE", "Clôture"
+        DECLOTURE = "DECLOTURE", "Réouverture"
+        RECEPTION = "RECEPTION", "Réception"
+        RECEPTION_ANNULEE = "RECEP_ANNUL", "Réception annulée"
 
     bon = models.ForeignKey(BonCommande, on_delete=models.CASCADE, related_name="evenements")
     action = models.CharField(max_length=12, choices=Action.choices)
