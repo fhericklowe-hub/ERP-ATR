@@ -12,6 +12,7 @@ import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
 import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
+import ImportStock from './stock/ImportStock'
 import Stock from './stock/Stock'
 import Biens from './moyens/Biens'
 import Contrats from './moyens/Contrats'
@@ -80,6 +81,7 @@ function Page({ moi }: { moi: Utilisateur }) {
   const intervention = route.match(/^\/interventions\/(\d+)$/)
   if (intervention) return <DetailIntervention id={Number(intervention[1])} />
   if (route === '/stock') return <Stock />
+  if (route === '/stock/import') return <ImportStock />
   if (route === '/stock/sorties') return <ListeSorties peutSortir={a('stock.add_bonsortie')} />
   if (route === '/stock/sorties/nouvelle') return <FormulaireSortie />
   const sortie = route.match(/^\/stock\/sorties\/(\d+)$/)

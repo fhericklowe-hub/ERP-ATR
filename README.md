@@ -155,3 +155,13 @@ liée au budget, un bon de commande, un bon de réception, une demande d'interve
   et par magasin.
 
 Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasinier », « Stock - Responsable ».
+
+### Bon de sortie en PDF et import du stock
+
+- Le bon de sortie s'imprime en PDF, avec le visa du magasinier et celui du receveur.
+- **Import depuis Excel** (écran Stock, réservé au responsable) : première feuille, titres en première ligne :
+  `Code, Désignation, Unité, Quantité`, puis au besoin `Seuil, Rangement, Prix`. Les articles inconnus sont créés,
+  le stock du magasin est mis à la quantité du fichier, les articles absents du fichier ne sont pas touchés.
+  Le fichier est d'abord contrôlé ; une seule ligne en erreur et rien n'est importé.
+- La même chose en ligne de commande :
+  `python manage.py importer_stock stock.xlsx --magasin SIEGE --utilisateur <identifiant> [--simuler]`.

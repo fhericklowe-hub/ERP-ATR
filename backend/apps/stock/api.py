@@ -1,8 +1,10 @@
 from decimal import Decimal
 
 from django.db.models import Q, Sum
+from django.http import HttpResponse
 from rest_framework import exceptions, mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -11,7 +13,9 @@ from apps.core.permissions import DroitsModele
 from apps.referentiels.models import Article, Emplacement
 
 from . import models as stock
+from .imports import importer
 from .models import BonSortie, LigneBonSortie, Mouvement, ReglageStock
+from .pdf import pdf_bon_sortie
 
 QUANTITE = serializers.DecimalField(max_digits=12, decimal_places=2)
 
@@ -130,6 +134,26 @@ class MouvementViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                             _magasin(d.get("destination")), QUANTITE.run_validation(d.get("quantite")), str(d.get("motif", "")))
 
 
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated],
+            parser_classes=[MultiPartParser, JSONParser])
+    def importer(self, request):
+        """Met le stock d'un magasin aux quantités d'un classeur Excel. `simuler=1` contrôle sans écrire."""
+        from django.core.exceptions import PermissionDenied, ValidationError
+        fichier = request.FILES.get("fichier")
+        if not fichier:
+            raise exceptions.ValidationError({"detail": "Choisissez un classeur Excel."})
+        if fichier.size > 5 * 1024 * 1024:
+            raise exceptions.ValidationError({"detail": "Fichier trop lourd : 5 Mo au plus."})
+        try:
+            bilan = importer(request.user, fichier, _magasin(request.data.get("magasin")),
+                             simuler=str(request.data.get("simuler", "")).lower() in ("1", "true", "on"))
+        except PermissionDenied as e:
+            raise exceptions.PermissionDenied(str(e))
+        except ValidationError as e:
+            raise exceptions.ValidationError({"detail": e.messages})
+        return Response(bilan)
+
+
 class ReglageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReglageStock
@@ -207,3 +231,10 @@ class BonSortieViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixin
     def annuler(self, request, pk=None):
         executer_transition(self.get_object(), "annuler", request.user, request.data.get("commentaire", ""))
         return Response(self.get_serializer(self.get_object()).data)
+
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, pk=None):
+        bon = self.get_object()
+        reponse = HttpResponse(pdf_bon_sortie(bon), content_type="application/pdf")
+        reponse["Content-Disposition"] = f'inline; filename="{bon.numero}.pdf"'
+        return reponse

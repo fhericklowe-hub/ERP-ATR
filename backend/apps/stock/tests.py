@@ -1,12 +1,15 @@
 from decimal import Decimal
+from io import BytesIO
 
 from django.contrib.auth.models import Group
+from django.core.files.uploadedfile import SimpleUploadedFile
+from openpyxl import Workbook
 
 from apps.achats.tests_commande import SocleCommande
 from apps.core.models import Utilisateur
 from apps.referentiels.models import Article, Emplacement, Unite
 
-from .models import BonSortie, Mouvement, quantite_en_stock
+from .models import BonSortie, Mouvement, ReglageStock, quantite_en_stock
 
 ETAT = "/api/stock/etat/"
 SORTIES = "/api/stock/sorties/"
@@ -211,3 +214,62 @@ class StockTests(SocleCommande):
         self.client.force_authenticate(self.demandeur)
         self.assertEqual(self.client.get(ETAT).status_code, 403)
         self.assertEqual(self.client.get(MOUVEMENTS).status_code, 403)
+
+    # ----- PDF et import
+
+    def test_pdf_du_bon_de_sortie(self):
+        self.ajuster(10)
+        bon = self.sortir({self.filtre: 2}).data
+        r = self.client.get(f"{SORTIES}{bon['id']}/pdf/")
+        self.assertEqual((r.status_code, r["Content-Type"]), (200, "application/pdf"))
+        self.assertTrue(r.content.startswith(b"%PDF"))
+        self.client.force_authenticate(self.demandeur)
+        self.assertEqual(self.client.get(f"{SORTIES}{bon['id']}/pdf/").status_code, 403)
+
+    def classeur(self, lignes, titres=("Code", "Désignation", "Unité", "Quantité", "Seuil", "Rangement", "Prix")):
+        wb = Workbook()
+        wb.active.append(titres)
+        for ligne in lignes:
+            wb.active.append(ligne)
+        tampon = BytesIO()
+        wb.save(tampon)
+        return SimpleUploadedFile("stock.xlsx", tampon.getvalue())
+
+    def importer(self, lignes, par=None, **champs):
+        self.client.force_authenticate(par or self.chef_stock)
+        return self.client.post(f"{MOUVEMENTS}importer/", {"fichier": self.classeur(lignes, **champs.pop("classeur", {})),
+                                                           "magasin": self.siege.id, **champs}, format="multipart")
+
+    LIGNES = [("FIL-001", "Filtre à huile", "U", 12, 4, "A-12", 4500), ("NEUF-9", "Roulement 6204", "u", "3,5", None, None, None),
+              (None, None, None, None, None, None, None)]
+
+    def test_import_du_stock(self):
+        self.ajuster(2)
+        simulation = self.importer(self.LIGNES, simuler="1")
+        self.assertEqual(simulation.status_code, 200, simulation.data)
+        self.assertEqual((simulation.data["lues"], simulation.data["articles_crees"], simulation.data["ecrit"]), (2, 1, False))
+        self.assertEqual((self.stock(), Article.objects.filter(code="NEUF-9").count()), (2, 0))
+        r = self.importer(self.LIGNES)
+        self.assertEqual((r.data["stocks_modifies"], r.data["articles_crees"], r.data["erreurs"], r.data["ecrit"]), (2, 1, [], True))
+        neuf = Article.objects.get(code="NEUF-9")
+        self.assertEqual((self.stock(), self.stock(neuf)), (12, Decimal("3.5")))
+        reglage = ReglageStock.objects.get(article=self.filtre, magasin=self.siege)
+        self.assertEqual((reglage.seuil_mini, reglage.casier), (4, "A-12"))
+        # Le même fichier une seconde fois ne change rien.
+        r = self.importer(self.LIGNES)
+        self.assertEqual((r.data["stocks_modifies"], r.data["inchanges"], r.data["articles_crees"]), (0, 2, 0))
+
+    def test_import_refuse_en_bloc(self):
+        r = self.importer([("FIL-001", "Filtre", "U", 5, None, None, None), ("X-1", "Sans quantité", "U", None, None, None, None),
+                           ("X-2", "Unité inconnue", "PALETTE", 1, None, None, None), ("fil-001", "Doublon", "U", 1, None, None, None),
+                           ("SRV-001", "Service", "U", 1, None, None, None), ("X-3", "Négatif", "U", -2, None, None, None)])
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual((len(r.data["erreurs"]), r.data["ecrit"]), (5, False))
+        self.assertIn("Ligne 3", r.data["erreurs"][0])
+        self.assertEqual((self.stock(), Mouvement.objects.count(), Article.objects.filter(code__startswith="X-").count()), (0, 0, 0))
+        self.assertEqual(self.importer([("A", 1)], classeur={"titres": ("Code", "Quantité")}).status_code, 400)
+        self.assertEqual(self.importer(self.LIGNES, par=self.magasinier).status_code, 403)
+        self.client.force_authenticate(self.chef_stock)
+        pas_excel = SimpleUploadedFile("stock.xlsx", b"ceci n'est pas un classeur")
+        self.assertEqual(self.client.post(f"{MOUVEMENTS}importer/", {"fichier": pas_excel, "magasin": self.siege.id},
+                                          format="multipart").status_code, 400)

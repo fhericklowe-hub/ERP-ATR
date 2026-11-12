@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, type Page, type Service } from '../api'
+import { api, ouvrirFichier, type Page, type Service } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr, dateHeureFr } from '../achats/types'
 import { type EtatStock, type LigneStock, type Magasin, type Sortie, nombre } from './types'
@@ -184,7 +184,10 @@ export function DetailSortie({ id }: { id: number }) {
   return (
     <div className="fiche">
       <p><a href="#/stock/sorties">← Bons de sortie</a></p>
-      <div className="barre"><h2>{s.numero}</h2></div>
+      <div className="barre">
+        <h2>{s.numero}</h2>
+        <button className="secondaire" onClick={() => ouvrirFichier(`/stock/sorties/${id}/pdf/`).catch((e: Error) => setErreur(e.message))}>Imprimer (PDF)</button>
+      </div>
       <p className="statut">{s.statut_libelle}</p>
       <dl>
         <dt>N° d'OR</dt><dd><strong>{s.numero_or}</strong></dd>
