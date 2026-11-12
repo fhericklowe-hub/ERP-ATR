@@ -3,6 +3,7 @@ import { api, type Page, type Tiers } from '../api'
 import { montant } from '../achats/commandes'
 import { dateFr, dateHeureFr } from '../achats/types'
 import type { Intervention } from './types'
+import PiecesJointes from '../PiecesJointes'
 
 type Personne = { id: number; first_name: string; last_name: string; username: string }
 
@@ -126,6 +127,8 @@ export default function DetailIntervention({ id }: { id: number }) {
           </div>
         </fieldset>
       )}
+
+      <PiecesJointes modele="moyens.demandeintervention" objet={id} aide="Joignez ici une photo du problème, un devis ou une facture." />
 
       <h3>Historique</h3>
       {d.evenements.length === 0 && <p className="aide">En attente de prise en charge par les moyens généraux.</p>}

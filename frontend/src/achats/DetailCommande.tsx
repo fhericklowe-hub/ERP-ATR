@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, ouvrirFichier } from '../api'
 import { type Commande, montant } from './commandes'
 import { dateFr, dateHeureFr } from './types'
+import PiecesJointes from '../PiecesJointes'
 
 export default function DetailCommande({ id }: { id: number }) {
   const [b, setB] = useState<Commande | null>(null)
@@ -153,6 +154,8 @@ export default function DetailCommande({ id }: { id: number }) {
           </div>
         </fieldset>
       )}
+
+      <PiecesJointes modele="achats.boncommande" objet={id} aide="Joignez ici le devis, la facture pro forma ou la facture." />
 
       <h3>Historique</h3>
       {b.evenements.length === 0 && <p className="aide">Brouillon, pas encore soumis.</p>}

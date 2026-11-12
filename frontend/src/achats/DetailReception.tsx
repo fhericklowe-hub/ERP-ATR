@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, ouvrirFichier } from '../api'
+import PiecesJointes from '../PiecesJointes'
 import { montant } from './commandes'
 import { type Reception, qte } from './receptions'
 import { dateFr, dateHeureFr } from './types'
@@ -111,6 +112,8 @@ export default function DetailReception({ id }: { id: number }) {
           </div>
         </fieldset>
       )}
+
+      <PiecesJointes modele="achats.bonreception" objet={id} aide="Joignez ici le bon de livraison du fournisseur." />
     </div>
   )
 }

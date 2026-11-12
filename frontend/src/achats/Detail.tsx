@@ -2,6 +2,7 @@ import { type ChangeEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page } from '../api'
 import type { Commande } from './commandes'
 import { type Acheteur, type Demande, URGENCES, dateFr, dateHeureFr } from './types'
+import PiecesJointes from '../PiecesJointes'
 
 export default function Detail({ id, moiId, droits }: { id: number; moiId: number; droits: string[] }) {
   const [d, setD] = useState<Demande | null>(null)
@@ -197,6 +198,8 @@ export default function Detail({ id, moiId, droits }: { id: number; moiId: numbe
           {peutCommander && <a className="bouton" href={`#/demandes/${d.id}/commander`}>Créer un bon de commande</a>}
         </>
       )}
+
+      <PiecesJointes modele="achats.demandeachat" objet={id} />
 
       <h3>Historique</h3>
       {d.evenements.length === 0 && <p className="aide">Brouillon, pas encore soumis.</p>}
