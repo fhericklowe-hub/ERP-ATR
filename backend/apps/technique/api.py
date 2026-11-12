@@ -1,3 +1,5 @@
+import datetime
+
 from rest_framework import exceptions, mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,10 +8,12 @@ from apps.achats.views import executer_transition
 from apps.core.api import VueMetier
 from apps.core.models import Utilisateur
 
-from .models import Materiel, OrdreReparation
+from . import couts
+from .models import Materiel, OrdreReparation, TempsPasse
 
 HEURES = serializers.DecimalField(max_digits=10, decimal_places=1, min_value=0, allow_null=True)
 KM = serializers.IntegerField(min_value=0, allow_null=True)
+DUREE = serializers.DecimalField(max_digits=4, decimal_places=2)
 
 
 def _nombre(champ, valeur):
@@ -59,6 +63,9 @@ class OrdreSerializer(serializers.ModelSerializer):
     mecanicien_nom = serializers.SerializerMethodField()
     cloture_par_nom = serializers.SerializerMethodField()
     pieces = serializers.SerializerMethodField()
+    temps = serializers.SerializerMethodField()
+    couts = serializers.SerializerMethodField()
+    peut_saisir_temps = serializers.SerializerMethodField()
     peut_travailler = serializers.SerializerMethodField()
     peut_piloter = serializers.SerializerMethodField()
 
@@ -67,7 +74,8 @@ class OrdreSerializer(serializers.ModelSerializer):
         fields = ["id", "numero", "statut", "statut_libelle", "cree_le", "materiel", "materiel_nom", "materiel_code",
                   "site_nom", "type", "type_libelle", "immobilisant", "description", "demandeur_nom", "mecanicien",
                   "mecanicien_nom", "compteur_heures", "compteur_km", "diagnostic", "travaux", "demarre_le", "termine_le",
-                  "cloture_par_nom", "cloture_le", "motif_annulation", "pieces", "peut_travailler", "peut_piloter"]
+                  "cloture_par_nom", "cloture_le", "motif_annulation", "pieces", "temps", "couts",
+                  "peut_saisir_temps", "peut_travailler", "peut_piloter"]
         # Le déroulement passe par les actions du circuit.
         read_only_fields = ["numero", "statut", "mecanicien", "compteur_heures", "compteur_km", "travaux", "demarre_le",
                             "termine_le", "cloture_le", "motif_annulation"]
@@ -87,16 +95,44 @@ class OrdreSerializer(serializers.ModelSerializer):
     def get_peut_piloter(self, obj) -> bool:
         return obj.pilote(self._u())
 
+    def get_peut_saisir_temps(self, obj) -> bool:
+        return obj.peut_saisir_temps(self._u())
+
+    def _detail(self) -> bool:
+        """Pièces, temps et coûts ne sont calculés que sur la fiche, pour ne pas multiplier les requêtes des listes."""
+        return self.context["view"].action != "list"
+
+    def _voit_les_couts(self) -> bool:
+        return self._u().has_perm("technique.voir_couts_ordrereparation")
+
+    def _pieces(self, obj) -> list:
+        if not hasattr(obj, "_pieces"):
+            obj._pieces = couts.pieces(obj)
+        return obj._pieces
+
     def get_pieces(self, obj) -> list:
-        """Pièces sorties du stock pour cet OR. Vide dans les listes, pour ne pas multiplier les requêtes."""
-        if self.context["view"].action == "list":
+        """Pièces sorties du stock pour cet OR. Les prix ne sont donnés qu'à qui peut voir les coûts."""
+        if not self._detail():
             return []
-        lignes = []
-        for bon in obj.sorties().prefetch_related("lignes__article__unite").order_by("date", "id"):
-            for l in bon.lignes.all():
-                lignes.append({"bon": bon.id, "bon_numero": bon.numero, "date": bon.date, "code": l.article.code,
-                               "designation": l.article.designation, "quantite": str(l.quantite), "unite": l.article.unite.code})
-        return lignes
+        chiffre = self._voit_les_couts()
+        return [{**l, "quantite": str(l["quantite"]),
+                 "prix_unitaire": l["prix_unitaire"] if chiffre else None, "montant": l["montant"] if chiffre else None}
+                for l in self._pieces(obj)]
+
+    def get_temps(self, obj) -> list:
+        if not self._detail():
+            return []
+        u, chiffre = self._u(), self._voit_les_couts()
+        retirable = obj.statut != obj.Statut.CLOTURE
+        return [{"id": t.id, "date": t.date, "mecanicien": t.mecanicien_id, "mecanicien_nom": str(t.mecanicien),
+                 "heures": str(t.heures), "commentaire": t.commentaire, "montant": t.montant if chiffre else None,
+                 "peut_retirer": retirable and (obj.pilote(u) or (t.saisi_par_id == u.id and obj.peut_saisir_temps(u)))}
+                for t in obj.temps.select_related("mecanicien")]
+
+    def get_couts(self, obj) -> dict | None:
+        if not self._detail() or not self._voit_les_couts():
+            return None
+        return couts.cout(obj, self._pieces(obj))
 
     def validate_materiel(self, materiel):
         if self.instance and self.instance.materiel_id != materiel.id:
@@ -174,3 +210,26 @@ class OrdreReparationViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     @action(**transition)
     def annuler(self, request, pk=None):
         return self._transition(request, "annuler", str(request.data.get("commentaire", "")))
+
+    @action(**transition)
+    def saisir_temps(self, request, pk=None):
+        d = request.data
+        mecanicien = None
+        if d.get("mecanicien"):
+            try:
+                mecanicien = Utilisateur.objects.get(pk=d["mecanicien"], is_active=True)
+            except (Utilisateur.DoesNotExist, ValueError):
+                raise exceptions.ValidationError({"detail": "Mécanicien inconnu."})
+        try:
+            date = datetime.date.fromisoformat(d["date"]) if d.get("date") else None
+        except (TypeError, ValueError):
+            raise exceptions.ValidationError({"detail": "Date invalide."})
+        return self._transition(request, "saisir_temps", DUREE.run_validation(d.get("heures")), date, mecanicien,
+                                str(d.get("commentaire", "")))
+
+    @action(**transition)
+    def retirer_temps(self, request, pk=None):
+        temps = TempsPasse.objects.filter(ordre=self.get_object(), pk=request.data.get("temps") or 0).first()
+        if not temps:
+            raise exceptions.ValidationError({"detail": "Saisie de temps introuvable."})
+        return self._transition(request, "retirer_temps", temps)
