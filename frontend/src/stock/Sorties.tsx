@@ -103,8 +103,8 @@ export function FormulaireSortie() {
       <fieldset>
         <legend>Pour quel travail</legend>
         <div className="grille">
-          <label>N° d'OR (obligatoire)
-            <input required value={d.numero_or} maxLength={40} onChange={(e) => champ('numero_or', e.target.value)} />
+          <label>N° d'OR (obligatoire pour une pièce)
+            <input value={d.numero_or} maxLength={40} onChange={(e) => champ('numero_or', e.target.value)} />
           </label>
           <label>Matériel concerné
             <input value={d.materiel} placeholder="Engin, véhicule, immatriculation" onChange={(e) => champ('materiel', e.target.value)} />
@@ -190,7 +190,7 @@ export function DetailSortie({ id }: { id: number }) {
       </div>
       <p className="statut">{s.statut_libelle}</p>
       <dl>
-        <dt>N° d'OR</dt><dd><strong>{s.numero_or}</strong></dd>
+        {s.numero_or && <><dt>N° d'OR</dt><dd><strong>{s.numero_or}</strong></dd></>}
         {s.materiel && <><dt>Matériel</dt><dd>{s.materiel}</dd></>}
         <dt>Magasin</dt><dd>{s.magasin_nom}</dd>
         <dt>Date</dt><dd>{dateFr(s.date)}</dd>
