@@ -11,6 +11,10 @@ import FormulaireReception from './achats/FormulaireReception'
 import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
+import Biens from './moyens/Biens'
+import DetailIntervention from './moyens/DetailIntervention'
+import FormulaireIntervention from './moyens/FormulaireIntervention'
+import ListeInterventions from './moyens/ListeInterventions'
 import { api, connecter, deconnecter, estConnecte, type Utilisateur } from './api'
 
 function Connexion({ onConnecte }: { onConnecte: () => void }) {
@@ -64,6 +68,15 @@ function useRoute() {
 
 function Page({ moi }: { moi: Utilisateur }) {
   const route = useRoute()
+  const a = (droit: string) => moi.droits.includes(droit)
+  if (route === '/interventions') return <ListeInterventions />
+  if (route === '/interventions/nouvelle') return <FormulaireIntervention moi={moi} />
+  const modifInt = route.match(/^\/interventions\/(\d+)\/modifier$/)
+  if (modifInt) return <FormulaireIntervention moi={moi} id={Number(modifInt[1])} />
+  const intervention = route.match(/^\/interventions\/(\d+)$/)
+  if (intervention) return <DetailIntervention id={Number(intervention[1])} />
+  if (route === '/biens') return <Biens peutModifier={a('moyens.change_bien')} />
+  if (route === '/' && !a('achats.view_demandeachat') && a('moyens.view_demandeintervention')) return <ListeInterventions />
   if (route === '/demandes/nouvelle') return <Formulaire moi={moi} />
   const modif = route.match(/^\/demandes\/(\d+)\/modifier$/)
   if (modif) return <Formulaire moi={moi} id={Number(modif[1])} />
@@ -113,15 +126,19 @@ export default function App() {
     setConnecte(false)
   }
 
+  const a = (droit: string) => !!moi && moi.droits.includes(droit)
+
   return (
     <>
       <header>
         <a href="#/" className="marque"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
         <nav>
-          <a href="#/">Demandes d'achat</a>
-          <a href="#/budget">Demandes budget</a>
-          <a href="#/commandes">Bons de commande</a>
-          <a href="#/receptions">Bons de réception</a>
+          {a('achats.view_demandeachat') && <a href="#/">Demandes d'achat</a>}
+          {a('achats.view_demandebudget') && <a href="#/budget">Demandes budget</a>}
+          {a('achats.view_boncommande') && <a href="#/commandes">Bons de commande</a>}
+          {a('achats.view_bonreception') && <a href="#/receptions">Bons de réception</a>}
+          {a('moyens.view_demandeintervention') && <a href="#/interventions">Interventions</a>}
+          {a('moyens.view_bien') && <a href="#/biens">Biens</a>}
         </nav>
         <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
         <button onClick={quitter}>Se déconnecter</button>

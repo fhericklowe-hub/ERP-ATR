@@ -100,3 +100,18 @@ cas, direction générale (investissement, montant au-dessus du seuil, hors budg
 - Les comptes de charge sont créés à l'installation. Les projets et codes analytiques se chargent depuis le
   classeur de l'entreprise, qui ne doit pas être ajouté au dépôt :
   `python manage.py importer_projets chemin/vers/le-classeur.xlsx`
+
+## Moyens généraux : biens et demandes d'intervention
+
+- **Inventaire des biens** (bâtiments et locaux, véhicules de service, mobilier, informatique, téléphonie,
+  équipements) : numéro `MG-00001`, site, emplacement, service utilisateur, état (en service, en panne,
+  en réparation, réformé), date et valeur d'acquisition.
+- **Demande d'intervention** (`INT-2026-0001`) : tout utilisateur signale un problème (objet, catégorie,
+  priorité, site, lieu, bien concerné). Les moyens généraux la prennent en charge (intervenant interne ou
+  prestataire, date prévue), déclarent l'intervention réalisée (compte rendu, coût), puis le demandeur
+  confirme et clôture, ou rouvre la demande si le problème persiste. Une demande peut être refusée avec motif.
+- L'état du bien suit la demande : en panne à la déclaration si le demandeur le coche, en réparation à la
+  prise en charge, en service à la réalisation.
+
+Deux rôles sont créés à l'installation : « Moyens généraux - Demandeur » et « Moyens généraux - Gestionnaire ».
+Le menu de l'application n'affiche que les rubriques auxquelles l'utilisateur a droit.
