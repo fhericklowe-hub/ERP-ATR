@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from rest_framework import exceptions, mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.achats.views import executer_transition
@@ -12,6 +13,7 @@ from apps.core.api import VueMetier
 from apps.core.models import Utilisateur
 
 from . import couts
+from .imports import importer
 from .models import Materiel, OrdreReparation, PlanEntretien, TempsPasse
 
 HEURES = serializers.DecimalField(max_digits=10, decimal_places=1, min_value=0, allow_null=True)
@@ -54,6 +56,46 @@ class MaterielViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins
 
     perform_create = VueMetier.perform_create
     perform_update = VueMetier.perform_update
+
+    @action(detail=True, methods=["get"])
+    def historique(self, request, pk=None):
+        """Les ordres de réparation du matériel, du plus récent au plus ancien, et ce qu'ils ont coûté.
+        Les montants ne sont donnés qu'à qui peut voir les coûts."""
+        materiel = self.get_object()
+        if not request.user.has_perm("technique.view_ordrereparation"):
+            raise exceptions.PermissionDenied()
+        chiffre = request.user.has_perm("technique.voir_couts_ordrereparation")
+        S, ordres = OrdreReparation.Statut, []
+        total = {"heures": couts.ZERO, "main_oeuvre": couts.ZERO, "pieces": couts.ZERO, "total": couts.ZERO}
+        for o in materiel.ordres.exclude(statut=S.ANNULE).prefetch_related("temps").order_by("-cree_le"):
+            c = couts.cout(o)
+            for cle in total:
+                total[cle] += c[cle]
+            ordres.append({"id": o.id, "numero": o.numero, "cree_le": o.cree_le, "type_libelle": o.get_type_display(),
+                           "statut": o.statut, "statut_libelle": o.get_statut_display(),
+                           "description": o.description.split("\n")[0][:120], "heures": c["heures"],
+                           "cout": c["total"] if chiffre else None})
+        return Response({"ordres": ordres, "nombre": len(ordres), "heures": total["heures"],
+                         "couts": {c: total[c] for c in ("main_oeuvre", "pieces", "total")} if chiffre else None})
+
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated],
+            parser_classes=[MultiPartParser, JSONParser])
+    def importer(self, request):
+        """Crée ou met à jour le parc depuis un classeur Excel. `simuler=1` contrôle sans écrire."""
+        from django.core.exceptions import PermissionDenied
+
+        fichier = request.FILES.get("fichier")
+        if not fichier:
+            raise exceptions.ValidationError({"detail": "Choisissez un classeur Excel."})
+        if fichier.size > 5 * 1024 * 1024:
+            raise exceptions.ValidationError({"detail": "Fichier trop lourd : 5 Mo au plus."})
+        try:
+            bilan = importer(request.user, fichier, simuler=str(request.data.get("simuler", "")).lower() in ("1", "true", "on"))
+        except PermissionDenied as e:
+            raise exceptions.PermissionDenied(str(e))
+        except DjangoValidationError as e:
+            raise exceptions.ValidationError({"detail": e.messages})
+        return Response(bilan)
 
 
 class OrdreSerializer(serializers.ModelSerializer):
