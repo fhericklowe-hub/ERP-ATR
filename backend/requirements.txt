@@ -8,3 +8,5 @@ celery>=5.7,<6
 redis>=8,<9
 django-environ>=0.14
 gunicorn>=27
+reportlab>=5,<6
+Pillow>=11

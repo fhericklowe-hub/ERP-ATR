@@ -1,18 +1,28 @@
 import { type ChangeEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page } from '../api'
+import type { Commande } from './commandes'
 import { type Acheteur, type Demande, URGENCES, dateFr, dateHeureFr } from './types'
 
-export default function Detail({ id, moiId }: { id: number; moiId: number }) {
+export default function Detail({ id, moiId, droits }: { id: number; moiId: number; droits: string[] }) {
   const [d, setD] = useState<Demande | null>(null)
   const [erreur, setErreur] = useState('')
   const [texte, setTexte] = useState('')
   const [enCours, setEnCours] = useState(false)
   const [acheteurs, setAcheteurs] = useState<Acheteur[]>([])
+  const [commandes, setCommandes] = useState<Commande[]>([])
 
   const charger = useCallback(() => {
     api<Demande>(`/achats/demandes/${id}/`).then(setD).catch((e: Error) => setErreur(e.message))
   }, [id])
   useEffect(charger, [charger])
+
+  // Bons de commande de la demande, pour ceux qui ont le droit de les voir.
+  const validee = d?.statut === 'VALIDEE'
+  useEffect(() => {
+    if (validee && droits.includes('achats.view_boncommande'))
+      api<Page<Commande>>(`/achats/bons-commande/?demande=${id}`).then((p) => setCommandes(p.results)).catch(() => {})
+  }, [validee, droits, id])
+  const peutCommander = droits.includes('achats.add_boncommande')
 
   // Seul le responsable achats réattribue : il a besoin de la charge de l'équipe.
   const responsable = d?.statut === 'ATT_ACHATS' && d.peut_valider
@@ -173,6 +183,19 @@ export default function Detail({ id, moiId }: { id: number; moiId: number }) {
             )}
           </div>
         </fieldset>
+      )}
+
+      {d.statut === 'VALIDEE' && (
+        <>
+          <h3>Bons de commande</h3>
+          {commandes.length === 0 && <p className="aide">Aucun bon de commande pour cette demande.</p>}
+          <ul>
+            {commandes.map((c) => (
+              <li key={c.id}><a href={`#/commandes/${c.id}`}>{c.numero}</a> · {c.fournisseur_nom} · {c.statut_libelle}</li>
+            ))}
+          </ul>
+          {peutCommander && <a className="bouton" href={`#/demandes/${d.id}/commander`}>Créer un bon de commande</a>}
+        </>
       )}
 
       <h3>Historique</h3>

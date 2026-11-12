@@ -11,6 +11,16 @@ from .models import Acheteur, DemandeAchat, PieceJointe
 from .serializers import AcheteurSerializer, DemandeAchatSerializer, PieceJointeSerializer
 
 
+def executer_transition(objet, nom, utilisateur, *args):
+    """Joue une étape du circuit et traduit ses refus en erreurs d'API."""
+    try:
+        getattr(objet, nom)(utilisateur, *args)
+    except DjangoPermissionDenied as e:
+        raise exceptions.PermissionDenied(str(e))
+    except DjangoValidationError as e:
+        raise exceptions.ValidationError({"detail": e.messages})
+
+
 class AcheteurViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     """Équipe achats : charge en cours et disponibilité de chaque acheteur."""
 
@@ -58,13 +68,7 @@ class DemandeAchatViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
         serializer.save(modifie_par=self.request.user)
 
     def _transition(self, request, nom, *args):
-        demande = self.get_object()
-        try:
-            getattr(demande, nom)(request.user, *args)
-        except DjangoPermissionDenied as e:
-            raise exceptions.PermissionDenied(str(e))
-        except DjangoValidationError as e:
-            raise exceptions.ValidationError({"detail": e.messages})
+        executer_transition(self.get_object(), nom, request.user, *args)
         return Response(self.get_serializer(self.get_object()).data)
 
     # Les transitions exigent d'être connecté ; le droit précis est vérifié par le circuit lui-même.

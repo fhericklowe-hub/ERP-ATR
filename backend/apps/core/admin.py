@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Service, Site, Utilisateur
+from .models import Service, Site, Societe, Utilisateur
 
 
 class AdminMetier(admin.ModelAdmin):
@@ -32,3 +32,12 @@ class UtilisateurAdmin(UserAdmin):
     list_filter = ["site", "service", "is_active", "groups"]
     fieldsets = UserAdmin.fieldsets + (("Entreprise", {"fields": ("site", "service", "fonction", "telephone")}),)
     add_fieldsets = UserAdmin.add_fieldsets + (("Entreprise", {"fields": ("site", "service")}),)
+
+
+@admin.register(Societe)
+class SocieteAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return not Societe.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
