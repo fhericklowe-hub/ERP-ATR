@@ -1,22 +1,21 @@
 """Bon de commande fournisseur : créé à partir d'une demande d'achat validée, validé par le responsable
 achats puis par le contrôleur de gestion, puis imprimé, signé et transmis au fournisseur."""
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
+from apps.core import devises
+from apps.core.devises import arrondi
 from apps.core.lettres import montant_en_lettres
 from apps.core.models import Compteur, Horodate, Service, Site
 from apps.referentiels.models import Article, Tiers
 
+from .choix import Activite
+
 CENT = Decimal(100)
-
-
-def arrondi(montant: Decimal) -> Decimal:
-    """Le franc CFA n'a pas de centimes."""
-    return montant.quantize(Decimal(1), rounding=ROUND_HALF_UP)
 
 
 class BonCommande(Horodate):
@@ -26,6 +25,7 @@ class BonCommande(Horodate):
         ATTENTE_CONTROLE = "ATT_CDG", "En attente du contrôleur de gestion"
         VALIDE = "VALIDE", "Validé, à signer et transmettre"
         TRANSMIS = "TRANSMIS", "Transmis au fournisseur"
+        CLOTURE = "CLOTURE", "Clôturé"
         ANNULE = "ANNULE", "Annulé"
 
     class Reglement(models.TextChoices):
@@ -49,12 +49,19 @@ class BonCommande(Horodate):
     objet = models.CharField("référence / objet", max_length=150, blank=True)
     site = models.ForeignKey(Site, on_delete=models.PROTECT, related_name="bons_commande", verbose_name="succursale")
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name="bons_commande", verbose_name="service imputé")
+    activite = models.CharField("activité", max_length=12, choices=Activite.choices, blank=True)
+    activite_autre = models.CharField("autre activité", max_length=100, blank=True)
     acheteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="bons_commande")
     date_livraison = models.DateField("délai de livraison", null=True, blank=True)
     transport = models.CharField(max_length=100, blank=True, default="PAR VOS SOINS")
     adresse_livraison = models.TextField("adresse de livraison", blank=True)
     echeance = models.CharField("échéance de paiement", max_length=100, blank=True, default="30 JOURS FIN DE MOIS")
     mode_reglement = models.CharField("mode de règlement", max_length=10, choices=Reglement.choices, default=Reglement.CHEQUE)
+    devise = models.CharField(max_length=3, choices=devises.CHOIX, default="XOF")
+    taux_change = models.DecimalField(
+        "cours de la devise en francs CFA", max_digits=12, decimal_places=4, null=True, blank=True,
+        help_text="Valeur d'une unité de la devise en francs CFA, pour la contre-valeur de la commande.",
+    )
     transmis_le = models.DateField("transmis au fournisseur le", null=True, blank=True, editable=False)
 
     class Meta:
@@ -70,6 +77,10 @@ class BonCommande(Horodate):
         return self.numero
 
     def save(self, *args, **kwargs):
+        if self.devise == "XOF":
+            self.taux_change = None
+        elif self.devise == "EUR":
+            self.taux_change = devises.PARITE_EURO
         if not self.numero:
             with transaction.atomic():
                 annee = self.date.year
@@ -77,15 +88,21 @@ class BonCommande(Horodate):
                 return super().save(*args, **kwargs)
         return super().save(*args, **kwargs)
 
+    @property
+    def activite_libelle(self) -> str:
+        if self.activite == Activite.AUTRE and self.activite_autre:
+            return self.activite_autre
+        return self.get_activite_display()
+
     # ----- montants
 
     def totaux(self) -> dict:
-        """Totaux et ventilation par taux de TVA, arrondis au franc."""
+        """Totaux et ventilation par taux de TVA, arrondis au franc (ou au centime en euro et en dollar)."""
         par_taux = {}
         for ligne in self.lignes.all():
             par_taux[ligne.taux_tva] = par_taux.get(ligne.taux_tva, Decimal(0)) + ligne.montant_ht
         ventilation = [
-            {"taux": taux, "base_ht": base, "tva": arrondi(base * taux / CENT)}
+            {"taux": taux, "base_ht": base, "tva": arrondi(base * taux / CENT, self.devise)}
             for taux, base in sorted(par_taux.items(), reverse=True)
         ]
         for v in ventilation:
@@ -93,7 +110,40 @@ class BonCommande(Horodate):
         ht = sum((v["base_ht"] for v in ventilation), Decimal(0))
         tva = sum((v["tva"] for v in ventilation), Decimal(0))
         return {"ventilation": ventilation, "total_ht": ht, "total_tva": tva, "total_ttc": ht + tva,
-                "en_lettres": montant_en_lettres(ht + tva)}
+                "en_lettres": montant_en_lettres(ht + tva, self.devise), "devise": self.devise,
+                "contre_valeur_xof": self.en_xof(ht + tva)}
+
+    def en_xof(self, montant):
+        """Contre-valeur en francs CFA, ou None si le cours de la devise n'est pas renseigné."""
+        if self.devise == "XOF":
+            return montant
+        return arrondi(montant * self.taux_change) if self.taux_change else None
+
+    # ----- réception
+
+    class Reception(models.TextChoices):
+        SANS_OBJET = "", "--"
+        AUCUNE = "AUCUNE", "Rien reçu"
+        PARTIELLE = "PARTIELLE", "Reçu en partie"
+        COMPLETE = "COMPLETE", "Reçu en totalité"
+
+    def quantites_recues(self) -> dict:
+        from .reception import quantites_recues
+
+        return quantites_recues(self)
+
+    @property
+    def etat_reception(self) -> str:
+        if self.statut not in (self.Statut.TRANSMIS, self.Statut.CLOTURE):
+            return self.Reception.SANS_OBJET
+        recues = self.quantites_recues()
+        if not recues:
+            return self.Reception.AUCUNE
+        complet = all(recues.get(l.id, 0) >= l.quantite for l in self.lignes.all())
+        return self.Reception.COMPLETE if complet else self.Reception.PARTIELLE
+
+    def get_etat_reception_display(self) -> str:
+        return self.Reception(self.etat_reception).label
 
     # ----- circuit
 
@@ -104,7 +154,7 @@ class BonCommande(Horodate):
     @property
     def definitif(self) -> bool:
         """Vrai quand le bon a ses deux validations et peut être imprimé pour signature."""
-        return self.statut in (self.Statut.VALIDE, self.Statut.TRANSMIS)
+        return self.statut in (self.Statut.VALIDE, self.Statut.TRANSMIS, self.Statut.CLOTURE)
 
     def peut_valider(self, utilisateur) -> bool:
         S = self.Statut
@@ -165,6 +215,31 @@ class BonCommande(Horodate):
         self._journal(utilisateur, EvenementCommande.Action.TRANSMISSION)
 
     @transaction.atomic
+    def cloturer(self, utilisateur, commentaire=""):
+        """Solde la commande : plus rien n'est attendu du fournisseur, même si tout n'a pas été reçu."""
+        if self.statut != self.Statut.TRANSMIS:
+            raise ValidationError("Seul un bon de commande transmis au fournisseur peut être clôturé.")
+        if not self.peut_preparer(utilisateur):
+            raise PermissionDenied("Seul l'acheteur du bon ou le responsable achats peut le clôturer.")
+        if self.etat_reception != self.Reception.COMPLETE and not commentaire.strip():
+            raise ValidationError("La commande n'est pas reçue en totalité : indiquez le motif de la clôture.")
+        if self.receptions.filter(statut="BROUILLON").exists():
+            raise ValidationError("Un bon de réception est en brouillon sur cette commande : validez-le ou annulez-le d'abord.")
+        self.statut = self.Statut.CLOTURE
+        self.save()
+        self._journal(utilisateur, EvenementCommande.Action.CLOTURE, commentaire)
+
+    @transaction.atomic
+    def decloturer(self, utilisateur, commentaire=""):
+        if self.statut != self.Statut.CLOTURE:
+            raise ValidationError("Ce bon de commande n'est pas clôturé.")
+        if not self.peut_preparer(utilisateur):
+            raise PermissionDenied("Seul l'acheteur du bon ou le responsable achats peut le rouvrir.")
+        self.statut = self.Statut.TRANSMIS
+        self.save()
+        self._journal(utilisateur, EvenementCommande.Action.DECLOTURE, commentaire)
+
+    @transaction.atomic
     def annuler(self, utilisateur, commentaire):
         if self.statut == self.Statut.ANNULE:
             raise ValidationError("Ce bon de commande est déjà annulé.")
@@ -172,6 +247,8 @@ class BonCommande(Horodate):
             raise PermissionDenied("Seul le responsable achats peut annuler un bon de commande.")
         if not commentaire.strip():
             raise ValidationError("Indiquez le motif de l'annulation.")
+        if self.quantites_recues():
+            raise ValidationError("Ce bon de commande a des réceptions validées : annulez-les d'abord.")
         self.statut = self.Statut.ANNULE
         self.save()
         self._journal(utilisateur, EvenementCommande.Action.ANNULATION, commentaire)
@@ -199,11 +276,11 @@ class LigneBonCommande(models.Model):
 
     @property
     def prix_net(self) -> Decimal:
-        return arrondi(self.prix_unitaire * (CENT - self.remise) / CENT)
+        return arrondi(self.prix_unitaire * (CENT - self.remise) / CENT, self.bon.devise)
 
     @property
     def montant_ht(self) -> Decimal:
-        return arrondi(self.quantite * self.prix_net)
+        return arrondi(self.quantite * self.prix_net, self.bon.devise)
 
 
 class EvenementCommande(models.Model):
@@ -215,6 +292,10 @@ class EvenementCommande(models.Model):
         REFUS = "REFUS", "Refus, à corriger"
         TRANSMISSION = "TRANSMISSION", "Transmission au fournisseur"
         ANNULATION = "ANNULATION", "Annulation"
+        CLOTURE = "CLOTURE", "Clôture"
+        DECLOTURE = "DECLOTURE", "Réouverture"
+        RECEPTION = "RECEPTION", "Réception"
+        RECEPTION_ANNULEE = "RECEP_ANNUL", "Réception annulée"
 
     bon = models.ForeignKey(BonCommande, on_delete=models.CASCADE, related_name="evenements")
     action = models.CharField(max_length=12, choices=Action.choices)

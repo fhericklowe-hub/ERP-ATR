@@ -11,13 +11,18 @@ from .views import executer_transition
 
 
 class LigneCommandeSerializer(serializers.ModelSerializer):
-    prix_net = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
-    montant_ht = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    prix_net = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    montant_ht = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+
+    quantite_recue = serializers.SerializerMethodField()
 
     class Meta:
         model = LigneBonCommande
         fields = ["id", "article", "reference", "designation", "quantite", "prix_unitaire", "remise", "taux_tva",
-                  "prix_net", "montant_ht"]
+                  "prix_net", "montant_ht", "quantite_recue"]
+
+    def get_quantite_recue(self, obj) -> str:
+        return str(self.context.get("recues", {}).get(obj.id, 0))
 
 
 class EvenementCommandeSerializer(serializers.ModelSerializer):
@@ -39,26 +44,40 @@ class BonCommandeSerializer(serializers.ModelSerializer):
     acheteur_nom = serializers.CharField(source="acheteur.__str__", read_only=True)
     site_nom = serializers.CharField(source="site.nom", read_only=True)
     service_nom = serializers.CharField(source="service.nom", read_only=True)
+    activite_libelle = serializers.CharField(read_only=True)
     totaux = serializers.SerializerMethodField()
     modifiable = serializers.BooleanField(read_only=True)
     definitif = serializers.BooleanField(read_only=True)
     peut_valider = serializers.SerializerMethodField()
     peut_preparer = serializers.SerializerMethodField()
     peut_annuler = serializers.SerializerMethodField()
+    etat_reception = serializers.CharField(read_only=True)
+    etat_reception_libelle = serializers.CharField(source="get_etat_reception_display", read_only=True)
+    receptions = serializers.SerializerMethodField()
 
     class Meta:
         model = BonCommande
         fields = [
             "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "demande", "demande_numero",
             "fournisseur", "fournisseur_nom", "reference_fournisseur", "objet", "site", "site_nom",
-            "service", "service_nom", "acheteur", "acheteur_nom", "date_livraison", "transport",
-            "adresse_livraison", "echeance", "mode_reglement", "mode_reglement_libelle", "transmis_le", "totaux",
-            "modifiable", "definitif", "peut_valider", "peut_preparer", "peut_annuler", "lignes", "evenements",
+            "service", "service_nom", "activite", "activite_autre", "activite_libelle", "acheteur", "acheteur_nom", "date_livraison", "transport",
+            "adresse_livraison", "devise", "taux_change", "echeance", "mode_reglement", "mode_reglement_libelle", "transmis_le", "totaux",
+            "modifiable", "definitif", "peut_valider", "peut_preparer", "peut_annuler", "etat_reception",
+            "etat_reception_libelle", "receptions", "lignes", "evenements",
         ]
         read_only_fields = ["numero", "statut", "acheteur", "transmis_le"]
 
     def _utilisateur(self):
         return self.context["request"].user
+
+    def to_representation(self, obj):
+        self.context["recues"] = obj.quantites_recues()
+        return super().to_representation(obj)
+
+    def get_receptions(self, obj) -> list:
+        return [{"id": r.id, "numero": r.numero, "date": r.date, "statut": r.statut,
+                 "statut_libelle": r.get_statut_display(), "numero_livraison": r.numero_livraison}
+                for r in obj.receptions.all()]
 
     def get_totaux(self, obj) -> dict:
         return obj.totaux()
@@ -85,6 +104,10 @@ class BonCommandeSerializer(serializers.ModelSerializer):
         return fournisseur
 
     def validate(self, attrs):
+        devise = attrs.get("devise", self.instance.devise if self.instance else "XOF")
+        cours = attrs.get("taux_change", self.instance.taux_change if self.instance else None)
+        if devise == "USD" and not cours:
+            raise serializers.ValidationError({"taux_change": "Indiquez le cours du dollar en francs CFA."})
         if self.instance and not self.instance.modifiable and set(attrs) - {"ancien_numero"}:
             raise serializers.ValidationError("Ce bon de commande a été soumis et ne peut plus être modifié.")
         return attrs
@@ -112,9 +135,9 @@ class BonCommandeViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mix
 
     serializer_class = BonCommandeSerializer
     queryset = BonCommande.objects.select_related("demande", "fournisseur", "site", "service", "acheteur").prefetch_related(
-        "lignes", "evenements__auteur"
+        "lignes", "evenements__auteur", "receptions"
     )
-    filterset_fields = ["statut", "fournisseur", "site", "service", "acheteur", "demande"]
+    filterset_fields = ["statut", "fournisseur", "site", "service", "activite", "acheteur", "demande"]
     search_fields = ["numero", "ancien_numero", "objet", "reference_fournisseur", "fournisseur__raison_sociale",
                      "demande__numero"]
     ordering_fields = ["cree_le", "date", "date_livraison"]
@@ -152,6 +175,14 @@ class BonCommandeViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mix
     @action(**transition)
     def transmettre(self, request, pk=None):
         return self._transition(request, "transmettre")
+
+    @action(**transition)
+    def cloturer(self, request, pk=None):
+        return self._transition(request, "cloturer", request.data.get("commentaire", ""))
+
+    @action(**transition)
+    def decloturer(self, request, pk=None):
+        return self._transition(request, "decloturer", request.data.get("commentaire", ""))
 
     @action(**transition)
     def annuler(self, request, pk=None):

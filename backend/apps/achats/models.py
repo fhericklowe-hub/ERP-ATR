@@ -6,7 +6,7 @@ from django.utils import timezone
 from apps.core.models import Compteur, Horodate, Service, Site
 from apps.referentiels.models import Article, Unite
 
-from . import delais
+from . import choix, delais
 
 
 class Acheteur(models.Model):
@@ -71,11 +71,7 @@ class DemandeAchat(Horodate):
         NORMAL = 2, "2. Normal (besoin courant)"
         PLANIFIE = 3, "3. Planifié (préventif, réapprovisionnement)"
 
-    class Activite(models.TextChoices):
-        MANUTENTION = "MANUTENTION", "Manutention"
-        LEVAGE = "LEVAGE", "Levage"
-        TRANSPORT = "TRANSPORT", "Transport"
-        AUTRE = "AUTRE", "Autre"
+    Activite = choix.Activite
 
     class ControleStock(models.TextChoices):
         NON_FAIT = "", "Non contrôlé"
@@ -327,5 +323,6 @@ class Evenement(models.Model):
         ordering = ["id"]
 
 
-# Les modèles du bon de commande vivent dans leur propre fichier.
+# Les modèles du bon de commande et du bon de réception vivent dans leurs propres fichiers.
 from .commande import BonCommande, EvenementCommande, LigneBonCommande  # noqa: E402,F401
+from .reception import BonReception, LigneBonReception  # noqa: E402,F401

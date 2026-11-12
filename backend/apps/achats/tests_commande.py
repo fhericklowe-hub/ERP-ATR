@@ -29,8 +29,16 @@ class LettresTests(SimpleTestCase):
         for montant, attendu in cas.items():
             self.assertEqual(montant_en_lettres(montant), attendu)
 
+    def test_euro_et_dollar(self):
+        self.assertEqual(montant_en_lettres(Decimal("1250.50"), "EUR"), "MILLE DEUX CENT CINQUANTE EUROS ET CINQUANTE CENTIMES")
+        self.assertEqual(montant_en_lettres(Decimal("1.01"), "EUR"), "UN EURO ET UN CENTIME")
+        self.assertEqual(montant_en_lettres(2000000, "USD"), "DEUX MILLIONS DE DOLLARS")
+        self.assertEqual(montant_en_lettres(Decimal("80.80"), "USD"), "QUATRE-VINGTS DOLLARS ET QUATRE-VINGTS CENTS")
 
-class BonCommandeTests(APITestCase):
+
+class SocleCommande(APITestCase):
+    """Utilisateurs, demande validée et aides communes aux tests des bons de commande et de réception."""
+
     def setUp(self):
         def utilisateur(nom, role):
             u = Utilisateur.objects.create_user(nom, password="x", first_name=nom.capitalize())
@@ -74,6 +82,8 @@ class BonCommandeTests(APITestCase):
         self.client.force_authenticate(utilisateur)
         return self.client.post(f"/api/achats/bons-commande/{id}/{action}/", donnees, format="json")
 
+
+class BonCommandeTests(SocleCommande):
     def test_totaux_identiques_au_bon_modele(self):
         r = self.creer()
         self.assertEqual(r.status_code, 201, r.data)
@@ -91,6 +101,68 @@ class BonCommandeTests(APITestCase):
         t = r.data["totaux"]
         self.assertEqual((t["total_ht"], t["total_tva"], t["total_ttc"]), (Decimal(2300), Decimal(324), Decimal(2624)))
         self.assertEqual(len(t["ventilation"]), 2)
+
+    def test_commande_en_euro_au_centime(self):
+        r = self.creer(devise="EUR", lignes=[
+            {"designation": "Vérin", "quantite": "3", "prix_unitaire": "149.99", "remise": "5"},
+            {"designation": "Port", "quantite": "1", "prix_unitaire": "80.50", "taux_tva": "0"},
+        ])
+        self.assertEqual(r.status_code, 201, r.data)
+        t = r.data["totaux"]
+        # 149,99 - 5 % = 142,49 ; x3 = 427,47 ; TVA 18 % = 76,94 ; + 80,50 de port
+        self.assertEqual((t["total_ht"], t["total_tva"], t["total_ttc"]), (Decimal("507.97"), Decimal("76.94"), Decimal("584.91")))
+        self.assertEqual(t["en_lettres"], "CINQ CENT QUATRE-VINGT-QUATRE EUROS ET QUATRE-VINGT-ONZE CENTIMES")
+        self.assertEqual(Decimal(r.data["taux_change"]), Decimal("655.957"))  # parité fixe, non saisie
+        self.assertEqual(t["contre_valeur_xof"], Decimal(383676))
+        self.client.force_authenticate(self.acheteur)
+        self.assertTrue(self.client.get(f"/api/achats/bons-commande/{r.data['id']}/pdf/").content.startswith(b"%PDF"))
+
+    def test_commande_en_dollar_exige_le_cours(self):
+        ligne = [{"designation": "Pompe", "quantite": "2", "prix_unitaire": "1200.25"}]
+        self.assertEqual(self.creer(devise="USD", lignes=ligne).status_code, 400)
+        r = self.creer(devise="USD", taux_change="602.5", lignes=ligne)
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data["totaux"]["total_ht"], Decimal("2400.50"))
+        self.assertEqual(r.data["totaux"]["contre_valeur_xof"], Decimal(1706635))  # 2 832,59 TTC x 602,5
+
+    def test_activite(self):
+        r = self.creer(activite="TRANSPORT")
+        self.assertEqual(r.data["activite_libelle"], "Transport")
+        r = self.creer(activite="AUTRE", activite_autre="Location de grue")
+        self.assertEqual(r.data["activite_libelle"], "Location de grue")
+        self.client.force_authenticate(self.acheteur)
+        self.assertEqual(self.client.get("/api/achats/bons-commande/?activite=TRANSPORT").data["count"], 1)
+        self.assertTrue(self.client.get(f"/api/achats/bons-commande/{r.data['id']}/pdf/").content.startswith(b"%PDF"))
+
+    def test_signatures_imprimees_apres_les_deux_validations(self):
+        import tempfile
+        from unittest import mock
+
+        from django.core.files.base import ContentFile
+        from django.test import override_settings
+        from PIL import Image as Pil
+
+        from . import pdf
+
+        with tempfile.TemporaryDirectory() as dossier, override_settings(MEDIA_ROOT=dossier):
+            for u in (self.responsable, self.controleur):
+                tampon = __import__("io").BytesIO()
+                Pil.new("RGB", (300, 100), "white").save(tampon, "PNG")
+                u.signature.save("signature.png", ContentFile(tampon.getvalue()))
+                self.assertNotIn("signature.png", u.signature.name)  # nom imprévisible
+            bon = self.creer().data
+            url = f"/api/achats/bons-commande/{bon['id']}/pdf/"
+            self.agir(self.acheteur, bon["id"], "soumettre")
+            self.agir(self.responsable, bon["id"], "valider")
+            with mock.patch.object(pdf, "Image", wraps=pdf.Image) as image:
+                self.client.get(url)
+                # une seule validation : aucune signature, seulement le logo
+                self.assertEqual([a.args[0] for a in image.call_args_list if "signatures" in a.args[0]], [])
+            self.agir(self.controleur, bon["id"], "valider")
+            with mock.patch.object(pdf, "Image", wraps=pdf.Image) as image:
+                self.assertTrue(self.client.get(url).content.startswith(b"%PDF"))
+                signatures = [a.args[0] for a in image.call_args_list if "signatures" in a.args[0]]
+                self.assertEqual(signatures, [self.responsable.signature.path, self.controleur.signature.path])
 
     def test_demande_non_validee_refusee(self):
         brouillon = DemandeAchat.objects.create(demandeur=self.demandeur, service=self.service, site=self.site)

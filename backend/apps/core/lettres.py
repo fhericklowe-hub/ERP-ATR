@@ -55,7 +55,16 @@ def en_lettres(n: int) -> str:
     return " ".join(parties)
 
 
-def montant_en_lettres(montant, devise: str = "francs CFA") -> str:
-    entier = int(round(montant))
+def montant_en_lettres(montant, devise: str = "XOF") -> str:
+    """Montant en toutes lettres dans sa devise : « ... FRANCS CFA », « ... EUROS ET CINQUANTE CENTIMES »."""
+    from .devises import DEVISES, arrondi
+
+    _, _, singulier, pluriel, centieme = DEVISES[devise]
+    montant = arrondi(montant, devise)
+    entier = int(montant)
     liaison = " de " if entier and entier % 10**6 == 0 else " "
-    return f"{en_lettres(entier)}{liaison}{devise}".upper()
+    texte = f"{en_lettres(entier)}{liaison}{singulier if entier < 2 and centieme else pluriel}"
+    centiemes = int((montant - entier) * 100)
+    if centiemes:
+        texte += f" et {en_lettres(centiemes)} {centieme}{'s' if centiemes > 1 else ''}"
+    return texte.upper()

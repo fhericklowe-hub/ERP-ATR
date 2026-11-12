@@ -9,12 +9,13 @@ const FILTRES = [
   ['ATT_RESP', 'Attente responsable achats'],
   ['ATT_CDG', 'Attente contrôleur de gestion'],
   ['VALIDE', 'Validés, à transmettre'],
-  ['TRANSMIS', 'Transmis'],
+  ['TRANSMIS', 'Transmis, à recevoir'],
+  ['CLOTURE', 'Clôturés'],
   ['ANNULE', 'Annulés'],
 ]
 
 export default function ListeCommandes() {
-  const [statut, setStatut] = useState('')
+  const [statut, setStatut] = useState(() => new URLSearchParams(location.hash.split('?')[1]).get('statut') ?? '')
   const [bons, setBons] = useState<Commande[] | null>(null)
   const [erreur, setErreur] = useState('')
 
@@ -59,8 +60,11 @@ export default function ListeCommandes() {
                   <td>{b.objet}</td>
                   <td><a href={`#/demandes/${b.demande}`}>{b.demande_numero}</a></td>
                   <td>{b.acheteur_nom}</td>
-                  <td className="nombre">{montant(b.totaux.total_ttc)}</td>
-                  <td>{b.statut_libelle}{b.peut_valider && <strong> · à valider</strong>}</td>
+                  <td className="nombre">{montant(b.totaux.total_ttc, b.devise)}{b.devise !== 'XOF' && ` ${b.devise}`}</td>
+                  <td>
+                    {b.statut_libelle}{b.peut_valider && <strong> · à valider</strong>}
+                    {b.etat_reception && <><br /><span className={`pastille ${b.etat_reception.toLowerCase()}`}>{b.etat_reception_libelle}</span></>}
+                  </td>
                 </tr>
               ))}
             </tbody>

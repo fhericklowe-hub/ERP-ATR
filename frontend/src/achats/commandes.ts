@@ -10,6 +10,7 @@ export type LigneCommande = {
   taux_tva: string
   prix_net?: string
   montant_ht?: string
+  quantite_recue?: string
 }
 
 export type Totaux = {
@@ -18,6 +19,8 @@ export type Totaux = {
   total_tva: string
   total_ttc: string
   en_lettres: string
+  devise: string
+  contre_valeur_xof: string | null
 }
 
 export type Commande = {
@@ -37,10 +40,15 @@ export type Commande = {
   site_nom: string
   service: number | ''
   service_nom: string
+  activite: string
+  activite_autre: string
+  activite_libelle: string
   acheteur_nom: string
   date_livraison: string | null
   transport: string
   adresse_livraison: string
+  devise: string
+  taux_change: string | null
   echeance: string
   mode_reglement: string
   mode_reglement_libelle: string
@@ -51,8 +59,16 @@ export type Commande = {
   peut_valider: boolean
   peut_preparer: boolean
   peut_annuler: boolean
+  etat_reception: '' | 'AUCUNE' | 'PARTIELLE' | 'COMPLETE'
+  etat_reception_libelle: string
+  receptions: { id: number; numero: string; date: string; statut: string; statut_libelle: string; numero_livraison: string }[]
   lignes: LigneCommande[]
   evenements: Evenement[]
 }
 
-export const montant = (n: string | number) => Math.round(Number(n)).toLocaleString('fr-FR')
+export const DEVISES = [['XOF', 'Franc CFA (XOF)'], ['EUR', 'Euro (EUR)'], ['USD', 'Dollar US (USD)']]
+export const decimales = (devise = 'XOF') => (devise === 'XOF' ? 0 : 2)
+/** Arrondi au franc, ou au centime en euro et en dollar. */
+export const arrondi = (n: number, devise = 'XOF') => Number(n.toFixed(decimales(devise)))
+export const montant = (n: string | number, devise = 'XOF') =>
+  Number(n).toLocaleString('fr-FR', { minimumFractionDigits: decimales(devise), maximumFractionDigits: decimales(devise) })

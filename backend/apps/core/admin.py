@@ -30,7 +30,7 @@ class ServiceAdmin(AdminMetier):
 class UtilisateurAdmin(UserAdmin):
     list_display = ["username", "last_name", "first_name", "site", "service", "is_active"]
     list_filter = ["site", "service", "is_active", "groups"]
-    fieldsets = UserAdmin.fieldsets + (("Entreprise", {"fields": ("site", "service", "fonction", "telephone")}),)
+    fieldsets = UserAdmin.fieldsets + (("Entreprise", {"fields": ("site", "service", "fonction", "telephone", "signature")}),)
     add_fieldsets = UserAdmin.add_fieldsets + (("Entreprise", {"fields": ("site", "service")}),)
 
 

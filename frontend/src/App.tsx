@@ -3,6 +3,9 @@ import Detail from './achats/Detail'
 import DetailCommande from './achats/DetailCommande'
 import FormulaireCommande from './achats/FormulaireCommande'
 import ListeCommandes from './achats/ListeCommandes'
+import DetailReception from './achats/DetailReception'
+import FormulaireReception from './achats/FormulaireReception'
+import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
 import { api, connecter, deconnecter, estConnecte, type Utilisateur } from './api'
@@ -29,6 +32,7 @@ function Connexion({ onConnecte }: { onConnecte: () => void }) {
   return (
     <main className="connexion">
       <form onSubmit={envoyer}>
+        <img src="/logo.png" alt="ATR" width="180" />
         <h1>ERP</h1>
         <label>
           Identifiant
@@ -62,7 +66,14 @@ function Page({ moi }: { moi: Utilisateur }) {
   if (modif) return <Formulaire moi={moi} id={Number(modif[1])} />
   const detail = route.match(/^\/demandes\/(\d+)$/)
   if (detail) return <Detail id={Number(detail[1])} moiId={moi.id} droits={moi.droits} />
-  if (route === '/commandes') return <ListeCommandes />
+  if (route.split('?')[0] === '/commandes') return <ListeCommandes key={route} />
+  if (route === '/receptions') return <ListeReceptions />
+  const recevoir = route.match(/^\/commandes\/(\d+)\/recevoir$/)
+  if (recevoir) return <FormulaireReception commandeId={Number(recevoir[1])} />
+  const modifBr = route.match(/^\/receptions\/(\d+)\/modifier$/)
+  if (modifBr) return <FormulaireReception id={Number(modifBr[1])} />
+  const br = route.match(/^\/receptions\/(\d+)$/)
+  if (br) return <DetailReception id={Number(br[1])} />
   const nouveauBon = route.match(/^\/demandes\/(\d+)\/commander$/)
   if (nouveauBon) return <FormulaireCommande demandeId={Number(nouveauBon[1])} />
   const modifBon = route.match(/^\/commandes\/(\d+)\/modifier$/)
@@ -94,10 +105,11 @@ export default function App() {
   return (
     <>
       <header>
-        <a href="#/"><strong>ERP</strong></a>
+        <a href="#/" className="marque"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
         <nav>
           <a href="#/">Demandes d'achat</a>
           <a href="#/commandes">Bons de commande</a>
+          <a href="#/receptions">Bons de réception</a>
         </nav>
         <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
         <button onClick={quitter}>Se déconnecter</button>

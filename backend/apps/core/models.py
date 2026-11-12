@@ -1,3 +1,6 @@
+import uuid
+from pathlib import Path
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -101,9 +104,21 @@ class Societe(models.Model):
         self.pk = 1
         super().save(*args, **kwargs)
 
+    @property
+    def chemin_logo(self) -> str:
+        """Logo chargé dans l'administration, sinon celui fourni avec l'application."""
+        if self.logo:
+            return self.logo.path
+        return str(Path(__file__).parent / "static" / "core" / "logo.png")
+
     @classmethod
     def courante(cls):
         return cls.objects.first() or cls(nom="Société à renseigner")
+
+
+def chemin_signature(instance, nom_fichier):
+    """Nom de fichier imprévisible : une signature ne doit pas se retrouver en devinant son adresse."""
+    return f"signatures/{uuid.uuid4().hex}{Path(nom_fichier).suffix.lower()}"
 
 
 class Utilisateur(AbstractUser):
@@ -113,6 +128,11 @@ class Utilisateur(AbstractUser):
     service = models.ForeignKey(Service, null=True, blank=True, on_delete=models.PROTECT, related_name="utilisateurs")
     telephone = models.CharField("téléphone", max_length=30, blank=True)
     fonction = models.CharField(max_length=100, blank=True)
+    signature = models.ImageField(
+        upload_to=chemin_signature, blank=True,
+        help_text="Image de la signature (fond blanc ou transparent). Elle s'imprime automatiquement sur les "
+                  "documents que cette personne a validés dans l'application.",
+    )
 
     class Meta:
         verbose_name = "utilisateur"
