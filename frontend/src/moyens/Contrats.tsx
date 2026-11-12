@@ -1,6 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page, type Site, type Tiers } from '../api'
 import { montant } from '../achats/commandes'
+import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
 import { type Bien, type Contrat, PERIODICITES, TYPES_CONTRAT } from './types'
 
@@ -54,6 +55,7 @@ export default function Contrats() {
 
   if (c) {
     return (
+      <div className="fiche">
       <form className="fiche" onSubmit={enregistrer}>
         <h2>{c.id ? `Contrat ${c.numero}` : 'Nouveau contrat'}</h2>
         <fieldset>
@@ -130,9 +132,11 @@ export default function Contrats() {
         {erreur && <p className="erreur" role="alert">{erreur}</p>}
         <div className="actions">
           <button>Enregistrer</button>
-          <button type="button" className="secondaire" onClick={() => { setC(null); setErreur('') }}>Annuler</button>
+          <button type="button" className="secondaire" onClick={() => { setC(null); setErreur('') }}>{c.id ? 'Retour' : 'Annuler'}</button>
         </div>
       </form>
+      {c.id && <PiecesJointes modele="moyens.contrat" objet={c.id} aide="Joignez ici le contrat signé, l'attestation ou les avenants." />}
+      </div>
     )
   }
 

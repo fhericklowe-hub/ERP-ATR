@@ -144,3 +144,4 @@ class Utilisateur(AbstractUser):
 
     def __str__(self):
         return self.get_full_name() or self.username
+from .pieces import PieceJointe  # noqa: E402,F401

@@ -127,3 +127,15 @@ Le menu de l'application n'affiche que les rubriques auxquelles l'utilisateur a 
   du préavis.
 
 Ces écrans sont réservés au rôle « Moyens généraux - Gestionnaire ».
+
+## Pièces jointes
+
+Un fichier (devis, facture, bon de livraison, contrat signé, photo) se joint à une demande d'achat, une demande
+liée au budget, un bon de commande, un bon de réception, une demande d'intervention ou un contrat.
+
+- Les droits sont ceux du document : qui le voit peut ouvrir ses pièces, qui peut le modifier peut en ajouter.
+  Seule la personne qui a ajouté une pièce peut la retirer.
+- Types acceptés : PDF, images JPG et PNG, Word, Excel, CSV, texte, e-mail. 10 Mo au plus par fichier.
+- Les fichiers sont rangés dans `media/pieces/` sous un nom aléatoire. Ils ne s'ouvrent que par l'API ; Nginx
+  refuse l'accès direct à ce dossier. **Ce dossier doit être compris dans les sauvegardes.**
+- Un nouveau module déclare ses documents par `pieces.declarer(SaVue)` dans son `apps.py`.

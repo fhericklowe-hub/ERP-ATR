@@ -10,3 +10,12 @@ class AchatsConfig(AppConfig):
         from .roles import creer_roles
 
         post_migrate.connect(creer_roles, sender=self)
+        from apps.core import pieces
+
+        from .budget_api import DemandeBudgetViewSet
+        from .commande_api import BonCommandeViewSet
+        from .reception_api import BonReceptionViewSet
+        from .views import DemandeAchatViewSet
+
+        for vue in (DemandeAchatViewSet, DemandeBudgetViewSet, BonCommandeViewSet, BonReceptionViewSet):
+            pieces.declarer(vue)

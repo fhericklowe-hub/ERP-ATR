@@ -10,3 +10,10 @@ class MoyensConfig(AppConfig):
         from .roles import creer_roles
 
         post_migrate.connect(creer_roles, sender=self)
+        from apps.core import pieces
+
+        from .api import BienViewSet, DemandeInterventionViewSet
+        from .contrats_api import ContratViewSet, EcheanceViewSet
+
+        for vue in (BienViewSet, DemandeInterventionViewSet, ContratViewSet, EcheanceViewSet):
+            pieces.declarer(vue)

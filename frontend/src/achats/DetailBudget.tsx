@@ -3,6 +3,7 @@ import { api, ouvrirFichier, type Page, type Service, type Tiers } from '../api'
 import type { Compte, DemandeBudget, Devis, LigneBudgetaire } from './budget'
 import { montant } from './commandes'
 import { dateFr, dateHeureFr } from './types'
+import PiecesJointes from '../PiecesJointes'
 
 const URL = '/achats/demandes-budget'
 
@@ -333,6 +334,8 @@ export default function DetailBudget({ id }: { id: number }) {
           {d.peut_commander && <div className="actions"><a className="bouton" href={`#/budget/${d.id}/commander`}>Créer un bon de commande</a></div>}
         </>
       )}
+
+      <PiecesJointes modele="achats.demandebudget" objet={id} aide="Joignez ici les devis reçus des fournisseurs." />
 
       <h3>Historique</h3>
       {d.evenements.length === 0 && <p className="aide">Brouillon, pas encore soumis.</p>}
