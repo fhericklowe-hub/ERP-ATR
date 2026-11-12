@@ -139,7 +139,7 @@ class LigneBonReception(models.Model):
 
     @property
     def montant_ht(self) -> Decimal:
-        return arrondi(self.quantite_recue * self.ligne_commande.prix_net)
+        return arrondi(self.quantite_recue * self.ligne_commande.prix_net, self.ligne_commande.bon.devise)
 
 
 def quantites_recues(commande) -> dict:

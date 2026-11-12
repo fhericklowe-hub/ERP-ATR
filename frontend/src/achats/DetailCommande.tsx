@@ -74,17 +74,18 @@ export default function DetailCommande({ id }: { id: number }) {
                 <td>{l.reference}</td><td>{l.designation}</td>
                 <td className="nombre">{Number(l.quantite)}</td>
                 {recu && <td className="nombre">{Number(l.quantite_recue ?? 0)}</td>}
-                <td className="nombre">{montant(l.prix_unitaire)}</td>
+                <td className="nombre">{montant(l.prix_unitaire, b.devise)}</td>
                 <td className="nombre">{Number(l.remise) ? `${Number(l.remise)} %` : ''}</td>
                 <td className="nombre">{Number(l.taux_tva)} %</td>
-                <td className="nombre">{montant(l.montant_ht ?? 0)}</td>
+                <td className="nombre">{montant(l.montant_ht ?? 0, b.devise)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <p className="nombre">
-        Total HT <strong>{montant(t.total_ht)}</strong> · TVA <strong>{montant(t.total_tva)}</strong> · Total TTC <strong>{montant(t.total_ttc)} XOF</strong>
+        Total HT <strong>{montant(t.total_ht, b.devise)}</strong> · TVA <strong>{montant(t.total_tva, b.devise)}</strong> · Total TTC <strong>{montant(t.total_ttc, b.devise)} {b.devise}</strong>
+        {b.devise !== 'XOF' && t.contre_valeur_xof && <><br />Contre-valeur {montant(t.contre_valeur_xof)} XOF (1 {b.devise} = {Number(b.taux_change)} XOF)</>}
         <br /><span className="aide">{t.en_lettres}</span>
       </p>
 

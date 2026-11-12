@@ -19,6 +19,8 @@ export type Totaux = {
   total_tva: string
   total_ttc: string
   en_lettres: string
+  devise: string
+  contre_valeur_xof: string | null
 }
 
 export type Commande = {
@@ -42,6 +44,8 @@ export type Commande = {
   date_livraison: string | null
   transport: string
   adresse_livraison: string
+  devise: string
+  taux_change: string | null
   echeance: string
   mode_reglement: string
   mode_reglement_libelle: string
@@ -59,4 +63,9 @@ export type Commande = {
   evenements: Evenement[]
 }
 
-export const montant = (n: string | number) => Math.round(Number(n)).toLocaleString('fr-FR')
+export const DEVISES = [['XOF', 'Franc CFA (XOF)'], ['EUR', 'Euro (EUR)'], ['USD', 'Dollar US (USD)']]
+export const decimales = (devise = 'XOF') => (devise === 'XOF' ? 0 : 2)
+/** Arrondi au franc, ou au centime en euro et en dollar. */
+export const arrondi = (n: number, devise = 'XOF') => Number(n.toFixed(decimales(devise)))
+export const montant = (n: string | number, devise = 'XOF') =>
+  Number(n).toLocaleString('fr-FR', { minimumFractionDigits: decimales(devise), maximumFractionDigits: decimales(devise) })

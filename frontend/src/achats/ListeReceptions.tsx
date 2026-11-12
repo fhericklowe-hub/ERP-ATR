@@ -53,7 +53,7 @@ export default function ListeReceptions() {
                   <td>{b.numero_livraison}</td>
                   <td><a href={`#/commandes/${b.commande}`}>{b.commande_numero}</a></td>
                   <td>{b.receptionnaire_nom}</td>
-                  <td className="nombre">{montant(b.total_ht)}</td>
+                  <td className="nombre">{montant(b.total_ht, b.devise)}{b.devise !== 'XOF' && ` ${b.devise}`}</td>
                   <td>{b.statut_libelle}</td>
                 </tr>
               ))}

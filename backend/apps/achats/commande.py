@@ -1,22 +1,19 @@
 """Bon de commande fournisseur : créé à partir d'une demande d'achat validée, validé par le responsable
 achats puis par le contrôleur de gestion, puis imprimé, signé et transmis au fournisseur."""
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 
+from apps.core import devises
+from apps.core.devises import arrondi
 from apps.core.lettres import montant_en_lettres
 from apps.core.models import Compteur, Horodate, Service, Site
 from apps.referentiels.models import Article, Tiers
 
 CENT = Decimal(100)
-
-
-def arrondi(montant: Decimal) -> Decimal:
-    """Le franc CFA n'a pas de centimes."""
-    return montant.quantize(Decimal(1), rounding=ROUND_HALF_UP)
 
 
 class BonCommande(Horodate):
@@ -56,6 +53,11 @@ class BonCommande(Horodate):
     adresse_livraison = models.TextField("adresse de livraison", blank=True)
     echeance = models.CharField("échéance de paiement", max_length=100, blank=True, default="30 JOURS FIN DE MOIS")
     mode_reglement = models.CharField("mode de règlement", max_length=10, choices=Reglement.choices, default=Reglement.CHEQUE)
+    devise = models.CharField(max_length=3, choices=devises.CHOIX, default="XOF")
+    taux_change = models.DecimalField(
+        "cours de la devise en francs CFA", max_digits=12, decimal_places=4, null=True, blank=True,
+        help_text="Valeur d'une unité de la devise en francs CFA, pour la contre-valeur de la commande.",
+    )
     transmis_le = models.DateField("transmis au fournisseur le", null=True, blank=True, editable=False)
 
     class Meta:
@@ -71,6 +73,10 @@ class BonCommande(Horodate):
         return self.numero
 
     def save(self, *args, **kwargs):
+        if self.devise == "XOF":
+            self.taux_change = None
+        elif self.devise == "EUR":
+            self.taux_change = devises.PARITE_EURO
         if not self.numero:
             with transaction.atomic():
                 annee = self.date.year
@@ -81,12 +87,12 @@ class BonCommande(Horodate):
     # ----- montants
 
     def totaux(self) -> dict:
-        """Totaux et ventilation par taux de TVA, arrondis au franc."""
+        """Totaux et ventilation par taux de TVA, arrondis au franc (ou au centime en euro et en dollar)."""
         par_taux = {}
         for ligne in self.lignes.all():
             par_taux[ligne.taux_tva] = par_taux.get(ligne.taux_tva, Decimal(0)) + ligne.montant_ht
         ventilation = [
-            {"taux": taux, "base_ht": base, "tva": arrondi(base * taux / CENT)}
+            {"taux": taux, "base_ht": base, "tva": arrondi(base * taux / CENT, self.devise)}
             for taux, base in sorted(par_taux.items(), reverse=True)
         ]
         for v in ventilation:
@@ -94,7 +100,14 @@ class BonCommande(Horodate):
         ht = sum((v["base_ht"] for v in ventilation), Decimal(0))
         tva = sum((v["tva"] for v in ventilation), Decimal(0))
         return {"ventilation": ventilation, "total_ht": ht, "total_tva": tva, "total_ttc": ht + tva,
-                "en_lettres": montant_en_lettres(ht + tva)}
+                "en_lettres": montant_en_lettres(ht + tva, self.devise), "devise": self.devise,
+                "contre_valeur_xof": self.en_xof(ht + tva)}
+
+    def en_xof(self, montant):
+        """Contre-valeur en francs CFA, ou None si le cours de la devise n'est pas renseigné."""
+        if self.devise == "XOF":
+            return montant
+        return arrondi(montant * self.taux_change) if self.taux_change else None
 
     # ----- réception
 
@@ -253,11 +266,11 @@ class LigneBonCommande(models.Model):
 
     @property
     def prix_net(self) -> Decimal:
-        return arrondi(self.prix_unitaire * (CENT - self.remise) / CENT)
+        return arrondi(self.prix_unitaire * (CENT - self.remise) / CENT, self.bon.devise)
 
     @property
     def montant_ht(self) -> Decimal:
-        return arrondi(self.quantite * self.prix_net)
+        return arrondi(self.quantite * self.prix_net, self.bon.devise)
 
 
 class EvenementCommande(models.Model):

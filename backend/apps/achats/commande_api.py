@@ -11,8 +11,8 @@ from .views import executer_transition
 
 
 class LigneCommandeSerializer(serializers.ModelSerializer):
-    prix_net = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
-    montant_ht = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    prix_net = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    montant_ht = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
 
     quantite_recue = serializers.SerializerMethodField()
 
@@ -60,7 +60,7 @@ class BonCommandeSerializer(serializers.ModelSerializer):
             "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "demande", "demande_numero",
             "fournisseur", "fournisseur_nom", "reference_fournisseur", "objet", "site", "site_nom",
             "service", "service_nom", "acheteur", "acheteur_nom", "date_livraison", "transport",
-            "adresse_livraison", "echeance", "mode_reglement", "mode_reglement_libelle", "transmis_le", "totaux",
+            "adresse_livraison", "devise", "taux_change", "echeance", "mode_reglement", "mode_reglement_libelle", "transmis_le", "totaux",
             "modifiable", "definitif", "peut_valider", "peut_preparer", "peut_annuler", "etat_reception",
             "etat_reception_libelle", "receptions", "lignes", "evenements",
         ]
@@ -103,6 +103,10 @@ class BonCommandeSerializer(serializers.ModelSerializer):
         return fournisseur
 
     def validate(self, attrs):
+        devise = attrs.get("devise", self.instance.devise if self.instance else "XOF")
+        cours = attrs.get("taux_change", self.instance.taux_change if self.instance else None)
+        if devise == "USD" and not cours:
+            raise serializers.ValidationError({"taux_change": "Indiquez le cours du dollar en francs CFA."})
         if self.instance and not self.instance.modifiable and set(attrs) - {"ancien_numero"}:
             raise serializers.ValidationError("Ce bon de commande a été soumis et ne peut plus être modifié.")
         return attrs

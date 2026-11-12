@@ -60,7 +60,7 @@ export default function ListeCommandes() {
                   <td>{b.objet}</td>
                   <td><a href={`#/demandes/${b.demande}`}>{b.demande_numero}</a></td>
                   <td>{b.acheteur_nom}</td>
-                  <td className="nombre">{montant(b.totaux.total_ttc)}</td>
+                  <td className="nombre">{montant(b.totaux.total_ttc, b.devise)}{b.devise !== 'XOF' && ` ${b.devise}`}</td>
                   <td>
                     {b.statut_libelle}{b.peut_valider && <strong> · à valider</strong>}
                     {b.etat_reception && <><br /><span className={`pastille ${b.etat_reception.toLowerCase()}`}>{b.etat_reception_libelle}</span></>}

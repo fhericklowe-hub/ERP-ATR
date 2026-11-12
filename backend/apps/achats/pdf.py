@@ -9,6 +9,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from apps.core.devises import formate
 from apps.core.lettres import montant_en_lettres
 from apps.core.models import Societe
 
@@ -17,11 +18,6 @@ GRAS = ParagraphStyle("gras", parent=BASE, fontName="Helvetica-Bold")
 TITRE = ParagraphStyle("titre", parent=GRAS, fontSize=11, leading=14)
 DROITE = ParagraphStyle("droite", parent=BASE, alignment=TA_RIGHT)
 PIED = ParagraphStyle("pied", parent=BASE, fontSize=7, leading=9, alignment=TA_CENTER)
-
-
-def nombre(n) -> str:
-    """Montant entier avec espace comme séparateur de milliers."""
-    return f"{int(round(n)):,}".replace(",", " ")
 
 
 def quantite(q) -> str:
@@ -85,6 +81,10 @@ def pdf_bon_commande(bon) -> bytes:
     societe = Societe.courante()
     totaux = bon.totaux()
     tampon = BytesIO()
+
+    def nombre(n):
+        return formate(n, bon.devise)
+
     # Sans ses deux validations, le document ne doit pas pouvoir passer pour un bon définitif.
     filigrane = None if bon.definitif else ("ANNULÉ" if bon.statut == bon.Statut.ANNULE else "PROJET")
     decor = _decor(societe, filigrane)
@@ -151,13 +151,16 @@ def pdf_bon_commande(bon) -> bytes:
                      style=[("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 8), ("FONT", (0, 1), (-1, -1), "Helvetica", 8),
                             ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("LINEABOVE", (0, 0), (-1, 0), 0.5, colors.black)])
     tot = [["Total HT", nombre(totaux["total_ht"])], ["Total TVA", nombre(totaux["total_tva"])],
-           ["Total TTC", nombre(totaux["total_ttc"])], ["Devise", societe.devise]]
+           ["Total TTC", nombre(totaux["total_ttc"])], ["Devise", bon.devise]]
     bloc_tot = Table(tot, colWidths=[largeur * 0.2, largeur * 0.2],
                      style=[("FONT", (0, 0), (-1, -1), "Helvetica-Bold", 10), ("ALIGN", (1, 0), (1, -1), "RIGHT"),
                             ("LINEABOVE", (0, 0), (-1, 0), 0.5, colors.black)])
     elements.append(Table([[bloc_tva, bloc_tot]], colWidths=[largeur * 0.6, largeur * 0.4],
                           style=[("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
                                  ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    if bon.devise != "XOF" and totaux["contre_valeur_xof"] is not None:
+        cours = f"{bon.taux_change.normalize():f}".replace(".", ",")
+        elements.append(Paragraph(f"Contre-valeur : {formate(totaux['contre_valeur_xof'])} XOF (1 {bon.devise} = {cours} XOF)", BASE))
     reglement = bon.get_mode_reglement_display().upper()
     elements.append(Paragraph(f"<b>À échéance : {bon.echeance}</b> par {reglement}" if bon.echeance
                               else f"Règlement par {reglement}", BASE))
@@ -185,6 +188,10 @@ def pdf_bon_reception(bon) -> bytes:
     commande = bon.commande
     f = commande.fournisseur
     tampon = BytesIO()
+
+    def nombre(n):
+        return formate(n, commande.devise)
+
     S = bon.Statut
     filigrane = {S.BROUILLON: "PROJET", S.ANNULE: "ANNULÉ"}.get(bon.statut)
     doc = SimpleDocTemplate(tampon, pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=15 * mm,
@@ -240,11 +247,11 @@ def pdf_bon_reception(bon) -> bytes:
     elements.append(Spacer(1, 8 * mm))
 
     total = bon.total_ht
-    elements.append(Table([["", "Total HT reçu", nombre(total)], ["", "Devise", societe.devise]],
+    elements.append(Table([["", "Total HT reçu", nombre(total)], ["", "Devise", commande.devise]],
                           colWidths=[largeur * 0.6, largeur * 0.2, largeur * 0.2],
                           style=[("FONT", (0, 0), (-1, -1), "Helvetica-Bold", 10), ("ALIGN", (2, 0), (2, -1), "RIGHT"),
                                  ("LINEABOVE", (1, 0), (-1, 0), 0.5, colors.black)]))
-    elements.append(Table([[Paragraph(montant_en_lettres(total), BASE)]], colWidths=[largeur],
+    elements.append(Table([[Paragraph(montant_en_lettres(total, commande.devise), BASE)]], colWidths=[largeur],
                           style=[("LINEABOVE", (0, 0), (-1, 0), 0.5, colors.black),
                                  ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black)]))
     if bon.observations:

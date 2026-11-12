@@ -83,13 +83,13 @@ export default function DetailReception({ id }: { id: number }) {
                 <td className="nombre">{qte(l.quantite_commandee)}</td>
                 <td className="nombre">{qte(l.quantite_recue)}</td>
                 <td className="nombre">{qte(l.quantite_stock)}</td>
-                <td className="nombre">{montant(l.montant_ht ?? 0)}</td>
+                <td className="nombre">{montant(l.montant_ht ?? 0, b.devise)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="nombre">Valeur HT reçue <strong>{montant(b.total_ht)} XOF</strong></p>
+      <p className="nombre">Valeur HT reçue <strong>{montant(b.total_ht, b.devise)} {b.devise}</strong></p>
 
       {erreur && <p className="erreur" role="alert">{erreur}</p>}
 

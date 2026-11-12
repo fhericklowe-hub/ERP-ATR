@@ -15,7 +15,7 @@ class LigneReceptionSerializer(serializers.ModelSerializer):
     designation = serializers.CharField(source="ligne_commande.designation", read_only=True)
     quantite_commandee = serializers.DecimalField(source="ligne_commande.quantite", max_digits=12, decimal_places=2,
                                                   read_only=True)
-    montant_ht = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    montant_ht = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
 
     class Meta:
         model = LigneBonReception
@@ -31,9 +31,10 @@ class BonReceptionSerializer(serializers.ModelSerializer):
     site_nom = serializers.CharField(source="commande.site.nom", read_only=True)
     service_nom = serializers.CharField(source="commande.service.nom", read_only=True)
     objet = serializers.CharField(source="commande.objet", read_only=True)
+    devise = serializers.CharField(source="commande.devise", read_only=True)
     receptionnaire_nom = serializers.CharField(source="receptionnaire.__str__", read_only=True)
     annule_par_nom = serializers.SerializerMethodField()
-    total_ht = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    total_ht = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     modifiable = serializers.BooleanField(read_only=True)
     peut_preparer = serializers.SerializerMethodField()
     peut_annuler = serializers.SerializerMethodField()
@@ -42,7 +43,7 @@ class BonReceptionSerializer(serializers.ModelSerializer):
         model = BonReception
         fields = [
             "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "commande", "commande_numero",
-            "fournisseur_nom", "site_nom", "service_nom", "objet", "numero_livraison", "receptionnaire",
+            "fournisseur_nom", "site_nom", "service_nom", "objet", "devise", "numero_livraison", "receptionnaire",
             "receptionnaire_nom", "observations", "valide_le", "annule_par_nom", "annule_le", "motif_annulation",
             "total_ht", "modifiable", "peut_preparer", "peut_annuler", "lignes",
         ]

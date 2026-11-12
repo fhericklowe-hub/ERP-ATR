@@ -29,6 +29,12 @@ class LettresTests(SimpleTestCase):
         for montant, attendu in cas.items():
             self.assertEqual(montant_en_lettres(montant), attendu)
 
+    def test_euro_et_dollar(self):
+        self.assertEqual(montant_en_lettres(Decimal("1250.50"), "EUR"), "MILLE DEUX CENT CINQUANTE EUROS ET CINQUANTE CENTIMES")
+        self.assertEqual(montant_en_lettres(Decimal("1.01"), "EUR"), "UN EURO ET UN CENTIME")
+        self.assertEqual(montant_en_lettres(2000000, "USD"), "DEUX MILLIONS DE DOLLARS")
+        self.assertEqual(montant_en_lettres(Decimal("80.80"), "USD"), "QUATRE-VINGTS DOLLARS ET QUATRE-VINGTS CENTS")
+
 
 class SocleCommande(APITestCase):
     """Utilisateurs, demande validée et aides communes aux tests des bons de commande et de réception."""
@@ -95,6 +101,29 @@ class BonCommandeTests(SocleCommande):
         t = r.data["totaux"]
         self.assertEqual((t["total_ht"], t["total_tva"], t["total_ttc"]), (Decimal(2300), Decimal(324), Decimal(2624)))
         self.assertEqual(len(t["ventilation"]), 2)
+
+    def test_commande_en_euro_au_centime(self):
+        r = self.creer(devise="EUR", lignes=[
+            {"designation": "Vérin", "quantite": "3", "prix_unitaire": "149.99", "remise": "5"},
+            {"designation": "Port", "quantite": "1", "prix_unitaire": "80.50", "taux_tva": "0"},
+        ])
+        self.assertEqual(r.status_code, 201, r.data)
+        t = r.data["totaux"]
+        # 149,99 - 5 % = 142,49 ; x3 = 427,47 ; TVA 18 % = 76,94 ; + 80,50 de port
+        self.assertEqual((t["total_ht"], t["total_tva"], t["total_ttc"]), (Decimal("507.97"), Decimal("76.94"), Decimal("584.91")))
+        self.assertEqual(t["en_lettres"], "CINQ CENT QUATRE-VINGT-QUATRE EUROS ET QUATRE-VINGT-ONZE CENTIMES")
+        self.assertEqual(Decimal(r.data["taux_change"]), Decimal("655.957"))  # parité fixe, non saisie
+        self.assertEqual(t["contre_valeur_xof"], Decimal(383676))
+        self.client.force_authenticate(self.acheteur)
+        self.assertTrue(self.client.get(f"/api/achats/bons-commande/{r.data['id']}/pdf/").content.startswith(b"%PDF"))
+
+    def test_commande_en_dollar_exige_le_cours(self):
+        ligne = [{"designation": "Pompe", "quantite": "2", "prix_unitaire": "1200.25"}]
+        self.assertEqual(self.creer(devise="USD", lignes=ligne).status_code, 400)
+        r = self.creer(devise="USD", taux_change="602.5", lignes=ligne)
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data["totaux"]["total_ht"], Decimal("2400.50"))
+        self.assertEqual(r.data["totaux"]["contre_valeur_xof"], Decimal(1706635))  # 2 832,59 TTC x 602,5
 
     def test_demande_non_validee_refusee(self):
         brouillon = DemandeAchat.objects.create(demandeur=self.demandeur, service=self.service, site=self.site)
