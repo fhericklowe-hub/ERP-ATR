@@ -32,3 +32,37 @@ th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--bo
   padding: 24px; background: #fff; border: 1px solid var(--bord); border-radius: 12px;
 }
 .connexion h1 { margin: 0; color: var(--vert); }
+a { color: var(--vert); }
+header a { color: #fff; text-decoration: none; }
+h2 { margin: 0; }
+h3 { margin: 24px 0 8px; }
+select, textarea {
+  font: inherit; display: block; width: 100%; margin-top: 4px;
+  padding: 10px 12px; border: 1px solid var(--bord); border-radius: 8px; background: #fff;
+}
+textarea { min-height: 80px; }
+.barre { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.bouton { display: inline-block; padding: 10px 16px; border-radius: 8px; background: var(--vert); color: #fff; text-decoration: none; cursor: pointer; }
+.secondaire, a.bouton.secondaire { background: #fff; color: var(--vert); border: 1px solid var(--vert); }
+.danger { background: #b91c1c; }
+.discret { background: transparent; color: #b91c1c; padding: 10px 0; }
+.filtre { display: block; max-width: 260px; margin-bottom: 16px; }
+.defilant { overflow-x: auto; }
+.pastille { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.85em; background: #e4e4e7; }
+.pastille.u1 { background: #fee2e2; color: #991b1b; font-weight: 600; }
+.pastille.u3 { background: #e0f2fe; color: #075985; }
+.fiche { display: grid; gap: 12px; }
+fieldset { border: 1px solid var(--bord); border-radius: 12px; padding: 16px; background: #fff; display: grid; gap: 12px; margin: 0; }
+legend { font-weight: 600; padding: 0 6px; }
+.grille { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.ligne { display: grid; gap: 8px; grid-template-columns: 2fr 2fr 90px 90px 2fr auto; align-items: end; padding-bottom: 12px; border-bottom: 1px solid var(--bord); }
+@media (max-width: 720px) { .ligne { grid-template-columns: 1fr 1fr; } }
+.case { display: flex; gap: 8px; align-items: flex-start; }
+.case input { width: auto; margin-top: 4px; }
+.actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.aide { color: #52525b; font-size: 0.9em; margin: 0; }
+.statut { font-weight: 600; margin: 0; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+dt { color: #52525b; }
+dd { margin: 0; }
+ul { margin: 0; padding-left: 20px; }
