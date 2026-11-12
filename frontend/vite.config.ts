@@ -20,5 +20,5 @@ export default defineConfig({
     }),
   ],
   // En développement, l'API Django tourne sur le port 8000.
-  server: { proxy: { '/api': 'http://localhost:8000', '/admin': 'http://localhost:8000', '/static': 'http://localhost:8000' } },
+  server: { proxy: { '/api': 'http://localhost:8000', '/admin': 'http://localhost:8000', '/static': 'http://localhost:8000', '/media': 'http://localhost:8000' } },
 })

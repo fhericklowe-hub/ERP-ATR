@@ -55,7 +55,7 @@ export async function api<T>(chemin: string, options: RequestInit = {}): Promise
     fetch(`/api${chemin}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         Authorization: `Bearer ${lire()?.access ?? ''}`,
         ...options.headers,
       },
@@ -67,7 +67,12 @@ export async function api<T>(chemin: string, options: RequestInit = {}): Promise
     throw new ErreurApi(401, 'Session expirée.')
   }
   if (r.status === 403) throw new ErreurApi(403, "Vous n'avez pas le droit d'accéder à ces données.")
-  if (!r.ok) throw new ErreurApi(r.status, 'Une erreur est survenue.')
+  if (!r.ok) {
+    // L'API renvoie soit {detail: ...}, soit une erreur par champ.
+    const corps = await r.json().catch(() => null)
+    const messages = corps ? Object.values(corps).flat().map(String) : []
+    throw new ErreurApi(r.status, messages.join(' ') || 'Une erreur est survenue.')
+  }
   return r.status === 204 ? (undefined as T) : r.json()
 }
 
@@ -80,5 +85,10 @@ export type Utilisateur = {
   fonction: string
   roles: string[]
   droits: string[]
+  site: number | null
+  service: number | null
+  telephone: string
 }
+export type Service = { id: number; code: string; nom: string }
+export type Unite = { id: number; code: string; nom: string }
 export type Site = { id: number; code: string; nom: string; ville: string; est_siege: boolean; actif: boolean }

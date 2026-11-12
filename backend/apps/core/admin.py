@@ -22,7 +22,7 @@ class SiteAdmin(AdminMetier):
 
 @admin.register(Service)
 class ServiceAdmin(AdminMetier):
-    list_display = ["code", "nom", "actif"]
+    list_display = ["code", "nom", "responsable", "actif"]
     search_fields = ["code", "nom"]
 
 

@@ -1,5 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, connecter, deconnecter, estConnecte, type Page, type Site, type Utilisateur } from './api'
+import Detail from './achats/Detail'
+import Formulaire from './achats/Formulaire'
+import Liste from './achats/Liste'
+import { api, connecter, deconnecter, estConnecte, type Utilisateur } from './api'
 
 function Connexion({ onConnecte }: { onConnecte: () => void }) {
   const [erreur, setErreur] = useState('')
@@ -39,38 +42,24 @@ function Connexion({ onConnecte }: { onConnecte: () => void }) {
   )
 }
 
-function Sites() {
-  const [sites, setSites] = useState<Site[] | null>(null)
-  const [erreur, setErreur] = useState('')
-
+function useRoute() {
+  const [hash, setHash] = useState(location.hash)
   useEffect(() => {
-    api<Page<Site>>('/sites/')
-      .then((p) => setSites(p.results))
-      .catch((e: Error) => setErreur(e.message))
+    const maj = () => setHash(location.hash)
+    addEventListener('hashchange', maj)
+    return () => removeEventListener('hashchange', maj)
   }, [])
+  return hash.replace(/^#/, '') || '/'
+}
 
-  if (erreur) return <p className="erreur">{erreur}</p>
-  if (!sites) return <p>Chargement…</p>
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>Code</th>
-          <th>Site</th>
-          <th>Ville</th>
-        </tr>
-      </thead>
-      <tbody>
-        {sites.map((s) => (
-          <tr key={s.id}>
-            <td>{s.code}</td>
-            <td>{s.nom}{s.est_siege && ' (siège)'}</td>
-            <td>{s.ville}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
+function Page({ moi }: { moi: Utilisateur }) {
+  const route = useRoute()
+  if (route === '/demandes/nouvelle') return <Formulaire moi={moi} />
+  const modif = route.match(/^\/demandes\/(\d+)\/modifier$/)
+  if (modif) return <Formulaire moi={moi} id={Number(modif[1])} />
+  const detail = route.match(/^\/demandes\/(\d+)$/)
+  if (detail) return <Detail id={Number(detail[1])} moiId={moi.id} />
+  return <Liste />
 }
 
 export default function App() {
@@ -95,13 +84,12 @@ export default function App() {
   return (
     <>
       <header>
-        <strong>ERP</strong>
+        <a href="#/"><strong>ERP</strong></a>
         <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
         <button onClick={quitter}>Se déconnecter</button>
       </header>
       <main>
-        <h2>Sites de l'entreprise</h2>
-        <Sites />
+        {moi && <Page moi={moi} />}
       </main>
     </>
   )

@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -11,4 +13,8 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
     path("api/", include("apps.core.urls")),
     path("api/", include("apps.referentiels.urls")),
+    path("api/achats/", include("apps.achats.urls")),
 ]
+
+# En développement, Django sert lui-même les fichiers joints ; en production c'est Nginx.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

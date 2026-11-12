@@ -12,7 +12,7 @@ class SiteSerializer(serializers.ModelSerializer):
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
-        fields = ["id", "code", "nom", "actif"]
+        fields = ["id", "code", "nom", "responsable", "actif"]
 
 
 class UtilisateurSerializer(serializers.ModelSerializer):
