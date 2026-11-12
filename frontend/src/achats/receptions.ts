@@ -27,6 +27,7 @@ export type Reception = {
   service_nom: string
   objet: string
   devise: string
+  activite_libelle: string
   numero_livraison: string
   receptionnaire_nom: string
   observations: string

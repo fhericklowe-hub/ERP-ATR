@@ -32,6 +32,7 @@ class BonReceptionSerializer(serializers.ModelSerializer):
     service_nom = serializers.CharField(source="commande.service.nom", read_only=True)
     objet = serializers.CharField(source="commande.objet", read_only=True)
     devise = serializers.CharField(source="commande.devise", read_only=True)
+    activite_libelle = serializers.CharField(source="commande.activite_libelle", read_only=True)
     receptionnaire_nom = serializers.CharField(source="receptionnaire.__str__", read_only=True)
     annule_par_nom = serializers.SerializerMethodField()
     total_ht = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
@@ -43,7 +44,7 @@ class BonReceptionSerializer(serializers.ModelSerializer):
         model = BonReception
         fields = [
             "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "commande", "commande_numero",
-            "fournisseur_nom", "site_nom", "service_nom", "objet", "devise", "numero_livraison", "receptionnaire",
+            "fournisseur_nom", "site_nom", "service_nom", "objet", "devise", "activite_libelle", "numero_livraison", "receptionnaire",
             "receptionnaire_nom", "observations", "valide_le", "annule_par_nom", "annule_le", "motif_annulation",
             "total_ht", "modifiable", "peut_preparer", "peut_annuler", "lignes",
         ]

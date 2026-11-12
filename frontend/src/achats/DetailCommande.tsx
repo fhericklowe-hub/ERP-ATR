@@ -53,7 +53,7 @@ export default function DetailCommande({ id }: { id: number }) {
         <dt>Demande d'achat</dt><dd><a href={`#/demandes/${b.demande}`}>{b.demande_numero}</a></dd>
         <dt>Date</dt><dd>{dateFr(b.date)}{b.date_livraison && ` · livraison pour le ${dateFr(b.date_livraison)}`}</dd>
         {b.objet && <><dt>Objet</dt><dd>{b.objet}</dd></>}
-        <dt>Imputation</dt><dd>{b.site_nom} · {b.service_nom}</dd>
+        <dt>Imputation</dt><dd>{b.site_nom} · {b.service_nom}{b.activite_libelle && ` · ${b.activite_libelle}`}</dd>
         <dt>Acheteur</dt><dd>{b.acheteur_nom}</dd>
         <dt>Règlement</dt><dd>{b.echeance} · {b.mode_reglement_libelle}</dd>
         {b.ancien_numero && <><dt>Ancien logiciel</dt><dd>{b.ancien_numero}</dd></>}

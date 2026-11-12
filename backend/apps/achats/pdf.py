@@ -118,6 +118,8 @@ def pdf_bon_commande(bon) -> bytes:
         ["Service", f"{bon.service.code} - {bon.service.nom}", "Transport", bon.transport or "--"],
         ["Opérateur", str(bon.acheteur).upper(), "Référence", Paragraph(f"<b>{bon.objet or '--'}</b>", BASE)],
     ]
+    if bon.activite:
+        infos.append(["Activité", bon.activite_libelle, "", ""])
     elements.append(Table(infos, colWidths=[largeur * 0.15, largeur * 0.37, largeur * 0.13, largeur * 0.35],
                           style=[("FONT", (0, 0), (-1, -1), "Helvetica", 9), ("VALIGN", (0, 0), (-1, -1), "TOP"),
                                  ("BOTTOMPADDING", (0, 0), (-1, -1), 1), ("TOPPADDING", (0, 0), (-1, -1), 1)]))
@@ -217,6 +219,8 @@ def pdf_bon_reception(bon) -> bytes:
         ["Succ. débitée", commande.site.nom, "Service", f"{commande.service.code} - {commande.service.nom}"],
         ["Réceptionnaire", str(bon.receptionnaire).upper(), "Demande", commande.demande.numero],
     ]
+    if commande.activite:
+        infos.append(["Activité", commande.activite_libelle, "", ""])
     elements.append(Table(infos, colWidths=[largeur * 0.17, largeur * 0.35, largeur * 0.13, largeur * 0.35],
                           style=[("FONT", (0, 0), (-1, -1), "Helvetica", 9), ("VALIGN", (0, 0), (-1, -1), "TOP"),
                                  ("BOTTOMPADDING", (0, 0), (-1, -1), 1), ("TOPPADDING", (0, 0), (-1, -1), 1)]))

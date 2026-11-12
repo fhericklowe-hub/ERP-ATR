@@ -44,6 +44,7 @@ class BonCommandeSerializer(serializers.ModelSerializer):
     acheteur_nom = serializers.CharField(source="acheteur.__str__", read_only=True)
     site_nom = serializers.CharField(source="site.nom", read_only=True)
     service_nom = serializers.CharField(source="service.nom", read_only=True)
+    activite_libelle = serializers.CharField(read_only=True)
     totaux = serializers.SerializerMethodField()
     modifiable = serializers.BooleanField(read_only=True)
     definitif = serializers.BooleanField(read_only=True)
@@ -59,7 +60,7 @@ class BonCommandeSerializer(serializers.ModelSerializer):
         fields = [
             "id", "numero", "ancien_numero", "statut", "statut_libelle", "date", "demande", "demande_numero",
             "fournisseur", "fournisseur_nom", "reference_fournisseur", "objet", "site", "site_nom",
-            "service", "service_nom", "acheteur", "acheteur_nom", "date_livraison", "transport",
+            "service", "service_nom", "activite", "activite_autre", "activite_libelle", "acheteur", "acheteur_nom", "date_livraison", "transport",
             "adresse_livraison", "devise", "taux_change", "echeance", "mode_reglement", "mode_reglement_libelle", "transmis_le", "totaux",
             "modifiable", "definitif", "peut_valider", "peut_preparer", "peut_annuler", "etat_reception",
             "etat_reception_libelle", "receptions", "lignes", "evenements",
@@ -136,7 +137,7 @@ class BonCommandeViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mix
     queryset = BonCommande.objects.select_related("demande", "fournisseur", "site", "service", "acheteur").prefetch_related(
         "lignes", "evenements__auteur", "receptions"
     )
-    filterset_fields = ["statut", "fournisseur", "site", "service", "acheteur", "demande"]
+    filterset_fields = ["statut", "fournisseur", "site", "service", "activite", "acheteur", "demande"]
     search_fields = ["numero", "ancien_numero", "objet", "reference_fournisseur", "fournisseur__raison_sociale",
                      "demande__numero"]
     ordering_fields = ["cree_le", "date", "date_livraison"]

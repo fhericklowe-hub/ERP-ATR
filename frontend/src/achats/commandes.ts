@@ -40,6 +40,9 @@ export type Commande = {
   site_nom: string
   service: number | ''
   service_nom: string
+  activite: string
+  activite_autre: string
+  activite_libelle: string
   acheteur_nom: string
   date_livraison: string | null
   transport: string

@@ -125,6 +125,15 @@ class BonCommandeTests(SocleCommande):
         self.assertEqual(r.data["totaux"]["total_ht"], Decimal("2400.50"))
         self.assertEqual(r.data["totaux"]["contre_valeur_xof"], Decimal(1706635))  # 2 832,59 TTC x 602,5
 
+    def test_activite(self):
+        r = self.creer(activite="TRANSPORT")
+        self.assertEqual(r.data["activite_libelle"], "Transport")
+        r = self.creer(activite="AUTRE", activite_autre="Location de grue")
+        self.assertEqual(r.data["activite_libelle"], "Location de grue")
+        self.client.force_authenticate(self.acheteur)
+        self.assertEqual(self.client.get("/api/achats/bons-commande/?activite=TRANSPORT").data["count"], 1)
+        self.assertTrue(self.client.get(f"/api/achats/bons-commande/{r.data['id']}/pdf/").content.startswith(b"%PDF"))
+
     def test_demande_non_validee_refusee(self):
         brouillon = DemandeAchat.objects.create(demandeur=self.demandeur, service=self.service, site=self.site)
         self.assertEqual(self.creer(demande=brouillon.id).status_code, 400)

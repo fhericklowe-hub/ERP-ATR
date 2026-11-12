@@ -51,7 +51,7 @@ class BonCommandeAdmin(admin.ModelAdmin):
     """Consultation et correction. Les validations se font dans l'application."""
 
     list_display = ["numero", "date", "fournisseur", "demande", "service", "acheteur", "statut"]
-    list_filter = ["statut", "site", "service"]
+    list_filter = ["statut", "site", "service", "activite"]
     search_fields = ["numero", "ancien_numero", "objet", "fournisseur__raison_sociale"]
     readonly_fields = ["numero", "statut", "transmis_le"]
     autocomplete_fields = ["fournisseur", "demande", "acheteur"]

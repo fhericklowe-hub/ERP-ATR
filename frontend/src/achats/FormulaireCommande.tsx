@@ -6,7 +6,7 @@ import type { Demande } from './types'
 const ligneVide = (): LigneCommande => ({ reference: '', designation: '', quantite: '1', prix_unitaire: '', remise: '0', taux_tva: '18' })
 
 type Saisie = Pick<Commande, 'fournisseur' | 'reference_fournisseur' | 'objet' | 'site' | 'service' | 'date_livraison'
-  | 'transport' | 'adresse_livraison' | 'devise' | 'taux_change' | 'echeance' | 'mode_reglement' | 'ancien_numero' | 'lignes'>
+  | 'transport' | 'adresse_livraison' | 'devise' | 'taux_change' | 'activite' | 'activite_autre' | 'echeance' | 'mode_reglement' | 'ancien_numero' | 'lignes'>
 
 
 /** Création depuis une demande d'achat (demandeId) ou correction d'un brouillon (id). */
@@ -17,7 +17,7 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
   const [demande, setDemande] = useState<{ id: number; numero: string } | null>(null)
   const [c, setC] = useState<Saisie>({
     fournisseur: '', reference_fournisseur: '', objet: '', site: '', service: '', date_livraison: null,
-    transport: 'PAR VOS SOINS', adresse_livraison: '', devise: 'XOF', taux_change: null, echeance: '30 JOURS FIN DE MOIS', mode_reglement: 'CHEQUE',
+    transport: 'PAR VOS SOINS', adresse_livraison: '', devise: 'XOF', taux_change: null, activite: '', activite_autre: '', echeance: '30 JOURS FIN DE MOIS', mode_reglement: 'CHEQUE',
     ancien_numero: '', lignes: [ligneVide()],
   })
   const [erreur, setErreur] = useState('')
@@ -42,7 +42,7 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
           // Le bon reprend le service, le site et les articles de la demande ; l'acheteur complète les prix.
           setDemande({ id: da.id, numero: da.numero })
           setC((x) => ({
-            ...x, site: da.site, service: da.service,
+            ...x, site: da.site, service: da.service, activite: da.activite, activite_autre: da.activite_autre,
             objet: da.equipement_designation || da.lignes[0]?.designation || '',
             lignes: da.lignes.map((l) => ({
               ...ligneVide(), reference: l.reference_constructeur, designation: l.designation, quantite: String(Number(l.quantite)),
@@ -128,6 +128,20 @@ export default function FormulaireCommande({ demandeId, id }: { demandeId?: numb
               {services.map((s) => <option key={s.id} value={s.id}>{s.nom}</option>)}
             </select>
           </label>
+          <label>Activité
+            <select value={c.activite} onChange={(e) => champ('activite', e.target.value)}>
+              <option value="">Non précisée</option>
+              <option value="MANUTENTION">Manutention</option>
+              <option value="LEVAGE">Levage</option>
+              <option value="TRANSPORT">Transport</option>
+              <option value="AUTRE">Autre</option>
+            </select>
+          </label>
+          {c.activite === 'AUTRE' && (
+            <label>Préciser l'activité
+              <input value={c.activite_autre} onChange={(e) => champ('activite_autre', e.target.value)} />
+            </label>
+          )}
           <label>Délai de livraison
             <input type="date" value={c.date_livraison ?? ''} onChange={(e) => champ('date_livraison', e.target.value)} />
           </label>

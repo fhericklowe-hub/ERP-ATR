@@ -13,6 +13,8 @@ from apps.core.lettres import montant_en_lettres
 from apps.core.models import Compteur, Horodate, Service, Site
 from apps.referentiels.models import Article, Tiers
 
+from .choix import Activite
+
 CENT = Decimal(100)
 
 
@@ -47,6 +49,8 @@ class BonCommande(Horodate):
     objet = models.CharField("référence / objet", max_length=150, blank=True)
     site = models.ForeignKey(Site, on_delete=models.PROTECT, related_name="bons_commande", verbose_name="succursale")
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name="bons_commande", verbose_name="service imputé")
+    activite = models.CharField("activité", max_length=12, choices=Activite.choices, blank=True)
+    activite_autre = models.CharField("autre activité", max_length=100, blank=True)
     acheteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="bons_commande")
     date_livraison = models.DateField("délai de livraison", null=True, blank=True)
     transport = models.CharField(max_length=100, blank=True, default="PAR VOS SOINS")
@@ -83,6 +87,12 @@ class BonCommande(Horodate):
                 self.numero = f"BC-{annee}-{Compteur.suivant(f'BC-{annee}'):04d}"
                 return super().save(*args, **kwargs)
         return super().save(*args, **kwargs)
+
+    @property
+    def activite_libelle(self) -> str:
+        if self.activite == Activite.AUTRE and self.activite_autre:
+            return self.activite_autre
+        return self.get_activite_display()
 
     # ----- montants
 

@@ -6,7 +6,7 @@ from django.utils import timezone
 from apps.core.models import Compteur, Horodate, Service, Site
 from apps.referentiels.models import Article, Unite
 
-from . import delais
+from . import choix, delais
 
 
 class Acheteur(models.Model):
@@ -71,11 +71,7 @@ class DemandeAchat(Horodate):
         NORMAL = 2, "2. Normal (besoin courant)"
         PLANIFIE = 3, "3. Planifié (préventif, réapprovisionnement)"
 
-    class Activite(models.TextChoices):
-        MANUTENTION = "MANUTENTION", "Manutention"
-        LEVAGE = "LEVAGE", "Levage"
-        TRANSPORT = "TRANSPORT", "Transport"
-        AUTRE = "AUTRE", "Autre"
+    Activite = choix.Activite
 
     class ControleStock(models.TextChoices):
         NON_FAIT = "", "Non contrôlé"
