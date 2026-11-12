@@ -15,3 +15,9 @@ class TechniqueConfig(AppConfig):
         post_migrate.connect(creer_roles, sender=self)
         pieces.declarer(MaterielViewSet)
         pieces.declarer(OrdreReparationViewSet)
+        from apps.core import rappels as rappels_du_jour
+
+        from .rappels import entretiens, ordres_a_cloturer
+
+        rappels_du_jour.declarer(entretiens)
+        rappels_du_jour.declarer(ordres_a_cloturer)

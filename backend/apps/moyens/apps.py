@@ -17,3 +17,8 @@ class MoyensConfig(AppConfig):
 
         for vue in (BienViewSet, DemandeInterventionViewSet, ContratViewSet, EcheanceViewSet):
             pieces.declarer(vue)
+        from apps.core import rappels as rappels_du_jour
+
+        from .rappels import echeances
+
+        rappels_du_jour.declarer(echeances)
