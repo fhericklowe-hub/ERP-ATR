@@ -9,6 +9,8 @@ ROLES = {
     "Technique - Mécanicien": LECTURE + ATELIER,
     "Technique - Chef d'atelier": LECTURE + ATELIER + [
         "technique.add_materiel", "technique.change_materiel", "technique.piloter_ordrereparation",
+        "technique.voir_couts_ordrereparation", "technique.view_reglageatelier", "technique.change_reglageatelier",
+        "technique.add_reglageatelier",
     ],
 }
 

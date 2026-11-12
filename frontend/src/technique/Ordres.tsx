@@ -1,11 +1,14 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page } from '../api'
 import PiecesJointes from '../PiecesJointes'
+import { montant as enChiffres } from '../achats/commandes'
 import { dateFr, dateHeureFr } from '../achats/types'
 import { nombre } from '../stock/types'
 import { type Materiel, type Ordre, STATUTS_ORDRE, TYPES_ORDRE } from './types'
 
 type Personne = { id: number; first_name: string; last_name: string; username: string }
+const montant = (n: string) => `${enChiffres(n)} XOF`
+const aujourdhui = () => new Date().toLocaleDateString('fr-CA')
 const pastille = (s: string) => (s === 'CLOTURE' ? 'complete' : s === 'EN_COURS' ? 'partielle' : s === 'OUVERT' ? 'u1' : s === 'TERMINE' ? 'u3' : '')
 
 export function ListeOrdres({ materiel, peutCreer }: { materiel?: string; peutCreer: boolean }) {
@@ -127,6 +130,7 @@ export function DetailOrdre({ id, peutDemanderPieces }: { id: number; peutDemand
   const [o, setO] = useState<Ordre | null>(null)
   const [personnes, setPersonnes] = useState<Personne[]>([])
   const [s, setS] = useState({ diagnostic: '', travaux: '', compteur_heures: '', compteur_km: '', commentaire: '', mecanicien: '' })
+  const [t, setT] = useState({ date: aujourdhui(), heures: '', mecanicien: '', commentaire: '' })
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
 
@@ -146,6 +150,7 @@ export function DetailOrdre({ id, peutDemanderPieces }: { id: number; peutDemand
     setEnCours(true)
     try {
       recevoir(await api<Ordre>(`/technique/ordres/${id}/${action}/`, { method: 'POST', body: JSON.stringify(corps) }))
+      if (action === 'saisir_temps') setT((v) => ({ ...v, heures: '', commentaire: '' }))
     } catch (err) {
       setErreur((err as Error).message)
     } finally {
@@ -189,16 +194,71 @@ export function DetailOrdre({ id, peutDemanderPieces }: { id: number; peutDemand
       {o.pieces.length > 0 && (
         <div className="defilant">
           <table>
-            <thead><tr><th>Date</th><th>Bon de sortie</th><th>Article</th><th className="nombre">Quantité</th></tr></thead>
+            <thead><tr><th>Date</th><th>Bon de sortie</th><th>Article</th><th className="nombre">Quantité</th>{o.couts && <><th className="nombre">Prix unitaire</th><th className="nombre">Montant</th></>}</tr></thead>
             <tbody>
               {o.pieces.map((p, i) => (
-                <tr key={i}><td>{dateFr(p.date)}</td><td><a href={`#/stock/sorties/${p.bon}`}>{p.bon_numero}</a></td><td>{p.designation}<br /><span className="aide">{p.code}</span></td><td className="nombre">{nombre(p.quantite)} {p.unite}</td></tr>
+                <tr key={i}><td>{dateFr(p.date)}</td><td><a href={`#/stock/sorties/${p.bon}`}>{p.bon_numero}</a></td><td>{p.designation}<br /><span className="aide">{p.code}</span></td><td className="nombre">{nombre(p.quantite)} {p.unite}</td>{o.couts && <><td className="nombre">{p.prix_unitaire ? montant(p.prix_unitaire) : 'inconnu'}</td><td className="nombre">{p.montant ? montant(p.montant) : ''}</td></>}</tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
       {ouvert && peutDemanderPieces && <div className="actions"><a className="bouton secondaire" href={`#/stock/demandes/nouvelle?or=${encodeURIComponent(o.numero)}&materiel=${encodeURIComponent(o.materiel_nom)}`}>Demander des pièces au magasin</a></div>}
+
+      <h3>Temps passé</h3>
+      {o.temps.length === 0 && <p className="aide">Aucune heure saisie pour cet ordre.</p>}
+      {o.temps.length > 0 && (
+        <div className="defilant">
+          <table>
+            <thead><tr><th>Date</th><th>Mécanicien</th><th className="nombre">Heures</th>{o.couts && <th className="nombre">Montant</th>}<th></th></tr></thead>
+            <tbody>
+              {o.temps.map((x) => (
+                <tr key={x.id}>
+                  <td>{dateFr(x.date)}</td><td>{x.mecanicien_nom}{x.commentaire && <><br /><span className="aide">{x.commentaire}</span></>}</td>
+                  <td className="nombre">{nombre(x.heures)} h</td>{o.couts && <td className="nombre">{x.montant ? montant(x.montant) : ''}</td>}
+                  <td>{x.peut_retirer && <button className="lien" disabled={enCours} onClick={() => agir('retirer_temps', { temps: x.id })}>Retirer</button>}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr><th colSpan={2}>Total</th><th className="nombre">{nombre(o.temps.reduce((n, x) => n + Number(x.heures), 0))} h</th>{o.couts && <th className="nombre">{montant(o.couts.main_oeuvre)}</th>}<th></th></tr></tfoot>
+          </table>
+        </div>
+      )}
+      {o.peut_saisir_temps && (
+        <form className="grille" onSubmit={(e) => { e.preventDefault(); agir('saisir_temps', t) }}>
+          <label>Date
+            <input type="date" required max={aujourdhui()} value={t.date} onChange={(e) => setT({ ...t, date: e.target.value })} />
+          </label>
+          <label>Heures
+            <input type="number" required min="0.25" max="24" step="0.25" value={t.heures} onChange={(e) => setT({ ...t, heures: e.target.value })} />
+          </label>
+          {o.peut_piloter && (
+            <label>Mécanicien
+              <select value={t.mecanicien} onChange={(e) => setT({ ...t, mecanicien: e.target.value })}>
+                <option value="">Moi</option>
+                {personnes.map((p) => <option key={p.id} value={p.id}>{`${p.first_name} ${p.last_name}`.trim() || p.username}</option>)}
+              </select>
+            </label>
+          )}
+          <label>Travail fait (facultatif)
+            <input maxLength={200} value={t.commentaire} onChange={(e) => setT({ ...t, commentaire: e.target.value })} />
+          </label>
+          <div className="actions"><button className="secondaire" disabled={enCours}>Ajouter ces heures</button></div>
+        </form>
+      )}
+
+      {o.couts && (
+        <>
+          <h3>Coût de l'ordre</h3>
+          <dl>
+            <dt>Main-d'œuvre</dt><dd>{montant(o.couts.main_oeuvre)} pour {nombre(o.couts.heures)} h</dd>
+            <dt>Pièces</dt><dd>{montant(o.couts.pieces)}</dd>
+            <dt>Total</dt><dd><strong>{montant(o.couts.total)}</strong></dd>
+          </dl>
+          {Number(o.couts.heures_non_chiffrees) > 0 && <p className="aide">{nombre(o.couts.heures_non_chiffrees)} h ne sont pas chiffrées : le taux horaire de l'atelier n'était pas renseigné dans l'administration au moment de la saisie.</p>}
+          {o.couts.pieces_sans_prix > 0 && <p className="aide">{o.couts.pieces_sans_prix} ligne(s) de pièces sans prix connu ne sont pas comptées.</p>}
+        </>
+      )}
 
       {erreur && <p className="erreur" role="alert">{erreur}</p>}
 
