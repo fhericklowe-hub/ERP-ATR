@@ -15,6 +15,7 @@ import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
 import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demandes'
 import ImportStock from './stock/ImportStock'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
+import { DetailDevis, FormulaireDevis, ListeDevis } from './commercial/Devis'
 import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
@@ -86,6 +87,9 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/ordres', texte: 'Ordres de réparation', droit: 'technique.view_ordrereparation' },
     { chemin: '/entretien', texte: 'Entretien préventif', droit: 'technique.view_planentretien' },
   ] },
+  { titre: 'Commercial', liens: [
+    { chemin: '/devis', texte: 'Devis de location', droit: 'commercial.view_devis' },
+  ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
     { chemin: '/biens', texte: 'Biens', droit: 'moyens.view_bien' },
@@ -124,6 +128,12 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const [chemin, requete] = route.split('?')
   const param = (nom: string) => new URLSearchParams(requete ?? '').get(nom) ?? undefined
   if (chemin === '/parc') return <Parc peutModifier={a('technique.change_materiel')} />
+  if (chemin === '/devis') return <ListeDevis peutCreer={a('commercial.add_devis')} />
+  if (chemin === '/devis/nouveau') return <FormulaireDevis />
+  const modifDevis = chemin.match(/^\/devis\/(\d+)\/modifier$/)
+  if (modifDevis) return <FormulaireDevis id={Number(modifDevis[1])} />
+  const devis = chemin.match(/^\/devis\/(\d+)$/)
+  if (devis) return <DetailDevis id={Number(devis[1])} />
   if (chemin === '/parc/import') return <ImportParc />
   const materiel = chemin.match(/^\/parc\/(\d+)$/)
   if (materiel) return <HistoriqueMateriel seul id={Number(materiel[1])} />
