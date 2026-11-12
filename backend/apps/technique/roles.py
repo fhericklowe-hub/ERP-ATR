@@ -1,7 +1,7 @@
 """Rôles par défaut du module Technique. Ils restent modifiables dans l'administration."""
 
 LECTURE = ["core.view_site", "core.view_service", "core.view_utilisateur", "referentiels.view_emplacement",
-           "technique.view_materiel", "technique.view_ordrereparation"]
+           "technique.view_materiel", "technique.view_ordrereparation", "technique.view_planentretien"]
 ATELIER = ["technique.add_ordrereparation", "technique.change_ordrereparation"]
 
 ROLES = {
@@ -10,8 +10,16 @@ ROLES = {
     "Technique - Chef d'atelier": LECTURE + ATELIER + [
         "technique.add_materiel", "technique.change_materiel", "technique.piloter_ordrereparation",
         "technique.voir_couts_ordrereparation", "technique.view_reglageatelier", "technique.change_reglageatelier",
-        "technique.add_reglageatelier",
+        "technique.add_reglageatelier", "technique.add_planentretien", "technique.change_planentretien",
     ],
+}
+
+# Droits ajoutés avec l'entretien préventif, pour les rôles créés avant.
+DROITS_ENTRETIEN = {
+    "Technique - Consultation": ["technique.view_planentretien"],
+    "Technique - Mécanicien": ["technique.view_planentretien"],
+    "Technique - Chef d'atelier": ["technique.view_planentretien", "technique.add_planentretien",
+                                   "technique.change_planentretien"],
 }
 
 

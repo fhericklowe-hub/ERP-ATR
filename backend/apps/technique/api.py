@@ -1,5 +1,8 @@
 import datetime
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
+
 from rest_framework import exceptions, mixins, permissions, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,7 +12,7 @@ from apps.core.api import VueMetier
 from apps.core.models import Utilisateur
 
 from . import couts
-from .models import Materiel, OrdreReparation, TempsPasse
+from .models import Materiel, OrdreReparation, PlanEntretien, TempsPasse
 
 HEURES = serializers.DecimalField(max_digits=10, decimal_places=1, min_value=0, allow_null=True)
 KM = serializers.IntegerField(min_value=0, allow_null=True)
@@ -62,6 +65,7 @@ class OrdreSerializer(serializers.ModelSerializer):
     demandeur_nom = serializers.CharField(source="demandeur.__str__", read_only=True)
     mecanicien_nom = serializers.SerializerMethodField()
     cloture_par_nom = serializers.SerializerMethodField()
+    plan_intitule = serializers.CharField(source="plan.intitule", read_only=True, default="")
     pieces = serializers.SerializerMethodField()
     temps = serializers.SerializerMethodField()
     couts = serializers.SerializerMethodField()
@@ -72,7 +76,7 @@ class OrdreSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrdreReparation
         fields = ["id", "numero", "statut", "statut_libelle", "cree_le", "materiel", "materiel_nom", "materiel_code",
-                  "site_nom", "type", "type_libelle", "immobilisant", "description", "demandeur_nom", "mecanicien",
+                  "site_nom", "type", "type_libelle", "immobilisant", "description", "plan", "plan_intitule", "demandeur_nom", "mecanicien",
                   "mecanicien_nom", "compteur_heures", "compteur_km", "diagnostic", "travaux", "demarre_le", "termine_le",
                   "cloture_par_nom", "cloture_le", "motif_annulation", "pieces", "temps", "couts",
                   "peut_saisir_temps", "peut_travailler", "peut_piloter"]
@@ -152,7 +156,7 @@ class OrdreReparationViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     """Ordres de réparation. `?ouvert=1` : ceux sur lesquels on peut encore sortir des pièces."""
 
     serializer_class = OrdreSerializer
-    queryset = OrdreReparation.objects.select_related("materiel__site", "demandeur", "mecanicien", "cloture_par")
+    queryset = OrdreReparation.objects.select_related("materiel__site", "demandeur", "mecanicien", "cloture_par", "plan")
     filterset_fields = ["statut", "type", "materiel", "mecanicien", "materiel__site"]
     search_fields = ["numero", "description", "materiel__code", "materiel__designation", "materiel__immatriculation"]
     ordering_fields = ["cree_le"]
@@ -233,3 +237,72 @@ class OrdreReparationViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
         if not temps:
             raise exceptions.ValidationError({"detail": "Saisie de temps introuvable."})
         return self._transition(request, "retirer_temps", temps)
+
+
+class PlanSerializer(serializers.ModelSerializer):
+    materiel_nom = serializers.CharField(source="materiel.__str__", read_only=True)
+    site_nom = serializers.CharField(source="materiel.site.nom", read_only=True)
+    compteur_heures = serializers.DecimalField(source="materiel.compteur_heures", max_digits=10, decimal_places=1, read_only=True)
+    compteur_km = serializers.IntegerField(source="materiel.compteur_km", read_only=True)
+    situation = serializers.CharField(read_only=True)
+    situation_libelle = serializers.SerializerMethodField()
+    prochaine_date = serializers.DateField(read_only=True)
+    prochaines_heures = serializers.DecimalField(max_digits=10, decimal_places=1, read_only=True)
+    prochain_km = serializers.IntegerField(read_only=True)
+    restes = serializers.SerializerMethodField()
+    ordre_en_cours = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PlanEntretien
+        fields = ["id", "materiel", "materiel_nom", "site_nom", "compteur_heures", "compteur_km", "intitule", "consignes",
+                  "intervalle_heures", "intervalle_km", "intervalle_mois", "dernier_le", "dernier_heures", "dernier_km",
+                  "actif", "situation", "situation_libelle", "prochaine_date", "prochaines_heures", "prochain_km", "restes",
+                  "ordre_en_cours"]
+        extra_kwargs = {"dernier_le": {"required": False}}
+
+    def get_situation_libelle(self, obj) -> str:
+        return PlanEntretien.Situation(obj.situation).label
+
+    def get_restes(self, obj) -> list:
+        return [{"reste": str(reste), "unite": unite} for reste, _, unite in obj.restes()]
+
+    def get_ordre_en_cours(self, obj) -> dict | None:
+        S = OrdreReparation.Statut
+        en_cours = next((o for o in obj.ordres.all() if o.statut in (S.OUVERT, S.EN_COURS)), None)
+        return {"id": en_cours.id, "numero": en_cours.numero} if en_cours else None
+
+    def validate_materiel(self, materiel):
+        if self.instance and self.instance.materiel_id != materiel.id:
+            raise serializers.ValidationError("Le matériel d'un plan d'entretien ne se change pas.")
+        return materiel
+
+    def validate(self, attrs):
+        if not self.instance:
+            attrs.setdefault("dernier_le", timezone.localdate())
+        champs = ("intervalle_heures", "intervalle_km", "intervalle_mois", "dernier_le")
+        plan = PlanEntretien(**{c: attrs.get(c, getattr(self.instance, c, None)) for c in champs})
+        try:
+            plan.clean()
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict if hasattr(e, "error_dict") else {"detail": e.messages})
+        return attrs
+
+
+class PlanEntretienViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+                           mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Plans d'entretien préventif. Pas de suppression : un plan abandonné passe à « non suivi »."""
+
+    serializer_class = PlanSerializer
+    queryset = PlanEntretien.objects.select_related("materiel__site").prefetch_related("ordres")
+    filterset_fields = ["materiel", "actif", "materiel__site", "materiel__type"]
+    search_fields = ["intitule", "materiel__code", "materiel__designation", "materiel__immatriculation"]
+
+    perform_create = VueMetier.perform_create
+    perform_update = VueMetier.perform_update
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def ouvrir_ordre(self, request, pk=None):
+        if not request.user.has_perm("technique.view_planentretien"):
+            raise exceptions.PermissionDenied()
+        ordre = executer_transition(self.get_object(), "ouvrir_ordre", request.user)
+        return Response({"id": ordre.id, "numero": ordre.numero}, status=201)
