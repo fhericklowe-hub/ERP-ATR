@@ -91,3 +91,8 @@ button.lien { background: none; color: var(--vert); padding: 0; border-radius: 0
 .pieces .discret { padding: 0 0 0 8px; }
 .ligne.sortie { grid-template-columns: 3fr 140px auto; }
 .pastille { white-space: nowrap; }
+header nav a[aria-current] { opacity: 1; font-weight: 600; border-bottom: 2px solid #fff; padding-bottom: 2px; }
+.rubriques { display: flex; gap: 4px 20px; flex-wrap: wrap; padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--bord); }
+.rubriques a { text-decoration: none; color: #3f3f46; padding-bottom: 2px; }
+.rubriques a[aria-current] { color: var(--vert); font-weight: 600; border-bottom: 2px solid var(--vert); }
+@media (max-width: 720px) { header { flex-wrap: wrap; } header nav { order: 3; width: 100%; } }
