@@ -9,6 +9,45 @@ from apps.referentiels.models import Article, Unite
 from . import delais
 
 
+class Acheteur(models.Model):
+    """Membre de l'équipe achats à qui des demandes peuvent être attribuées."""
+
+    utilisateur = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="acheteur")
+    disponible = models.BooleanField(
+        default=True, help_text="Décocher pendant une absence : les nouvelles demandes vont aux autres acheteurs."
+    )
+
+    class Meta:
+        ordering = ["utilisateur__last_name", "utilisateur__first_name"]
+
+    def __str__(self):
+        return str(self.utilisateur)
+
+    @classmethod
+    def avec_charge(cls):
+        """Acheteurs avec leur nombre de demandes en cours de traitement."""
+        en_cours = models.Count(
+            "utilisateur__demandes_attribuees",
+            filter=models.Q(utilisateur__demandes_attribuees__statut=DemandeAchat.Statut.ATTENTE_ACHATS),
+        )
+        return (
+            cls.objects.select_related("utilisateur").annotate(en_cours=en_cours)
+            .order_by("utilisateur__last_name", "utilisateur__first_name", "id")
+        )
+
+    @classmethod
+    def choisir(cls):
+        """L'acheteur disponible le moins chargé ; à égalité, celui servi le moins récemment."""
+        dernier = models.Max("utilisateur__demandes_attribuees__recue_le")
+        return (
+            cls.avec_charge()
+            .filter(disponible=True, utilisateur__is_active=True)
+            .annotate(dernier=dernier)
+            .order_by("en_cours", models.F("dernier").asc(nulls_first=True), "id")
+            .first()
+        )
+
+
 class DemandeAchat(Horodate):
     """Demande d'achat et son circuit : service demandeur, direction technique si urgent, achats."""
 
@@ -68,6 +107,10 @@ class DemandeAchat(Horodate):
     echeance_commande = models.DateTimeField("bon de commande attendu avant le", null=True, blank=True, editable=False)
     elements_manquants = models.TextField("éléments manquants", blank=True, editable=False)
     controle_stock = models.CharField(max_length=10, choices=ControleStock.choices, blank=True, default="")
+    acheteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, editable=False, on_delete=models.PROTECT,
+        related_name="demandes_attribuees", verbose_name="acheteur chargé de la demande",
+    )
 
     class Meta:
         verbose_name = "demande d'achat"
@@ -115,6 +158,12 @@ class DemandeAchat(Horodate):
             return utilisateur.has_perm("achats.valider_achats_demandeachat")
         return False
 
+    def peut_traiter(self, utilisateur) -> bool:
+        """Vrai pour l'acheteur chargé de la demande et pour le responsable achats, tant qu'elle est aux achats."""
+        return self.statut == self.Statut.ATTENTE_ACHATS and (
+            self.acheteur_id == utilisateur.id or utilisateur.has_perm("achats.valider_achats_demandeachat")
+        )
+
     def controler_completude(self):
         erreurs = []
         if not self.lignes.exists():
@@ -135,7 +184,12 @@ class DemandeAchat(Horodate):
         self.evenements.create(auteur=utilisateur, action=action, statut=self.statut, commentaire=commentaire)
 
     def _arriver_aux_achats(self):
+        """Entrée dans l'équipe achats : attribution à un acheteur et départ du délai."""
         self.statut = self.Statut.ATTENTE_ACHATS
+        deja = Acheteur.objects.filter(utilisateur_id=self.acheteur_id, disponible=True, utilisateur__is_active=True)
+        if not deja.exists():  # une demande renvoyée puis corrigée revient au même acheteur s'il est disponible
+            choisi = Acheteur.choisir()
+            self.acheteur = choisi.utilisateur if choisi else None
         self.recue_le = timezone.now()
         local = timezone.localtime(self.recue_le)
         if self.urgence == self.Urgence.URGENT:
@@ -160,6 +214,7 @@ class DemandeAchat(Horodate):
         if not self.peut_valider(utilisateur):
             raise PermissionDenied("Vous n'êtes pas le valideur attendu à cette étape.")
         S = self.Statut
+        avant = self.statut
         if self.statut == S.ATTENTE_SERVICE:
             if self.urgence == self.Urgence.URGENT:
                 self.statut = S.ATTENTE_DT
@@ -171,6 +226,11 @@ class DemandeAchat(Horodate):
             self.statut = S.VALIDEE
         self.save()
         self._journal(utilisateur, Evenement.Action.VALIDATION, commentaire)
+        if avant != S.ATTENTE_ACHATS and self.statut == S.ATTENTE_ACHATS:
+            self._journal(
+                utilisateur, Evenement.Action.ATTRIBUTION,
+                f"Attribuée automatiquement à {self.acheteur}" if self.acheteur_id else "Aucun acheteur disponible",
+            )
 
     @transaction.atomic
     def refuser(self, utilisateur, commentaire):
@@ -185,8 +245,8 @@ class DemandeAchat(Horodate):
     @transaction.atomic
     def renvoyer(self, utilisateur, elements_manquants):
         """Le service achats renvoie une fiche incomplète au demandeur."""
-        if self.statut != self.Statut.ATTENTE_ACHATS or not self.peut_valider(utilisateur):
-            raise PermissionDenied("Seul le service achats peut renvoyer une demande qu'il a reçue.")
+        if not self.peut_traiter(utilisateur):
+            raise PermissionDenied("Seul l'acheteur chargé de la demande ou le responsable achats peut la renvoyer.")
         if not elements_manquants.strip():
             raise ValidationError("Indiquez les éléments manquants.")
         self.statut = self.Statut.RENVOYEE
@@ -194,6 +254,15 @@ class DemandeAchat(Horodate):
         self.recue_le = self.echeance_commande = None  # le délai repart à la réception de la fiche complète
         self.save()
         self._journal(utilisateur, Evenement.Action.RENVOI, elements_manquants)
+
+    @transaction.atomic
+    def attribuer(self, utilisateur, acheteur):
+        """Le responsable achats confie la demande à un autre acheteur."""
+        if self.statut != self.Statut.ATTENTE_ACHATS or not utilisateur.has_perm("achats.valider_achats_demandeachat"):
+            raise PermissionDenied("Seul le responsable achats peut attribuer une demande reçue par les achats.")
+        self.acheteur = acheteur.utilisateur
+        self.save()
+        self._journal(utilisateur, Evenement.Action.ATTRIBUTION, f"Attribuée à {acheteur}")
 
 
 class LigneDemandeAchat(models.Model):
@@ -238,6 +307,7 @@ class Evenement(models.Model):
         VALIDATION = "VALIDATION", "Validation"
         REFUS = "REFUS", "Refus"
         RENVOI = "RENVOI", "Renvoi au demandeur"
+        ATTRIBUTION = "ATTRIBUTION", "Attribution à un acheteur"
 
     demande = models.ForeignKey(DemandeAchat, on_delete=models.CASCADE, related_name="evenements")
     action = models.CharField(max_length=12, choices=Action.choices)

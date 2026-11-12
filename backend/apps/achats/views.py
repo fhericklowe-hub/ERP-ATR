@@ -5,8 +5,21 @@ from rest_framework import exceptions, mixins, parsers, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import DemandeAchat, PieceJointe
-from .serializers import DemandeAchatSerializer, PieceJointeSerializer
+from apps.core.permissions import DroitsModele
+
+from .models import Acheteur, DemandeAchat, PieceJointe
+from .serializers import AcheteurSerializer, DemandeAchatSerializer, PieceJointeSerializer
+
+
+class AcheteurViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    """Équipe achats : charge en cours et disponibilité de chaque acheteur."""
+
+    serializer_class = AcheteurSerializer
+    permission_classes = [DroitsModele]
+    queryset = Acheteur.objects.none()  # sert au contrôle des droits ; la liste réelle vient de get_queryset
+
+    def get_queryset(self):
+        return Acheteur.avec_charge()
 
 
 class DemandeAchatViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
@@ -14,10 +27,10 @@ class DemandeAchatViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
     """Demandes d'achat. Pas de suppression : une demande reste dans l'historique."""
 
     serializer_class = DemandeAchatSerializer
-    queryset = DemandeAchat.objects.select_related("demandeur", "service", "site").prefetch_related(
+    queryset = DemandeAchat.objects.select_related("demandeur", "service", "site", "acheteur").prefetch_related(
         "lignes__unite", "pieces_jointes", "evenements__auteur"
     )
-    filterset_fields = ["statut", "urgence", "service", "site", "demandeur"]
+    filterset_fields = ["statut", "urgence", "service", "site", "demandeur", "acheteur"]
     search_fields = ["numero", "ancien_numero", "numero_or", "equipement_designation", "lignes__designation"]
     ordering_fields = ["cree_le", "date_besoin", "urgence", "echeance_commande"]
 
@@ -37,7 +50,7 @@ class DemandeAchatViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
         demande, u = self.get_object(), request.user
         if demande.modifiable and demande.demandeur_id != u.id:
             raise exceptions.PermissionDenied("Seul le demandeur peut modifier sa demande.")
-        if not demande.modifiable and not u.has_perm("achats.valider_achats_demandeachat"):
+        if not demande.modifiable and not demande.peut_traiter(u):
             raise exceptions.PermissionDenied("Cette demande a été soumise et ne peut plus être modifiée.")
         return super().update(request, *args, **kwargs)
 
@@ -72,6 +85,13 @@ class DemandeAchatViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
     @action(**transition)
     def renvoyer(self, request, pk=None):
         return self._transition(request, "renvoyer", request.data.get("elements_manquants", ""))
+
+    @action(**transition)
+    def attribuer(self, request, pk=None):
+        acheteur = Acheteur.objects.select_related("utilisateur").filter(id=request.data.get("acheteur")).first()
+        if not acheteur:
+            raise exceptions.ValidationError({"detail": ["Choisissez un acheteur."]})
+        return self._transition(request, "attribuer", acheteur)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated],
             parser_classes=[parsers.MultiPartParser], url_path="pieces-jointes")

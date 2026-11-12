@@ -10,8 +10,10 @@ ROLES = {
         "achats.view_demandeachat", "achats.voir_toutes_demandeachat",
         "achats.valider_direction_technique_demandeachat",
     ],
+    "Achats - Acheteur": LECTURE + SAISIE + ["achats.voir_toutes_demandeachat", "achats.view_acheteur"],
     "Achats - Responsable achats": LECTURE + SAISIE + [
         "achats.voir_toutes_demandeachat", "achats.valider_achats_demandeachat",
+        "achats.view_acheteur", "achats.change_acheteur",
     ],
 }
 

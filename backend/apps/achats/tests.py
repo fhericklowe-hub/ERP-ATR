@@ -9,7 +9,7 @@ from apps.core.models import Service, Site, Utilisateur
 from apps.referentiels.models import Unite
 
 from . import delais
-from .models import DemandeAchat
+from .models import Acheteur, DemandeAchat
 
 
 class DelaisTests(SimpleTestCase):
@@ -86,7 +86,7 @@ class DemandeAchatTests(APITestCase):
         self.assertIsNotNone(r.data["echeance_commande"])
         r = self.agir(self.achats, d["id"], "valider")
         self.assertEqual(r.data["statut"], "VALIDEE")
-        self.assertEqual([e["action"] for e in r.data["evenements"]], ["SOUMISSION", "VALIDATION", "VALIDATION"])
+        self.assertEqual([e["action"] for e in r.data["evenements"]], ["SOUMISSION", "VALIDATION", "ATTRIBUTION", "VALIDATION"])
 
     def test_circuit_urgent_passe_par_le_directeur_technique(self):
         d = self.creer(urgence=1, justification_urgence="Grue 80T à l'arrêt chez le client")
@@ -142,6 +142,7 @@ class DemandeAchatTests(APITestCase):
     def test_les_achats_renseignent_le_controle_de_stock(self):
         d = self.creer()
         self.agir(self.demandeur, d["id"], "soumettre")
+        self.agir(self.chef, d["id"], "valider")
         self.client.force_authenticate(self.achats)
         r = self.client.patch(f"/api/achats/demandes/{d['id']}/", {"controle_stock": "NON_DISPO"}, format="json")
         self.assertEqual(r.status_code, 200, r.data)
@@ -156,3 +157,84 @@ class DemandeAchatTests(APITestCase):
         self.client.force_authenticate(self.autre)
         self.assertEqual(self.client.get(f"/api/achats/demandes/{d['id']}/").status_code, 404)
         self.assertEqual(self.agir(self.autre, d["id"], "soumettre").status_code, 404)
+
+
+class AttributionTests(DemandeAchatTests):
+    """Attribution des demandes aux acheteurs à leur arrivée aux achats."""
+
+    def setUp(self):
+        super().setUp()
+
+        def acheteur(nom):
+            u = Utilisateur.objects.create_user(nom, password="x")
+            u.groups.add(Group.objects.get(name="Achats - Acheteur"))
+            return Acheteur.objects.create(utilisateur=u)
+
+        self.a1, self.a2 = acheteur("acheteur1"), acheteur("acheteur2")
+
+    def envoyer_aux_achats(self):
+        d = self.creer()
+        self.agir(self.demandeur, d["id"], "soumettre")
+        return self.agir(self.chef, d["id"], "valider").data
+
+    def test_repartition_selon_la_charge(self):
+        attribuees = [self.envoyer_aux_achats()["acheteur"] for _ in range(4)]
+        self.assertEqual(attribuees.count(self.a1.utilisateur_id), 2)
+        self.assertEqual(attribuees.count(self.a2.utilisateur_id), 2)
+
+    def test_un_acheteur_indisponible_ne_recoit_rien(self):
+        self.a1.disponible = False
+        self.a1.save()
+        self.assertEqual({self.envoyer_aux_achats()["acheteur"] for _ in range(3)}, {self.a2.utilisateur_id})
+
+    def test_le_moins_charge_recoit_la_demande(self):
+        premiere = self.envoyer_aux_achats()
+        charge, libre = (self.a1, self.a2) if premiere["acheteur"] == self.a1.utilisateur_id else (self.a2, self.a1)
+        self.assertEqual(self.envoyer_aux_achats()["acheteur"], libre.utilisateur_id)
+        # la demande du premier acheteur est validée : il redevient le moins chargé
+        self.agir(self.achats, premiere["id"], "valider")
+        self.assertEqual(self.envoyer_aux_achats()["acheteur"], charge.utilisateur_id)
+
+    def test_sans_acheteur_disponible_la_demande_reste_a_attribuer(self):
+        Acheteur.objects.update(disponible=False)
+        d = self.envoyer_aux_achats()
+        self.assertIsNone(d["acheteur"])
+        self.assertEqual(d["evenements"][-1]["commentaire"], "Aucun acheteur disponible")
+
+    def test_le_responsable_achats_reattribue(self):
+        d = self.envoyer_aux_achats()
+        autre = self.a2 if d["acheteur"] == self.a1.utilisateur_id else self.a1
+        self.assertEqual(self.agir(autre.utilisateur, d["id"], "attribuer", acheteur=autre.id).status_code, 403)
+        r = self.agir(self.achats, d["id"], "attribuer", acheteur=autre.id)
+        self.assertEqual(r.data["acheteur"], autre.utilisateur_id)
+
+    def test_l_acheteur_traite_mais_ne_valide_pas(self):
+        d = self.envoyer_aux_achats()
+        acheteur = Utilisateur.objects.get(id=d["acheteur"])
+        autre = (self.a2 if acheteur == self.a1.utilisateur else self.a1).utilisateur
+        self.client.force_authenticate(autre)
+        r = self.client.patch(f"/api/achats/demandes/{d['id']}/", {"controle_stock": "DISPO"}, format="json")
+        self.assertEqual(r.status_code, 403)
+        self.client.force_authenticate(acheteur)
+        r = self.client.patch(f"/api/achats/demandes/{d['id']}/", {"controle_stock": "DISPO"}, format="json")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(self.agir(acheteur, d["id"], "valider").status_code, 403)
+        self.assertEqual(self.agir(acheteur, d["id"], "renvoyer", elements_manquants="Photo floue").data["statut"], "RENVOYEE")
+
+    def test_une_demande_corrigee_revient_au_meme_acheteur(self):
+        d = self.envoyer_aux_achats()
+        self.agir(self.achats, d["id"], "renvoyer", elements_manquants="Référence")
+        self.envoyer_aux_achats()  # entre-temps, l'autre acheteur reçoit une demande
+        self.agir(self.demandeur, d["id"], "soumettre")
+        self.assertEqual(self.agir(self.chef, d["id"], "valider").data["acheteur"], d["acheteur"])
+
+    def test_charge_de_l_equipe(self):
+        self.envoyer_aux_achats()
+        self.client.force_authenticate(self.achats)
+        r = self.client.get("/api/achats/acheteurs/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(sorted(a["en_cours"] for a in r.data["results"]), [0, 1])
+        r = self.client.patch(f"/api/achats/acheteurs/{self.a1.id}/", {"disponible": False}, format="json")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.client.force_authenticate(self.demandeur)
+        self.assertEqual(self.client.get("/api/achats/acheteurs/").status_code, 403)

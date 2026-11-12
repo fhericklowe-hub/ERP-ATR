@@ -48,6 +48,9 @@ export type Demande = {
   controle_stock: string
   modifiable: boolean
   peut_valider: boolean
+  peut_traiter: boolean
+  acheteur: number | null
+  acheteur_nom: string
   lignes: Ligne[]
   pieces_jointes: { id: number; fichier: string }[]
   evenements: Evenement[]
@@ -58,3 +61,5 @@ export const URGENCES: Record<number, string> = { 1: 'Urgent', 2: 'Normal', 3: '
 export const dateFr = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR') : '')
 export const dateHeureFr = (d: string | null) =>
   d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : ''
+
+export type Acheteur = { id: number; utilisateur: number; nom: string; disponible: boolean; en_cours: number }

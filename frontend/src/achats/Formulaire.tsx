@@ -6,7 +6,7 @@ const ligneVide = (): Ligne => ({ designation: '', reference_constructeur: '', q
 
 type Brouillon = Omit<Demande, 'id' | 'numero' | 'demandeur' | 'statut' | 'statut_libelle' | 'demandeur_nom' | 'service_nom' | 'site_nom'
   | 'recue_le' | 'echeance_commande' | 'en_retard' | 'elements_manquants' | 'controle_stock' | 'modifiable'
-  | 'peut_valider' | 'pieces_jointes' | 'evenements' | 'date_demande' | 'ancien_numero'>
+  | 'peut_valider' | 'peut_traiter' | 'acheteur' | 'acheteur_nom' | 'pieces_jointes' | 'evenements' | 'date_demande' | 'ancien_numero'>
 
 export default function Formulaire({ moi, id }: { moi: Utilisateur; id?: number }) {
   const [sites, setSites] = useState<Site[]>([])

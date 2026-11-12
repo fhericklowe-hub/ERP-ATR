@@ -59,13 +59,18 @@ sans le droit correspondant.
 ## Achats : demande d'achat
 
 Circuit : brouillon, validation par le responsable du service demandeur (désigné sur le service dans
-l'administration), validation par le directeur technique si l'urgence est de niveau 1, puis validation
-par les achats. Les achats peuvent renvoyer une fiche incomplète au demandeur.
+l'administration), validation par le directeur technique si l'urgence est de niveau 1, puis traitement
+par les achats.
 
 Le délai d'émission du bon de commande (4 h ouvrées, 2 ou 3 jours ouvrés selon l'urgence) démarre à la
 réception de la fiche complète par les achats. Horaires de travail : du lundi au vendredi de 8 h à 12 h
 et de 13 h à 17 h, le samedi de 8 h à 12 h, hors jours fériés. Les délais en jours ne comptent pas le
 samedi (voir `backend/apps/achats/delais.py`).
 
-Trois rôles sont créés à l'installation : « Achats - Demandeur », « Achats - Directeur technique » et
-« Achats - Responsable achats ».
+À son arrivée aux achats, la demande est attribuée automatiquement à l'acheteur disponible qui a le moins
+de demandes en cours. L'acheteur contrôle la fiche et le stock, et peut la renvoyer au demandeur ; le
+responsable achats valide ou refuse, et peut réattribuer. Les acheteurs et leur disponibilité se gèrent
+dans l'administration (Achats > Acheteurs).
+
+Quatre rôles sont créés à l'installation : « Achats - Demandeur », « Achats - Directeur technique »,
+« Achats - Acheteur » et « Achats - Responsable achats ».

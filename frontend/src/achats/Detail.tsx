@@ -1,17 +1,24 @@
 import { type ChangeEvent, useCallback, useEffect, useState } from 'react'
-import { api } from '../api'
-import { type Demande, URGENCES, dateFr, dateHeureFr } from './types'
+import { api, type Page } from '../api'
+import { type Acheteur, type Demande, URGENCES, dateFr, dateHeureFr } from './types'
 
 export default function Detail({ id, moiId }: { id: number; moiId: number }) {
   const [d, setD] = useState<Demande | null>(null)
   const [erreur, setErreur] = useState('')
   const [texte, setTexte] = useState('')
   const [enCours, setEnCours] = useState(false)
+  const [acheteurs, setAcheteurs] = useState<Acheteur[]>([])
 
   const charger = useCallback(() => {
     api<Demande>(`/achats/demandes/${id}/`).then(setD).catch((e: Error) => setErreur(e.message))
   }, [id])
   useEffect(charger, [charger])
+
+  // Seul le responsable achats réattribue : il a besoin de la charge de l'équipe.
+  const responsable = d?.statut === 'ATT_ACHATS' && d.peut_valider
+  useEffect(() => {
+    if (responsable) api<Page<Acheteur>>('/achats/acheteurs/').then((p) => setAcheteurs(p.results)).catch(() => {})
+  }, [responsable, d?.acheteur])
 
   async function agir(action: string, corps: object = {}) {
     setEnCours(true)
@@ -51,6 +58,7 @@ export default function Detail({ id, moiId }: { id: number; moiId: number }) {
   if (!d) return erreur ? <p className="erreur">{erreur}</p> : <p>Chargement…</p>
   const mienne = d.modifiable && d.demandeur === moiId
   const auxAchats = d.statut === 'ATT_ACHATS' && d.peut_valider
+  const reattribuable = auxAchats && acheteurs.length > 0
 
   return (
     <div className="fiche">
@@ -108,10 +116,29 @@ export default function Detail({ id, moiId }: { id: number; moiId: number }) {
         </label>
       )}
 
-      {auxAchats && (
+      {(d.acheteur_nom || d.statut === 'ATT_ACHATS') && (
+        <>
+          <h3>Acheteur</h3>
+          <p className={d.acheteur_nom ? '' : 'erreur'}>{d.acheteur_nom || 'Aucun acheteur disponible : demande à attribuer.'}</p>
+          {reattribuable && (
+            <label className="filtre">Attribuer à
+              <select value="" onChange={(e) => e.target.value && agir('attribuer', { acheteur: Number(e.target.value) })}>
+                <option value="">Choisir un acheteur…</option>
+                {acheteurs.filter((a) => a.utilisateur !== d.acheteur).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.nom} · {a.en_cours} en cours{a.disponible ? '' : ' · absent'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </>
+      )}
+
+      {d.peut_traiter && (
         <>
           <h3>Contrôle stock</h3>
-          <select value={d.controle_stock} onChange={(e) => controleStock(e.target.value)}>
+          <select className="filtre" value={d.controle_stock} onChange={(e) => controleStock(e.target.value)}>
             <option value="">Non contrôlé</option>
             <option value="DISPO">Disponible</option>
             <option value="NON_DISPO">Non disponible</option>
@@ -128,20 +155,22 @@ export default function Detail({ id, moiId }: { id: number; moiId: number }) {
         </div>
       )}
 
-      {d.peut_valider && (
+      {(d.peut_valider || d.peut_traiter) && (
         <fieldset>
-          <legend>Votre décision</legend>
-          <label>Commentaire, motif du refus ou éléments manquants
+          <legend>{d.peut_valider ? 'Votre décision' : 'Traitement de la demande'}</legend>
+          <label>{d.peut_valider ? 'Commentaire, motif du refus ou éléments manquants' : 'Éléments manquants'}
             <textarea value={texte} onChange={(e) => setTexte(e.target.value)} />
           </label>
           <div className="actions">
-            <button disabled={enCours} onClick={() => agir('valider', { commentaire: texte })}>Valider</button>
-            {auxAchats && (
+            {d.peut_valider && <button disabled={enCours} onClick={() => agir('valider', { commentaire: texte })}>Valider</button>}
+            {d.peut_traiter && (
               <button className="secondaire" disabled={enCours} onClick={() => agir('renvoyer', { elements_manquants: texte })}>
                 Renvoyer au demandeur (incomplète)
               </button>
             )}
-            <button className="danger" disabled={enCours} onClick={() => agir('refuser', { commentaire: texte })}>Refuser</button>
+            {d.peut_valider && (
+              <button className="danger" disabled={enCours} onClick={() => agir('refuser', { commentaire: texte })}>Refuser</button>
+            )}
           </div>
         </fieldset>
       )}

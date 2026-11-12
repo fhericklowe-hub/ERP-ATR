@@ -46,7 +46,7 @@ export default function Liste() {
             <thead>
               <tr>
                 <th>N°</th><th>Date</th><th>Demandeur</th><th>Service</th><th>Site</th>
-                <th>Urgence</th><th>Statut</th><th>BC attendu avant</th>
+                <th>Urgence</th><th>Statut</th><th>Acheteur</th><th>BC attendu avant</th>
               </tr>
             </thead>
             <tbody>
@@ -59,6 +59,7 @@ export default function Liste() {
                   <td>{d.site_nom}</td>
                   <td><span className={`pastille u${d.urgence}`}>{URGENCES[d.urgence]}</span></td>
                   <td>{d.statut_libelle}{d.peut_valider && <strong> · à valider</strong>}</td>
+                  <td>{d.acheteur_nom}</td>
                   <td className={d.en_retard ? 'erreur' : ''}>
                     {dateHeureFr(d.echeance_commande)}{d.en_retard && ' (en retard)'}
                   </td>

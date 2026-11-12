@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import DemandeAchat, Evenement, LigneDemandeAchat, PieceJointe
+from .models import Acheteur, DemandeAchat, Evenement, LigneDemandeAchat, PieceJointe
 
 
 class LigneSerializer(serializers.ModelSerializer):
@@ -28,6 +28,16 @@ class EvenementSerializer(serializers.ModelSerializer):
         fields = ["id", "action", "action_libelle", "statut", "auteur", "auteur_nom", "date", "commentaire"]
 
 
+class AcheteurSerializer(serializers.ModelSerializer):
+    nom = serializers.CharField(source="utilisateur.__str__", read_only=True)
+    en_cours = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Acheteur
+        fields = ["id", "utilisateur", "nom", "disponible", "en_cours"]
+        read_only_fields = ["utilisateur"]
+
+
 class DemandeAchatSerializer(serializers.ModelSerializer):
     lignes = LigneSerializer(many=True)
     pieces_jointes = PieceJointeSerializer(many=True, read_only=True)
@@ -39,6 +49,8 @@ class DemandeAchatSerializer(serializers.ModelSerializer):
     en_retard = serializers.BooleanField(read_only=True)
     modifiable = serializers.BooleanField(read_only=True)
     peut_valider = serializers.SerializerMethodField()
+    peut_traiter = serializers.SerializerMethodField()
+    acheteur_nom = serializers.SerializerMethodField()
 
     class Meta:
         model = DemandeAchat
@@ -50,12 +62,18 @@ class DemandeAchatSerializer(serializers.ModelSerializer):
             "equipement_serie", "activite", "activite_autre",
             "urgence", "justification_urgence",
             "recue_le", "echeance_commande", "en_retard", "elements_manquants", "controle_stock",
-            "modifiable", "peut_valider", "lignes", "pieces_jointes", "evenements",
+            "acheteur", "acheteur_nom", "modifiable", "peut_valider", "peut_traiter", "lignes", "pieces_jointes", "evenements",
         ]
-        read_only_fields = ["numero", "statut", "demandeur", "recue_le", "echeance_commande", "elements_manquants"]
+        read_only_fields = ["numero", "statut", "demandeur", "acheteur", "recue_le", "echeance_commande", "elements_manquants"]
 
     def get_peut_valider(self, obj) -> bool:
         return obj.peut_valider(self.context["request"].user)
+
+    def get_peut_traiter(self, obj) -> bool:
+        return obj.peut_traiter(self.context["request"].user)
+
+    def get_acheteur_nom(self, obj) -> str:
+        return str(obj.acheteur) if obj.acheteur_id else ""
 
     def validate(self, attrs):
         if self.instance and not self.instance.modifiable:
