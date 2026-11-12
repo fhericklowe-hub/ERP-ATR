@@ -242,3 +242,4 @@ class Evenement(models.Model):
     class Meta:
         verbose_name = "événement d'intervention"
         ordering = ["id"]
+from .contrats import Contrat, Echeance  # noqa: E402,F401
