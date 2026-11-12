@@ -64,6 +64,40 @@ function Connexion({ onConnecte }: { onConnecte: () => void }) {
   )
 }
 
+type Lien = { chemin: string; texte: string; droit: string; aussi?: string[] }
+/** Le menu : un onglet par module, et sous chaque onglet ses rubriques. `aussi` : autres adresses de la même rubrique. */
+const MENU: { titre: string; liens: Lien[] }[] = [
+  { titre: 'Achats', liens: [
+    { chemin: '/', texte: "Demandes d'achat", droit: 'achats.view_demandeachat', aussi: ['/demandes'] },
+    { chemin: '/budget', texte: 'Demandes liées au budget', droit: 'achats.view_demandebudget' },
+    { chemin: '/commandes', texte: 'Bons de commande', droit: 'achats.view_boncommande' },
+    { chemin: '/receptions', texte: 'Bons de réception', droit: 'achats.view_bonreception' },
+  ] },
+  { titre: 'Stock', liens: [
+    { chemin: '/stock/demandes', texte: 'Demandes de sortie', droit: 'stock.view_demandesortie' },
+    { chemin: '/stock', texte: 'État du stock', droit: 'stock.view_mouvement', aussi: ['/stock/import'] },
+    { chemin: '/stock/sorties', texte: 'Bons de sortie', droit: 'stock.view_bonsortie' },
+  ] },
+  { titre: 'Technique', liens: [
+    { chemin: '/parc', texte: 'Parc de matériels', droit: 'technique.view_materiel' },
+    { chemin: '/ordres', texte: 'Ordres de réparation', droit: 'technique.view_ordrereparation' },
+  ] },
+  { titre: 'Moyens généraux', liens: [
+    { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
+    { chemin: '/biens', texte: 'Biens', droit: 'moyens.view_bien' },
+    { chemin: '/echeances', texte: 'Échéances', droit: 'moyens.view_echeance' },
+    { chemin: '/contrats', texte: 'Contrats', droit: 'moyens.view_contrat' },
+  ] },
+]
+
+/** La rubrique à laquelle appartient une adresse : la plus précise de celles dont l'adresse commence pareil. */
+function rubrique(chemin: string): Lien | undefined {
+  const debute = (base: string) => chemin === base || (base !== '/' && chemin.startsWith(`${base}/`))
+  return MENU.flatMap((m) => m.liens)
+    .filter((l) => debute(l.chemin) || (l.aussi ?? []).some(debute))
+    .sort((x, y) => y.chemin.length - x.chemin.length)[0]
+}
+
 function useRoute() {
   const [hash, setHash] = useState(location.hash)
   useEffect(() => {
@@ -74,8 +108,7 @@ function useRoute() {
   return hash.replace(/^#/, '') || '/'
 }
 
-function Page({ moi }: { moi: Utilisateur }) {
-  const route = useRoute()
+function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const a = (droit: string) => moi.droits.includes(droit)
   if (route === '/interventions') return <ListeInterventions />
   if (route === '/interventions/nouvelle') return <FormulaireIntervention moi={moi} />
@@ -103,8 +136,13 @@ function Page({ moi }: { moi: Utilisateur }) {
   if (route === '/echeances') return <Echeances />
   if (route === '/contrats') return <Contrats />
   if (route === '/biens') return <Biens peutModifier={a('moyens.change_bien')} />
-  if (route === '/' && !a('achats.view_demandeachat') && a('moyens.view_demandeintervention')) return <ListeInterventions />
-  if (route === '/' && !a('achats.view_demandeachat') && a('stock.view_demandesortie')) return <ListeDemandes />
+  if (route === '/' && !a('achats.view_demandeachat')) {
+    // Sans accès aux demandes d'achat, l'accueil est la première rubrique à laquelle l'utilisateur a droit.
+    const premiere = MENU.flatMap((m) => m.liens).find((l) => a(l.droit))
+    if (!premiere) return <p>Aucune rubrique ne vous est ouverte pour l'instant. Demandez vos droits à l'administrateur.</p>
+    location.replace(`#${premiere.chemin}`)
+    return null
+  }
   if (route === '/demandes/nouvelle') return <Formulaire moi={moi} />
   const modif = route.match(/^\/demandes\/(\d+)\/modifier$/)
   if (modif) return <Formulaire moi={moi} id={Number(modif[1])} />
@@ -138,6 +176,7 @@ function Page({ moi }: { moi: Utilisateur }) {
 export default function App() {
   const [connecte, setConnecte] = useState(estConnecte())
   const [moi, setMoi] = useState<Utilisateur | null>(null)
+  const route = useRoute()
 
   useEffect(() => {
     if (!connecte) return
@@ -155,29 +194,31 @@ export default function App() {
   }
 
   const a = (droit: string) => !!moi && moi.droits.includes(droit)
+  const active = rubrique(route.split('?')[0])
+  const modules = MENU.map((m) => ({ ...m, liens: m.liens.filter((l) => a(l.droit)) })).filter((m) => m.liens.length > 0)
+  const moduleActif = modules.find((m) => m.liens.some((l) => l.chemin === active?.chemin))
 
   return (
     <>
       <header>
         <a href="#/" className="marque"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
-        <nav>
-          {a('achats.view_demandeachat') && <a href="#/">Demandes d'achat</a>}
-          {a('achats.view_demandebudget') && <a href="#/budget">Demandes budget</a>}
-          {a('achats.view_boncommande') && <a href="#/commandes">Bons de commande</a>}
-          {a('achats.view_bonreception') && <a href="#/receptions">Bons de réception</a>}
-          {a('technique.view_materiel') && <a href="#/parc">Parc</a>}
-          {a('technique.view_ordrereparation') && <a href="#/ordres">Ordres de réparation</a>}
-          {a('stock.view_demandesortie') && <a href="#/stock/demandes">Demandes de sortie</a>}
-          {a('stock.view_mouvement') && <a href="#/stock">Stock</a>}
-          {a('moyens.view_demandeintervention') && <a href="#/interventions">Interventions</a>}
-          {a('moyens.view_bien') && <a href="#/biens">Biens</a>}
-          {a('moyens.view_echeance') && <a href="#/echeances">Échéances</a>}
+        <nav aria-label="Modules">
+          {modules.map((m) => (
+            <a key={m.titre} href={`#${m.liens[0].chemin}`} aria-current={m === moduleActif ? 'page' : undefined}>{m.titre}</a>
+          ))}
         </nav>
         <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
         <button onClick={quitter}>Se déconnecter</button>
       </header>
+      {moduleActif && moduleActif.liens.length > 1 && (
+        <nav className="rubriques" aria-label={moduleActif.titre}>
+          {moduleActif.liens.map((l) => (
+            <a key={l.chemin} href={`#${l.chemin}`} aria-current={l.chemin === active?.chemin ? 'page' : undefined}>{l.texte}</a>
+          ))}
+        </nav>
+      )}
       <main>
-        {moi && <Page moi={moi} />}
+        {moi && <Page moi={moi} route={route} />}
       </main>
     </>
   )
