@@ -1,0 +1,58 @@
+import type { Evenement } from './types'
+
+export type LigneCommande = {
+  id?: number
+  reference: string
+  designation: string
+  quantite: string
+  prix_unitaire: string
+  remise: string
+  taux_tva: string
+  prix_net?: string
+  montant_ht?: string
+}
+
+export type Totaux = {
+  ventilation: { taux: string; base_ht: string; tva: string; ttc: string }[]
+  total_ht: string
+  total_tva: string
+  total_ttc: string
+  en_lettres: string
+}
+
+export type Commande = {
+  id: number
+  numero: string
+  ancien_numero: string
+  statut: string
+  statut_libelle: string
+  date: string
+  demande: number
+  demande_numero: string
+  fournisseur: number | ''
+  fournisseur_nom: string
+  reference_fournisseur: string
+  objet: string
+  site: number | ''
+  site_nom: string
+  service: number | ''
+  service_nom: string
+  acheteur_nom: string
+  date_livraison: string | null
+  transport: string
+  adresse_livraison: string
+  echeance: string
+  mode_reglement: string
+  mode_reglement_libelle: string
+  transmis_le: string | null
+  totaux: Totaux
+  modifiable: boolean
+  definitif: boolean
+  peut_valider: boolean
+  peut_preparer: boolean
+  peut_annuler: boolean
+  lignes: LigneCommande[]
+  evenements: Evenement[]
+}
+
+export const montant = (n: string | number) => Math.round(Number(n)).toLocaleString('fr-FR')

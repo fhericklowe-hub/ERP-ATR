@@ -50,7 +50,7 @@ export class ErreurApi extends Error {
   }
 }
 
-export async function api<T>(chemin: string, options: RequestInit = {}): Promise<T> {
+async function appeler(chemin: string, options: RequestInit = {}): Promise<Response> {
   const appel = () =>
     fetch(`/api${chemin}`, {
       ...options,
@@ -66,14 +66,32 @@ export async function api<T>(chemin: string, options: RequestInit = {}): Promise
     deconnecter()
     throw new ErreurApi(401, 'Session expirée.')
   }
-  if (r.status === 403) throw new ErreurApi(403, "Vous n'avez pas le droit d'accéder à ces données.")
+  if (r.status === 403) throw new ErreurApi(403, "Vous n'avez pas le droit d'effectuer cette action.")
   if (!r.ok) {
     // L'API renvoie soit {detail: ...}, soit une erreur par champ.
     const corps = await r.json().catch(() => null)
-    const messages = corps ? Object.values(corps).flat().map(String) : []
+    const messages = corps ? Object.values(corps).flat().map((m) => (typeof m === 'string' ? m : JSON.stringify(m))) : []
     throw new ErreurApi(r.status, messages.join(' ') || 'Une erreur est survenue.')
   }
+  return r
+}
+
+export async function api<T>(chemin: string, options: RequestInit = {}): Promise<T> {
+  const r = await appeler(chemin, options)
   return r.status === 204 ? (undefined as T) : r.json()
+}
+
+/** Ouvre dans un nouvel onglet un fichier protégé par la connexion (un PDF par exemple). */
+export async function ouvrirFichier(chemin: string) {
+  const onglet = window.open('', '_blank')
+  try {
+    const url = URL.createObjectURL(await (await appeler(chemin)).blob())
+    if (onglet) onglet.location.href = url
+    else location.href = url
+  } catch (e) {
+    onglet?.close()
+    throw e
+  }
 }
 
 export type Page<T> = { count: number; results: T[] }
@@ -92,3 +110,4 @@ export type Utilisateur = {
 export type Service = { id: number; code: string; nom: string }
 export type Unite = { id: number; code: string; nom: string }
 export type Site = { id: number; code: string; nom: string; ville: string; est_siege: boolean; actif: boolean }
+export type Tiers = { id: number; code: string; raison_sociale: string }

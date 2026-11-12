@@ -1,5 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import Detail from './achats/Detail'
+import DetailCommande from './achats/DetailCommande'
+import FormulaireCommande from './achats/FormulaireCommande'
+import ListeCommandes from './achats/ListeCommandes'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
 import { api, connecter, deconnecter, estConnecte, type Utilisateur } from './api'
@@ -58,7 +61,14 @@ function Page({ moi }: { moi: Utilisateur }) {
   const modif = route.match(/^\/demandes\/(\d+)\/modifier$/)
   if (modif) return <Formulaire moi={moi} id={Number(modif[1])} />
   const detail = route.match(/^\/demandes\/(\d+)$/)
-  if (detail) return <Detail id={Number(detail[1])} moiId={moi.id} />
+  if (detail) return <Detail id={Number(detail[1])} moiId={moi.id} droits={moi.droits} />
+  if (route === '/commandes') return <ListeCommandes />
+  const nouveauBon = route.match(/^\/demandes\/(\d+)\/commander$/)
+  if (nouveauBon) return <FormulaireCommande demandeId={Number(nouveauBon[1])} />
+  const modifBon = route.match(/^\/commandes\/(\d+)\/modifier$/)
+  if (modifBon) return <FormulaireCommande id={Number(modifBon[1])} />
+  const bon = route.match(/^\/commandes\/(\d+)$/)
+  if (bon) return <DetailCommande id={Number(bon[1])} />
   return <Liste />
 }
 
@@ -85,6 +95,10 @@ export default function App() {
     <>
       <header>
         <a href="#/"><strong>ERP</strong></a>
+        <nav>
+          <a href="#/">Demandes d'achat</a>
+          <a href="#/commandes">Bons de commande</a>
+        </nav>
         <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
         <button onClick={quitter}>Se déconnecter</button>
       </header>

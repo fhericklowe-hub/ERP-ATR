@@ -74,6 +74,38 @@ class Compteur(models.Model):
         return compteur.valeur
 
 
+class Societe(models.Model):
+    """Coordonnées de l'entreprise, imprimées sur les documents. Une seule fiche."""
+
+    nom = models.CharField(max_length=150)
+    forme_capital = models.CharField("forme et capital", max_length=150, blank=True)
+    adresse = models.CharField("siège social", max_length=255, blank=True)
+    rccm = models.CharField("RCCM", max_length=60, blank=True)
+    compte_contribuable = models.CharField("n° compte contribuable", max_length=30, blank=True)
+    regime_imposition = models.CharField("régime d'imposition", max_length=60, blank=True)
+    centre_impots = models.CharField("centre des impôts", max_length=60, blank=True)
+    telephone = models.CharField("téléphone", max_length=80, blank=True)
+    email = models.EmailField(blank=True)
+    banque = models.CharField("coordonnées bancaires", max_length=120, blank=True)
+    logo = models.ImageField(upload_to="societe/", blank=True)
+    devise = models.CharField(max_length=5, default="XOF")
+    taux_tva = models.DecimalField("taux de TVA par défaut (%)", max_digits=5, decimal_places=2, default=18)
+
+    class Meta:
+        verbose_name = "société"
+
+    def __str__(self):
+        return self.nom
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def courante(cls):
+        return cls.objects.first() or cls(nom="Société à renseigner")
+
+
 class Utilisateur(AbstractUser):
     """Compte utilisateur. Les rôles sont les groupes Django, qui portent les droits."""
 

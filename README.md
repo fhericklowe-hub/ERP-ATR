@@ -74,3 +74,16 @@ dans l'administration (Achats > Acheteurs).
 
 Quatre rôles sont créés à l'installation : « Achats - Demandeur », « Achats - Directeur technique »,
 « Achats - Acheteur » et « Achats - Responsable achats ».
+
+## Achats : bon de commande
+
+Un bon de commande se crée depuis une demande d'achat validée et reprend ses articles. Il est validé
+dans l'application par le responsable achats, puis par le contrôleur de gestion, dans cet ordre. Un
+refus le renvoie à l'acheteur pour correction. Une fois validé deux fois, son PDF peut être imprimé,
+signé et transmis au fournisseur ; avant, le PDF porte la mention PROJET.
+
+Les montants sont arrondis au franc. La TVA se règle par ligne (18 % par défaut). Les coordonnées et le
+logo imprimés se renseignent dans l'administration (Socle > Société). Les fournisseurs se créent dans
+l'administration (Référentiels > Tiers).
+
+Rôle supplémentaire : « Achats - Contrôleur de gestion ».

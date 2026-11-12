@@ -26,9 +26,15 @@ class Acheteur(models.Model):
     @classmethod
     def avec_charge(cls):
         """Acheteurs avec leur nombre de demandes en cours de traitement."""
+        # En cours : la demande est aux achats, ou validée mais sans bon de commande validé.
+        d = "utilisateur__demandes_attribuees"
+        commandee = models.Exists(
+            BonCommande.objects.filter(demande=models.OuterRef(f"{d}__pk"), statut__in=["VALIDE", "TRANSMIS"])
+        )
         en_cours = models.Count(
-            "utilisateur__demandes_attribuees",
-            filter=models.Q(utilisateur__demandes_attribuees__statut=DemandeAchat.Statut.ATTENTE_ACHATS),
+            d, distinct=True,
+            filter=models.Q(**{f"{d}__statut": DemandeAchat.Statut.ATTENTE_ACHATS})
+            | (models.Q(**{f"{d}__statut": DemandeAchat.Statut.VALIDEE}) & ~commandee),
         )
         return (
             cls.objects.select_related("utilisateur").annotate(en_cours=en_cours)
@@ -319,3 +325,7 @@ class Evenement(models.Model):
     class Meta:
         verbose_name = "événement"
         ordering = ["id"]
+
+
+# Les modèles du bon de commande vivent dans leur propre fichier.
+from .commande import BonCommande, EvenementCommande, LigneBonCommande  # noqa: E402,F401

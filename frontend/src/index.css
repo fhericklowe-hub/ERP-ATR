@@ -66,3 +66,9 @@ dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margi
 dt { color: #52525b; }
 dd { margin: 0; }
 ul { margin: 0; padding-left: 20px; }
+header nav { display: flex; gap: 16px; flex-wrap: wrap; }
+header nav a { opacity: 0.9; }
+.nombre { text-align: right; }
+th.nombre { text-align: right; }
+.ligne.commande { grid-template-columns: 1.2fr 2.4fr 80px 130px 90px 80px 110px auto; }
+@media (max-width: 720px) { .ligne.commande { grid-template-columns: 1fr 1fr; } }
