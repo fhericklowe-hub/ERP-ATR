@@ -74,6 +74,11 @@ def exiger_article(article):
         raise ValidationError(f"« {article.designation} » n'est pas un article géré en stock.")
 
 
+def or_exige(articles) -> bool:
+    """Une pièce détachée ne sort que pour un ordre de réparation. Les fournitures et consommables n'en ont pas besoin."""
+    return any(a.nature == Article.Nature.PIECE for a in articles)
+
+
 def sortir(article, magasin, quantite, **champs):
     """Écrit une sortie après avoir vérifié qu'il y a assez en stock. Le verrou doit être pris."""
     dispo = quantite_en_stock(article, magasin)
@@ -141,7 +146,8 @@ class ReglageStock(models.Model):
 
 
 class BonSortie(Horodate):
-    """Sortie de pièces du magasin pour un ordre de réparation (OR). Sans numéro d'OR, rien ne sort."""
+    """Sortie du magasin. Une pièce détachée ne sort que pour un ordre de réparation (OR) ; une fourniture ou un
+    consommable sort sans OR."""
 
     class Statut(models.TextChoices):
         VALIDE = "VALIDE", "Validé"
@@ -152,7 +158,7 @@ class BonSortie(Horodate):
     date = models.DateField("date de sortie", default=timezone.localdate)
     magasin = models.ForeignKey(Emplacement, on_delete=models.PROTECT, related_name="bons_sortie",
                                 limit_choices_to={"type": "SITE"})
-    numero_or = models.CharField("n° d'OR", max_length=40)
+    numero_or = models.CharField("n° d'OR", max_length=40, blank=True)
     materiel = models.CharField("matériel concerné", max_length=100, blank=True, help_text="Engin, véhicule, immatriculation")
     remis_a = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sorties_recues",
                                 verbose_name="remis à")
@@ -169,7 +175,6 @@ class BonSortie(Horodate):
         verbose_name_plural = "bons de sortie"
         ordering = ["-cree_le"]
         permissions = [("annuler_bonsortie", "Peut annuler un bon de sortie")]
-        constraints = [models.CheckConstraint(name="bon_sortie_or_obligatoire", condition=~models.Q(numero_or=""))]
 
     def __str__(self):
         return self.numero
@@ -181,11 +186,11 @@ class BonSortie(Horodate):
         if not utilisateur.has_perm("stock.add_bonsortie"):
             raise PermissionDenied("Seul le magasin enregistre les sorties de stock.")
         champs["numero_or"] = (champs.get("numero_or") or "").strip()
-        if not champs["numero_or"]:
-            raise ValidationError("Le numéro d'OR est obligatoire pour sortir une pièce du stock.")
         exiger_magasin(champs["magasin"])
         if not lignes:
-            raise ValidationError("Indiquez au moins une pièce à sortir.")
+            raise ValidationError("Indiquez au moins un article à sortir.")
+        if not champs["numero_or"] and or_exige(a for a, _ in lignes):
+            raise ValidationError("Le numéro d'OR est obligatoire pour sortir une pièce du stock.")
         articles = [a.id for a, _ in lignes]
         if len(set(articles)) != len(articles):
             raise ValidationError("Un article figure deux fois : regroupez les quantités.")
@@ -199,7 +204,7 @@ class BonSortie(Horodate):
                 raise ValidationError(f"« {article.designation} » : la quantité doit être positive.")
             ligne = bon.lignes.create(article=article, quantite=quantite)
             sortir(article, bon.magasin, quantite, type=Mouvement.Type.SORTIE, ligne_sortie=ligne,
-                   motif=f"{bon.numero} · OR : {bon.numero_or}"[:200], auteur=utilisateur)
+                   motif=(f"{bon.numero} · OR : {bon.numero_or}" if bon.numero_or else bon.numero)[:200], auteur=utilisateur)
         return bon
 
     def peut_annuler(self, utilisateur) -> bool:
@@ -237,3 +242,6 @@ class LigneBonSortie(models.Model):
             models.CheckConstraint(name="ligne_bs_quantite_positive", condition=models.Q(quantite__gt=0)),
             models.UniqueConstraint(fields=["bon", "article"], name="ligne_bs_article_unique"),
         ]
+
+
+from .demandes import DemandeSortie, LigneDemandeSortie  # noqa: E402,F401

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BonSortie, Mouvement, ReglageStock
+from .models import BonSortie, DemandeSortie, Mouvement, ReglageStock
 
 
 class LectureSeule(admin.ModelAdmin):
@@ -35,3 +35,10 @@ class ReglageStockAdmin(admin.ModelAdmin):
     list_display = ["article", "magasin", "seuil_mini", "casier"]
     list_filter = ["magasin"]
     autocomplete_fields = ["article", "magasin"]
+
+
+@admin.register(DemandeSortie)
+class DemandeSortieAdmin(LectureSeule):
+    list_display = ["numero", "cree_le", "demandeur", "service", "magasin", "numero_or", "statut"]
+    list_filter = ["statut", "magasin", "service"]
+    search_fields = ["numero", "numero_or", "materiel"]

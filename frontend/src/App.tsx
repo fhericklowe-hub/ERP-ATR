@@ -12,6 +12,7 @@ import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
 import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
+import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demandes'
 import ImportStock from './stock/ImportStock'
 import Stock from './stock/Stock'
 import Biens from './moyens/Biens'
@@ -81,6 +82,10 @@ function Page({ moi }: { moi: Utilisateur }) {
   const intervention = route.match(/^\/interventions\/(\d+)$/)
   if (intervention) return <DetailIntervention id={Number(intervention[1])} />
   if (route === '/stock') return <Stock />
+  if (route === '/stock/demandes') return <ListeDemandes />
+  if (route === '/stock/demandes/nouvelle') return <FormulaireDemande moi={moi} />
+  const demandeSortie = route.match(/^\/stock\/demandes\/(\d+)$/)
+  if (demandeSortie) return <DetailDemande id={Number(demandeSortie[1])} />
   if (route === '/stock/import') return <ImportStock />
   if (route === '/stock/sorties') return <ListeSorties peutSortir={a('stock.add_bonsortie')} />
   if (route === '/stock/sorties/nouvelle') return <FormulaireSortie />
@@ -90,6 +95,7 @@ function Page({ moi }: { moi: Utilisateur }) {
   if (route === '/contrats') return <Contrats />
   if (route === '/biens') return <Biens peutModifier={a('moyens.change_bien')} />
   if (route === '/' && !a('achats.view_demandeachat') && a('moyens.view_demandeintervention')) return <ListeInterventions />
+  if (route === '/' && !a('achats.view_demandeachat') && a('stock.view_demandesortie')) return <ListeDemandes />
   if (route === '/demandes/nouvelle') return <Formulaire moi={moi} />
   const modif = route.match(/^\/demandes\/(\d+)\/modifier$/)
   if (modif) return <Formulaire moi={moi} id={Number(modif[1])} />
@@ -150,6 +156,7 @@ export default function App() {
           {a('achats.view_demandebudget') && <a href="#/budget">Demandes budget</a>}
           {a('achats.view_boncommande') && <a href="#/commandes">Bons de commande</a>}
           {a('achats.view_bonreception') && <a href="#/receptions">Bons de réception</a>}
+          {a('stock.view_demandesortie') && <a href="#/stock/demandes">Demandes de sortie</a>}
           {a('stock.view_mouvement') && <a href="#/stock">Stock</a>}
           {a('moyens.view_demandeintervention') && <a href="#/interventions">Interventions</a>}
           {a('moyens.view_bien') && <a href="#/biens">Biens</a>}

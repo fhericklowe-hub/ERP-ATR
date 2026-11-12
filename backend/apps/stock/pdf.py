@@ -32,7 +32,7 @@ def pdf_bon_sortie(bon) -> bytes:
         Spacer(1, 4 * mm),
     ]
     infos = [
-        ["N° d'OR", Paragraph(f"<b>{bon.numero_or}</b>", BASE), "Matériel", Paragraph(bon.materiel or "--", BASE)],
+        ["N° d'OR", Paragraph(f"<b>{bon.numero_or or '--'}</b>", BASE), "Matériel", Paragraph(bon.materiel or "--", BASE)],
         ["Remis à", str(bon.remis_a).upper(), "Service", bon.service.nom if bon.service_id else "--"],
         ["Magasinier", str(bon.magasinier).upper(), "", ""],
     ]

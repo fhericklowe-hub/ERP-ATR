@@ -165,3 +165,14 @@ Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasi
   Le fichier est d'abord contrôlé ; une seule ligne en erreur et rien n'est importé.
 - La même chose en ligne de commande :
   `python manage.py importer_stock stock.xlsx --magasin SIEGE --utilisateur <identifiant> [--simuler]`.
+
+### Demande de sortie de stock
+
+- Un atelier ou un service demande des articles au magasin (`DS-2026-0001`) : articles et quantités, n° d'OR,
+  matériel, service, magasin, usage.
+- **Le n° d'OR est obligatoire dès qu'une pièce détachée est demandée.** Une fourniture ou un consommable sort
+  sans OR : les fournitures de bureau passent par ce même circuit.
+- Le responsable du service valide (étape sautée si le service n'a pas de responsable ou si c'est lui qui
+  demande), puis le magasin sert : il voit le stock, ajuste les quantités, et le bon de sortie est créé.
+  Ce qui n'est pas servi fait l'objet d'une nouvelle demande.
+- Rôle « Stock - Demandeur », à donner à tous ceux qui demandent des pièces ou des fournitures.
