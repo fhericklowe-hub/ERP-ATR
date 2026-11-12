@@ -14,7 +14,7 @@ from .serializers import AcheteurSerializer, DemandeAchatSerializer, PieceJointe
 def executer_transition(objet, nom, utilisateur, *args):
     """Joue une étape du circuit et traduit ses refus en erreurs d'API."""
     try:
-        getattr(objet, nom)(utilisateur, *args)
+        return getattr(objet, nom)(utilisateur, *args)
     except DjangoPermissionDenied as e:
         raise exceptions.PermissionDenied(str(e))
     except DjangoValidationError as e:

@@ -115,3 +115,15 @@ cas, direction générale (investissement, montant au-dessus du seuil, hors budg
 
 Deux rôles sont créés à l'installation : « Moyens généraux - Demandeur » et « Moyens généraux - Gestionnaire ».
 Le menu de l'application n'affiche que les rubriques auxquelles l'utilisateur a droit.
+
+## Moyens généraux : contrats et échéances
+
+- **Contrats** (`CTR-2026-0001`) : assurances, baux, maintenance, gardiennage, nettoyage, abonnements. Prestataire,
+  référence, site ou bien concerné, dates, préavis, tacite reconduction, montant et périodicité.
+- **Échéances** : assurance, visite technique, vignette et taxes, contrôle réglementaire, loyer, fin de contrat.
+  Chaque échéance a un délai de rappel (30 jours par défaut) et peut revenir tous les N mois. L'écran s'ouvre sur
+  ce qui est à traiter : en retard ou dans le délai de rappel. Marquer une échéance faite crée la suivante.
+- Un contrat avec une date de fin crée et tient à jour son échéance « fin de contrat », placée à la date limite
+  du préavis.
+
+Ces écrans sont réservés au rôle « Moyens généraux - Gestionnaire ».

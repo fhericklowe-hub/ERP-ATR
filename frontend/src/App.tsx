@@ -12,6 +12,8 @@ import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
 import Biens from './moyens/Biens'
+import Contrats from './moyens/Contrats'
+import Echeances from './moyens/Echeances'
 import DetailIntervention from './moyens/DetailIntervention'
 import FormulaireIntervention from './moyens/FormulaireIntervention'
 import ListeInterventions from './moyens/ListeInterventions'
@@ -75,6 +77,8 @@ function Page({ moi }: { moi: Utilisateur }) {
   if (modifInt) return <FormulaireIntervention moi={moi} id={Number(modifInt[1])} />
   const intervention = route.match(/^\/interventions\/(\d+)$/)
   if (intervention) return <DetailIntervention id={Number(intervention[1])} />
+  if (route === '/echeances') return <Echeances />
+  if (route === '/contrats') return <Contrats />
   if (route === '/biens') return <Biens peutModifier={a('moyens.change_bien')} />
   if (route === '/' && !a('achats.view_demandeachat') && a('moyens.view_demandeintervention')) return <ListeInterventions />
   if (route === '/demandes/nouvelle') return <Formulaire moi={moi} />
@@ -139,6 +143,7 @@ export default function App() {
           {a('achats.view_bonreception') && <a href="#/receptions">Bons de réception</a>}
           {a('moyens.view_demandeintervention') && <a href="#/interventions">Interventions</a>}
           {a('moyens.view_bien') && <a href="#/biens">Biens</a>}
+          {a('moyens.view_echeance') && <a href="#/echeances">Échéances</a>}
         </nav>
         <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
         <button onClick={quitter}>Se déconnecter</button>

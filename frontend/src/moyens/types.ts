@@ -72,3 +72,65 @@ export const STATUTS = [
   ['', 'Toutes'], ['NOUVELLE', 'Nouvelles'], ['EN_COURS', 'Prises en charge'], ['REALISEE', 'Réalisées, à confirmer'],
   ['CLOTUREE', 'Clôturées'], ['REFUSEE', 'Refusées'],
 ]
+
+export type Contrat = {
+  id: number
+  numero: string
+  type: string
+  type_libelle: string
+  objet: string
+  prestataire: number | ''
+  prestataire_nom: string
+  reference: string
+  site: number | null
+  site_nom: string
+  bien: number | null
+  bien_nom: string
+  date_debut: string
+  date_fin: string | null
+  tacite_reconduction: boolean
+  preavis_jours: number
+  date_limite_preavis: string | null
+  montant: string | null
+  periodicite: string
+  periodicite_libelle: string
+  statut: string
+  statut_libelle: string
+  observations: string
+}
+
+export type Echeance = {
+  id: number
+  type: string
+  type_libelle: string
+  libelle: string
+  date_echeance: string
+  rappel_jours: number
+  recurrence_mois: number
+  site: number | null
+  site_nom: string
+  bien: number | null
+  bien_nom: string
+  contrat: number | null
+  contrat_numero: string
+  montant_prevu: string | null
+  statut: string
+  statut_libelle: string
+  situation: 'RETARD' | 'PROCHE' | 'A_VENIR' | 'FAITE' | 'ANNULEE'
+  jours_restants: number
+  faite_le: string | null
+  montant_reel: string | null
+  commentaire: string
+}
+
+export const TYPES_CONTRAT = [
+  ['ASSURANCE', 'Assurance'], ['BAIL', 'Bail ou location'], ['MAINTENANCE', 'Maintenance et entretien'],
+  ['GARDIENNAGE', 'Gardiennage et sécurité'], ['NETTOYAGE', 'Nettoyage'],
+  ['ABONNEMENT', 'Abonnement (eau, électricité, téléphone, internet)'], ['AUTRE', 'Autre'],
+]
+export const PERIODICITES = [['M', 'Par mois'], ['T', 'Par trimestre'], ['S', 'Par semestre'], ['A', 'Par an'], ['U', 'En une fois']]
+export const TYPES_ECHEANCE = [
+  ['ASSURANCE', 'Assurance'], ['VISITE', 'Visite technique'], ['VIGNETTE', 'Vignette, patente et taxes'],
+  ['CONTROLE', 'Contrôle réglementaire (extincteurs, électricité...)'], ['PAIEMENT', 'Loyer ou paiement'], ['AUTRE', 'Autre'],
+]
+export const RECURRENCES = [[0, 'Ne revient pas'], [1, 'Tous les mois'], [3, 'Tous les 3 mois'], [6, 'Tous les 6 mois'], [12, 'Tous les ans'], [24, 'Tous les 2 ans']] as const
