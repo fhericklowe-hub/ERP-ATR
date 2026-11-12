@@ -89,3 +89,5 @@ button.lien { background: none; color: var(--vert); padding: 0; border-radius: 0
 .pieces form { align-items: end; }
 .pieces li { margin-bottom: 4px; }
 .pieces .discret { padding: 0 0 0 8px; }
+.ligne.sortie { grid-template-columns: 3fr 140px auto; }
+.pastille { white-space: nowrap; }

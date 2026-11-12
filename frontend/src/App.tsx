@@ -11,6 +11,8 @@ import FormulaireReception from './achats/FormulaireReception'
 import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
 import Liste from './achats/Liste'
+import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
+import Stock from './stock/Stock'
 import Biens from './moyens/Biens'
 import Contrats from './moyens/Contrats'
 import Echeances from './moyens/Echeances'
@@ -77,6 +79,11 @@ function Page({ moi }: { moi: Utilisateur }) {
   if (modifInt) return <FormulaireIntervention moi={moi} id={Number(modifInt[1])} />
   const intervention = route.match(/^\/interventions\/(\d+)$/)
   if (intervention) return <DetailIntervention id={Number(intervention[1])} />
+  if (route === '/stock') return <Stock />
+  if (route === '/stock/sorties') return <ListeSorties peutSortir={a('stock.add_bonsortie')} />
+  if (route === '/stock/sorties/nouvelle') return <FormulaireSortie />
+  const sortie = route.match(/^\/stock\/sorties\/(\d+)$/)
+  if (sortie) return <DetailSortie id={Number(sortie[1])} />
   if (route === '/echeances') return <Echeances />
   if (route === '/contrats') return <Contrats />
   if (route === '/biens') return <Biens peutModifier={a('moyens.change_bien')} />
@@ -141,6 +148,7 @@ export default function App() {
           {a('achats.view_demandebudget') && <a href="#/budget">Demandes budget</a>}
           {a('achats.view_boncommande') && <a href="#/commandes">Bons de commande</a>}
           {a('achats.view_bonreception') && <a href="#/receptions">Bons de réception</a>}
+          {a('stock.view_mouvement') && <a href="#/stock">Stock</a>}
           {a('moyens.view_demandeintervention') && <a href="#/interventions">Interventions</a>}
           {a('moyens.view_bien') && <a href="#/biens">Biens</a>}
           {a('moyens.view_echeance') && <a href="#/echeances">Échéances</a>}

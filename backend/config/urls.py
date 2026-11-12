@@ -15,6 +15,7 @@ urlpatterns = [
     path("api/", include("apps.referentiels.urls")),
     path("api/achats/", include("apps.achats.urls")),
     path("api/moyens/", include("apps.moyens.urls")),
+    path("api/stock/", include("apps.stock.urls")),
 ]
 
 # En développement, Django sert lui-même les fichiers joints ; en production c'est Nginx.

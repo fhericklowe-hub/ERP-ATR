@@ -10,6 +10,9 @@ from django.utils import timezone
 
 from apps.core.models import Compteur, Horodate
 
+from apps.referentiels.models import Emplacement
+
+from . import signaux
 from .commande import BonCommande, EvenementCommande, LigneBonCommande, arrondi
 
 
@@ -26,6 +29,9 @@ class BonReception(Horodate):
     commande = models.ForeignKey(BonCommande, on_delete=models.PROTECT, related_name="receptions",
                                  verbose_name="bon de commande")
     numero_livraison = models.CharField("n° de livraison fournisseur", max_length=50, blank=True)
+    magasin = models.ForeignKey(Emplacement, null=True, blank=True, on_delete=models.PROTECT, related_name="+",
+                                limit_choices_to={"type": "SITE"}, verbose_name="magasin de réception",
+                                help_text="Où les articles sont mis en stock. Par défaut, le site du bon de commande.")
     receptionnaire = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="bons_reception",
                                        verbose_name="réceptionnaire")
     observations = models.TextField(blank=True)
@@ -91,11 +97,14 @@ class BonReception(Horodate):
                 raise ValidationError(
                     f"« {lc.designation} » : {l.quantite_recue.normalize():f} reçu pour {reste.normalize():f} restant à recevoir."
                 )
+        if not self.magasin_id:
+            self.magasin = Emplacement.objects.filter(type=Emplacement.Type.SITE, site_id=commande.site_id, actif=True).first()
         self.statut = self.Statut.VALIDE
         self.valide_le = timezone.now()
         self.save()
         commande.evenements.create(auteur=utilisateur, action=EvenementCommande.Action.RECEPTION, statut=commande.statut,
                                    commentaire=f"{self.numero} ({commande.get_etat_reception_display()})")
+        signaux.reception_validee.send(sender=BonReception, bon=self, utilisateur=utilisateur)
 
     @transaction.atomic
     def annuler(self, utilisateur, commentaire):
@@ -108,6 +117,7 @@ class BonReception(Horodate):
         self.annule_par, self.annule_le, self.motif_annulation = utilisateur, timezone.now(), commentaire.strip()
         self.save()
         if etait_valide:
+            signaux.reception_annulee.send(sender=BonReception, bon=self, utilisateur=utilisateur)
             self.commande.evenements.create(
                 auteur=utilisateur, action=EvenementCommande.Action.RECEPTION_ANNULEE, statut=self.commande.statut,
                 commentaire=f"{self.numero} : {commentaire.strip()}",

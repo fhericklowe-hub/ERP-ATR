@@ -139,3 +139,19 @@ liée au budget, un bon de commande, un bon de réception, une demande d'interve
 - Les fichiers sont rangés dans `media/pieces/` sous un nom aléatoire. Ils ne s'ouvrent que par l'API ; Nginx
   refuse l'accès direct à ce dossier. **Ce dossier doit être compris dans les sauvegardes.**
 - Un nouveau module déclare ses documents par `pieces.declarer(SaVue)` dans son `apps.py`.
+
+## Stock : magasins, entrées et sorties
+
+- **Magasins** : un par site (ce sont les emplacements de type « site » des référentiels).
+- **Le stock est la somme des mouvements.** Un mouvement ne se modifie pas et ne se supprime pas ; une erreur se
+  corrige par une annulation ou un ajustement d'inventaire.
+- **Entrées** : à la validation d'un bon de réception, la « quantité à mettre en stock » entre dans le magasin du
+  site de la commande, pour les lignes qui portent un article du catalogue géré en stock. Annuler le bon de
+  réception ressort les pièces, sauf si elles sont déjà sorties.
+- **Bon de sortie** (`BS-2026-0001`) : n° d'OR obligatoire, matériel, magasin, personne à qui les pièces sont
+  remises. Refusé si le stock du magasin ne suffit pas. Il ne se modifie pas ; le responsable du stock l'annule.
+- **Inventaire** : le responsable met le stock à la quantité comptée, avec un motif. C'est aussi la façon de
+  saisir le stock de départ. **Transfert** d'un magasin à un autre. **Seuil d'alerte** et rangement par article
+  et par magasin.
+
+Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasinier », « Stock - Responsable ».
