@@ -79,10 +79,10 @@ export function ListeDemandes() {
   )
 }
 
-export function FormulaireDemande({ moi }: { moi: Utilisateur }) {
+export function FormulaireDemande({ moi, numeroOr, materiel }: { moi: Utilisateur; numeroOr?: string; materiel?: string }) {
   const [magasins, setMagasins] = useState<Magasin[]>([])
   const [services, setServices] = useState<Service[]>([])
-  const [d, setD] = useState({ service: moi.service ? String(moi.service) : '', magasin: '', numero_or: '', materiel: '', motif: '' })
+  const [d, setD] = useState({ service: moi.service ? String(moi.service) : '', magasin: '', numero_or: numeroOr ?? '', materiel: materiel ?? '', motif: '' })
   const [recherche, setRecherche] = useState('')
   const [trouves, setTrouves] = useState<Article[]>([])
   const [lignes, setLignes] = useState<{ article: Article; quantite: string }[]>([])
@@ -92,6 +92,11 @@ export function FormulaireDemande({ moi }: { moi: Utilisateur }) {
   useEffect(() => {
     api<Page<Magasin>>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p.results)).catch(() => undefined)
     api<Page<Service>>('/services/?actif=true').then((p) => setServices(p.results)).catch(() => undefined)
+  }, [])
+  const [ordres, setOrdres] = useState<{ numero: string; materiel_nom: string }[]>([])
+  useEffect(() => {
+    // Les ordres de réparation ouverts, proposés à la saisie du n° d'OR. Sans le droit de les voir, la saisie reste libre.
+    api<Page<{ numero: string; materiel_nom: string }>>('/technique/ordres/?ouvert=1&page_size=200').then((p) => setOrdres(p.results)).catch(() => undefined)
   }, [])
   useEffect(() => {
     if (recherche.length < 2) return setTrouves([])
@@ -149,7 +154,11 @@ export function FormulaireDemande({ moi }: { moi: Utilisateur }) {
         <legend>Pour quel usage</legend>
         <div className="grille">
           <label>N° d'OR {piece ? '(obligatoire pour une pièce)' : '(pour une pièce)'}
-            <input required={piece} value={d.numero_or} maxLength={40} onChange={(e) => champ('numero_or', e.target.value)} />
+            <input required={piece} value={d.numero_or} maxLength={40} list="ordres-ouverts" onChange={(e) => {
+              const ordre = ordres.find((o) => o.numero === e.target.value)
+              setD((x) => ({ ...x, numero_or: e.target.value, materiel: ordre && !x.materiel ? ordre.materiel_nom : x.materiel }))
+            }} />
+            <datalist id="ordres-ouverts">{ordres.map((o) => <option key={o.numero} value={o.numero}>{o.materiel_nom}</option>)}</datalist>
           </label>
           <label>Matériel concerné
             <input value={d.materiel} placeholder="Engin, véhicule, immatriculation" onChange={(e) => champ('materiel', e.target.value)} />

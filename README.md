@@ -176,3 +176,18 @@ Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasi
   demande), puis le magasin sert : il voit le stock, ajuste les quantités, et le bon de sortie est créé.
   Ce qui n'est pas servi fait l'objet d'une nouvelle demande.
 - Rôle « Stock - Demandeur », à donner à tous ceux qui demandent des pièces ou des fournitures.
+
+## Technique : parc de matériels et ordres de réparation
+
+- **Parc** : engins de manutention et de levage, camions, remorques, véhicules, groupes. N° de parc, type,
+  marque, modèle, série, immatriculation, capacité, activité, site de rattachement, lieu où il se trouve
+  (site ou client), état, compteurs heures et kilomètres.
+- **Ordre de réparation** (`OR-2026-0001`) : ouvert par un mécanicien ou le chef d'atelier sur un matériel
+  (panne, entretien, accident, modification). Démarrage avec diagnostic et relevé de compteur, fin des travaux
+  avec compte rendu, clôture par le chef d'atelier, qui peut aussi affecter, rouvrir et annuler.
+- **État du matériel** : « en panne » à l'ouverture d'un OR immobilisant, « en réparation » au démarrage,
+  « disponible » quand il n'y a plus d'OR immobilisant ouvert. Le compteur relevé met la fiche à jour.
+- **Pièces** : l'OR liste les pièces sorties du stock sous son numéro. Depuis l'OR, « Demander des pièces au
+  magasin » ouvre une demande de sortie déjà remplie. Les OR ouverts sont proposés à la saisie du n° d'OR.
+
+Rôles créés à l'installation : « Technique - Consultation », « Technique - Mécanicien », « Technique - Chef d'atelier ».
