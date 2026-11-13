@@ -54,7 +54,7 @@ export function ListeSalaries({ peutCreer }: { peutCreer: boolean }) {
     <>
       <div className="barre">
         <h2>Personnel</h2>
-        {peutCreer && <div className="actions"><a className="bouton" href="#/personnel/nouveau">Nouveau salarié</a></div>}
+        {peutCreer && <div className="actions"><a className="bouton secondaire" href="#/personnel/import">Importer depuis Excel</a><a className="bouton" href="#/personnel/nouveau">Nouveau salarié</a></div>}
       </div>
       <div className="grille filtres large">
         <label>Recherche<input placeholder="Nom, matricule, fonction" value={filtre.search} onChange={(e) => setFiltre({ ...filtre, search: e.target.value })} /></label>

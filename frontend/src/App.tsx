@@ -28,6 +28,7 @@ import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
 import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
 import { DetailAbsence, FormulaireAbsence, ListeAbsences, PlanningAbsences } from './rh/Absences'
+import ImportPersonnel from './rh/ImportPersonnel'
 import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
 import ValeurStock from './stock/Valeur'
@@ -186,6 +187,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (chemin === '/personnel') return <ListeSalaries peutCreer={a('rh.add_salarie')} />
   if (chemin === '/personnel/echeances') return <EcheancesPersonnel />
   if (chemin === '/personnel/nouveau') return <FormulaireSalarie />
+  if (chemin === '/personnel/import') return a('rh.add_salarie') ? <ImportPersonnel /> : <p>L'import est réservé au gestionnaire RH.</p>
   const modifSalarie = chemin.match(/^\/personnel\/(\d+)\/modifier$/)
   if (modifSalarie) return <FormulaireSalarie id={Number(modifSalarie[1])} />
   const salarie = chemin.match(/^\/personnel\/(\d+)$/)

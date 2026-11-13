@@ -66,6 +66,20 @@ docker compose exec backend python manage.py createsuperuser
 
 L'application répond ensuite sur le port 80 du serveur.
 
+## RH : import du personnel depuis Excel
+
+RH, Personnel, « Importer depuis Excel » (gestionnaire RH), ou en ligne de commande :
+
+```
+python manage.py importer_personnel personnel.xlsx --utilisateur <identifiant RH> [--simuler]
+```
+
+Première feuille, titres en première ligne : Nom, Prénoms, Site, puis au besoin Matricule, Sexe, Date de naissance,
+Lieu de naissance, Nationalité, Téléphone, E-mail, Adresse, N° CNPS, Service, Fonction, Catégorie, Date d'embauche,
+Solde de congés, Solde arrêté au. Un salarié déjà connu (même matricule, ou à défaut mêmes nom et prénoms) est mis à
+jour, une case vide ne change rien ; les autres sont créés. On contrôle d'abord le fichier : à la moindre ligne en
+erreur, rien n'est écrit. Le fichier du personnel ne doit jamais être déposé dans ce dépôt.
+
 ## Page d'accueil
 
 À la connexion, chacun arrive sur une page « ce qui attend votre action » : demandes d'achat et bons de commande
