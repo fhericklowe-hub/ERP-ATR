@@ -251,3 +251,22 @@ signés et les photos se joignent à la fiche. Un retour prévu dépassé est si
 
 Rôles : « Exploitation - Consultation » et « Exploitation - Agent ». Les rôles du Commercial voient les mises à
 disposition de leurs devis.
+
+## Commercial : relevé de location
+
+Le relevé calcule ce qui est dû par le client sur une période. Ce n'est pas une facture : la facture reste émise dans
+le logiciel de facturation, et son numéro est noté sur le relevé.
+
+Sur une commande client, « Préparer le relevé de cette période » crée un brouillon :
+
+- pour chaque matériel livré, la durée passée chez le client pendant la période, d'après les bons de livraison et de
+  retour, dans l'unité du loyer (jours, semaines de 7 jours, mois ; un mois entamé compte au prorata sur 30 jours) ;
+- les lignes sans matériel (transport, forfaits) une seule fois, sur le premier relevé ;
+- avec un loyer au forfait, chaque matériel est relevé une seule fois.
+
+Le commercial corrige les durées, quantités et remises ou retire une ligne. Le responsable commercial valide (« à
+facturer »), puis le numéro et la date de la facture sont saisis (« facturé »). Deux relevés d'une même commande ne
+peuvent pas se chevaucher ; un relevé annulé libère sa période. Le relevé sort en PDF.
+
+Droits : les rôles Commercial préparent et corrigent, « Commercial - Responsable » valide et annule un relevé facturé,
+les rôles Exploitation consultent.
