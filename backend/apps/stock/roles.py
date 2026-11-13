@@ -13,7 +13,7 @@ ROLES = {
     "Stock - Consultation": LECTURE + ["stock.view_demandesortie"],
     "Stock - Magasinier": LECTURE + SORTIE + DEMANDE,
     "Stock - Responsable": LECTURE + SORTIE + DEMANDE + [
-        "stock.ajuster_stock", "stock.annuler_bonsortie", "stock.add_reglagestock", "stock.change_reglagestock",
+        "stock.ajuster_stock", "stock.voir_valeur_stock", "stock.annuler_bonsortie", "stock.add_reglagestock", "stock.change_reglagestock",
     ],
 }
 
@@ -22,17 +22,28 @@ def creer_roles(sender, **kwargs):
     from django.contrib.auth.models import Group, Permission
     from django.db.models import Q
 
-    for nom, droits in ROLES.items():
-        groupe, cree = Group.objects.get_or_create(name=nom)
-        if not cree:  # on ne touche pas à un rôle déjà ajusté par l'administrateur
-            continue
+    def droits_de(droits):
         filtre = Q()
         for droit in droits:
             app, code = droit.split(".")
             filtre |= Q(content_type__app_label=app, codename=code)
-        groupe.permissions.set(Permission.objects.filter(filtre))
+        return Permission.objects.filter(filtre)
+
+    premiere_fois = not Group.objects.filter(name__in=ROLES).exists()
+    for nom, droits in ROLES.items():
+        groupe, cree = Group.objects.get_or_create(name=nom)
+        if cree:  # on ne touche pas à un rôle déjà ajusté par l'administrateur
+            groupe.permissions.set(droits_de(droits))
+    if premiere_fois:  # à l'installation seulement : les rôles des achats qui voient la valeur du stock
+        for nom, droits in DROITS_VALEUR.items():
+            groupe = Group.objects.filter(name=nom).first()
+            if groupe:
+                groupe.permissions.add(*droits_de(droits))
 
 
 # Droits ajoutés avec les demandes de sortie, pour les rôles créés avant.
 DROITS_DEMANDES = {"Stock - Consultation": ["stock.view_demandesortie"], "Stock - Magasinier": DEMANDE,
                    "Stock - Responsable": DEMANDE}
+# Droit ajouté avec la valorisation du stock, pour les rôles créés avant.
+DROITS_VALEUR = {"Stock - Responsable": ["stock.voir_valeur_stock"], "Achats - Contrôleur de gestion": ["stock.voir_valeur_stock"],
+                 "Achats - Responsable achats": ["stock.voir_valeur_stock"]}

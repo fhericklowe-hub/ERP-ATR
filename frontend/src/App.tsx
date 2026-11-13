@@ -22,6 +22,7 @@ import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
 import Stock from './stock/Stock'
+import ValeurStock from './stock/Valeur'
 import Biens from './moyens/Biens'
 import Contrats from './moyens/Contrats'
 import Echeances from './moyens/Echeances'
@@ -82,6 +83,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/stock/demandes', texte: 'Demandes de sortie', droit: 'stock.view_demandesortie' },
     { chemin: '/stock', texte: 'État du stock', droit: 'stock.view_mouvement', aussi: ['/stock/import'] },
     { chemin: '/stock/sorties', texte: 'Bons de sortie', droit: 'stock.view_bonsortie' },
+    { chemin: '/stock/valeur', texte: 'Valeur du stock', droit: 'stock.voir_valeur_stock' },
   ] },
   { titre: 'Technique', liens: [
     { chemin: '/parc', texte: 'Parc de matériels', droit: 'technique.view_materiel' },
@@ -154,6 +156,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const demandeSortie = route.match(/^\/stock\/demandes\/(\d+)$/)
   if (demandeSortie) return <DetailDemande id={Number(demandeSortie[1])} />
   if (route === '/stock/import') return <ImportStock />
+  if (route === '/stock/valeur') return <ValeurStock />
   if (route === '/stock/sorties') return <ListeSorties peutSortir={a('stock.add_bonsortie')} />
   if (route === '/stock/sorties/nouvelle') return <FormulaireSortie />
   const sortie = route.match(/^\/stock\/sorties\/(\d+)$/)

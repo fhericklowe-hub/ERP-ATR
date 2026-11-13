@@ -177,6 +177,19 @@ Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasi
   Ce qui n'est pas servi fait l'objet d'une nouvelle demande.
 - Rôle « Stock - Demandeur », à donner à tous ceux qui demandent des pièces ou des fournitures.
 
+### Valeur du stock
+
+Stock > Valeur du stock donne le stock valorisé au **coût moyen pondéré**, par article et par magasin, à la date
+choisie, avec un export Excel. Chaque entrée chiffrée (bon de réception, stock de départ importé, ajustement avec un
+prix) recalcule le coût moyen de l'article pour toute l'entreprise ; une sortie se fait à ce coût ; une entrée sans
+prix entre au coût moyen du moment ; un transfert ne change rien. Les articles dont aucune entrée n'a de prix sont
+signalés et ne sont pas comptés.
+
+Le même écran donne la valeur des sorties sur une période, par service et par ordre de réparation.
+
+Droit « Peut voir la valeur du stock et des consommations » : donné à « Stock - Responsable », « Achats - Responsable
+achats » et « Achats - Contrôleur de gestion ».
+
 ## Technique : parc de matériels et ordres de réparation
 
 - **Parc** : engins de manutention et de levage, camions, remorques, véhicules, groupes. N° de parc, type,

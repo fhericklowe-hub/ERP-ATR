@@ -94,6 +94,16 @@ export async function ouvrirFichier(chemin: string) {
   }
 }
 
+/** Enregistre un fichier produit par l'API (Excel) sous le nom donné. */
+export async function telechargerFichier(chemin: string, nom: string) {
+  const url = URL.createObjectURL(await (await appeler(chemin)).blob())
+  const lien = Object.assign(document.createElement('a'), { href: url, download: nom })
+  document.body.appendChild(lien)
+  lien.click()
+  lien.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
 export type Page<T> = { count: number; results: T[] }
 export type Utilisateur = {
   id: number
