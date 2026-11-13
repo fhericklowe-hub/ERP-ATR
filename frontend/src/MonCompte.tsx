@@ -4,7 +4,7 @@ import { changerMotDePasse } from './api'
 type Moi = { username: string; first_name: string; last_name: string; email?: string; telephone?: string; fonction: string; roles: string[] }
 
 /** Le compte de la personne connectée : ce que l'ERP sait d'elle, ses rôles, et son mot de passe qu'elle change elle-même. */
-export default function MonCompte({ moi }: { moi: Moi }) {
+export default function MonCompte({ moi, obligatoire = false, apres }: { moi: Moi; obligatoire?: boolean; apres?: () => void }) {
   const [saisie, setSaisie] = useState({ actuel: '', nouveau: '', encore: '' })
   const [erreur, setErreur] = useState('')
   const [fait, setFait] = useState(false)
@@ -20,6 +20,7 @@ export default function MonCompte({ moi }: { moi: Moi }) {
       await changerMotDePasse(saisie.actuel, saisie.nouveau)
       setSaisie({ actuel: '', nouveau: '', encore: '' })
       setFait(true)
+      apres?.()
     } catch (err) {
       setErreur((err as Error).message)
     } finally {
@@ -30,8 +31,9 @@ export default function MonCompte({ moi }: { moi: Moi }) {
 
   return (
     <div className="fiche">
-      <h2>Mon compte</h2>
-      <fieldset>
+      <h2>{obligatoire ? 'Choisissez votre mot de passe' : 'Mon compte'}</h2>
+      {obligatoire && <p role="status">Votre mot de passe vous a été donné par l'administrateur. Choisissez-en un qui n'est connu que de vous : l'application s'ouvre ensuite.</p>}
+      {!obligatoire && <fieldset>
         <dl>
           <dt>Identifiant</dt><dd>{moi.username}</dd>
           <dt>Nom</dt><dd>{`${moi.first_name} ${moi.last_name}`.trim() || '—'}</dd>
@@ -41,7 +43,7 @@ export default function MonCompte({ moi }: { moi: Moi }) {
           <dt>Rôles</dt><dd>{moi.roles.length ? moi.roles.join(', ') : 'Aucun'}</dd>
         </dl>
         <p className="aide">Pour corriger ces informations ou vos rôles, adressez-vous à la personne qui gère les comptes.</p>
-      </fieldset>
+      </fieldset>}
       <form onSubmit={changer}>
         <fieldset>
           <legend>Changer mon mot de passe</legend>
@@ -52,7 +54,7 @@ export default function MonCompte({ moi }: { moi: Moi }) {
           </div>
           <p className="aide">8 caractères au moins, pas uniquement des chiffres, pas un mot de passe courant. Vos autres appareils seront déconnectés.</p>
           {erreur && <p className="erreur" role="alert">{erreur}</p>}
-          {fait && <p role="status">Votre mot de passe est changé.</p>}
+          {fait && !obligatoire && <p role="status">Votre mot de passe est changé.</p>}
           <div className="actions"><button disabled={enCours}>{enCours ? 'Enregistrement…' : 'Changer le mot de passe'}</button></div>
         </fieldset>
       </form>

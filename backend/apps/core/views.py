@@ -92,7 +92,8 @@ class MonMotDePasseView(APIView):
         except ValidationError as e:
             raise exceptions.ValidationError({"nouveau": list(e.messages)})
         request.user.set_password(nouveau)
-        request.user.save(update_fields=["password"])
+        request.user.mot_de_passe_a_changer = False
+        request.user.save(update_fields=["password", "mot_de_passe_a_changer"])
         jetons = RefreshToken.for_user(request.user)
         return Response({"access": str(jetons.access_token), "refresh": str(jetons)})
 

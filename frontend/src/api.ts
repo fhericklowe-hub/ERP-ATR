@@ -121,6 +121,7 @@ export type Utilisateur = {
   site: number | null
   service: number | null
   telephone: string
+  mot_de_passe_a_changer: boolean
 }
 export type Service = { id: number; code: string; nom: string }
 export type Unite = { id: number; code: string; nom: string }

@@ -106,3 +106,31 @@ class OrganisationTests(APITestCase):
         r = self.client.post("/api/sites/", {"code": "ESSAI", "nom": "Site d'essai", "ville": "Bouaké"}, format="json")
         self.assertEqual(r.status_code, 201, r.data)
         self.assertEqual(self.client.patch(f"/api/sites/{r.data['id']}/", {"actif": False}, format="json").data["actif"], False)
+
+
+class MotDePasseInitialTests(APITestCase):
+    def test_mot_de_passe_donne_par_l_administrateur_est_a_changer(self):
+        gestionnaire = Utilisateur.objects.create_user("gestionnaire", password="x")
+        gestionnaire.groups.add(Group.objects.get(name=ROLE_COMPTES))
+        self.client.force_authenticate(gestionnaire)
+        r = self.client.post(URL, {"username": "recrue", "mot_de_passe": "Abidjan-2026-essai"}, format="json")
+        self.assertEqual((r.status_code, r.data["mot_de_passe_a_changer"]), (201, True))
+        self.assertTrue(Utilisateur.objects.get(username="recrue").mot_de_passe_a_changer)
+        # Le compte voit l'indicateur dans /moi/, et ne peut pas le lever lui-même par une autre voie.
+        recrue = Utilisateur.objects.get(username="recrue")
+        self.client.force_authenticate(recrue)
+        self.assertTrue(self.client.get("/api/moi/").data["mot_de_passe_a_changer"])
+        self.assertEqual(self.client.patch(f"{URL}{recrue.id}/", {"mot_de_passe_a_changer": False}, format="json").status_code, 403)
+        # En choisissant son mot de passe, il est levé.
+        r = self.client.post("/api/moi/mot-de-passe/", {"actuel": "Abidjan-2026-essai", "nouveau": "Ferke-2027-autre"}, format="json")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertFalse(Utilisateur.objects.get(username="recrue").mot_de_passe_a_changer)
+        # Un mot de passe redonné par l'administrateur est à changer à nouveau, sauf s'il décide le contraire.
+        self.client.force_authenticate(gestionnaire)
+        self.client.patch(f"{URL}{recrue.id}/", {"mot_de_passe": "Zanzan-2028-reprise"}, format="json")
+        self.assertTrue(Utilisateur.objects.get(username="recrue").mot_de_passe_a_changer)
+        self.client.patch(f"{URL}{recrue.id}/", {"mot_de_passe": "Bouake-2029-reprise", "mot_de_passe_a_changer": False}, format="json")
+        self.assertFalse(Utilisateur.objects.get(username="recrue").mot_de_passe_a_changer)
+        # Les comptes existants ne sont pas touchés, et le gestionnaire n'est pas obligé de changer le sien.
+        self.client.patch(f"{URL}{gestionnaire.id}/", {"mot_de_passe": "Korhogo-2030-moi"}, format="json")
+        self.assertFalse(Utilisateur.objects.get(username="gestionnaire").mot_de_passe_a_changer)
