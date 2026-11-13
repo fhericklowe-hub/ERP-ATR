@@ -22,7 +22,9 @@ import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
+import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
+import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
 import { DetailAbsence, FormulaireAbsence, ListeAbsences, PlanningAbsences } from './rh/Absences'
 import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
@@ -109,6 +111,8 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   ] },
   { titre: 'HSE', liens: [
     { chemin: '/hse', texte: 'Événements', droit: 'hse.view_evenement' },
+    { chemin: '/hse/visites', texte: 'Visites de sécurité', droit: 'hse.view_visite' },
+    { chemin: '/hse/epi', texte: 'Équipements de protection', droit: 'hse.view_dotationepi' },
   ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
@@ -156,6 +160,13 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (devis) return <DetailDevis id={Number(devis[1])} voitMises={a('exploitation.view_miseadisposition')} peutPreparer={a('exploitation.add_miseadisposition')} voitReleves={a('exploitation.view_relevelocation')} peutRelever={a('exploitation.add_relevelocation')} />
   if (chemin === '/hse') return <ListeEvenements peutTraiter={a('hse.traiter_evenement')} />
   if (chemin === '/hse/nouveau') return <FormulaireEvenement />
+  if (chemin === '/hse/epi') return <Epi peutModifier={a('hse.add_dotationepi')} />
+  if (chemin === '/hse/visites') return <ListeVisites peutCreer={a('hse.add_visite')} />
+  if (chemin === '/hse/visites/nouvelle') return <FormulaireVisite />
+  const modifVisite = chemin.match(/^\/hse\/visites\/(\d+)\/modifier$/)
+  if (modifVisite) return <FormulaireVisite id={Number(modifVisite[1])} />
+  const visite = chemin.match(/^\/hse\/visites\/(\d+)$/)
+  if (visite) return <DetailVisite id={Number(visite[1])} />
   const modifHse = chemin.match(/^\/hse\/(\d+)\/modifier$/)
   if (modifHse) return <FormulaireEvenement id={Number(modifHse[1])} />
   const evenement = chemin.match(/^\/hse\/(\d+)$/)

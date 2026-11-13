@@ -119,7 +119,9 @@ class ActionCorrective(Horodate):
         FAITE = "FAITE", "Faite"
         ABANDONNEE = "ABANDON", "Abandonnée"
 
-    evenement = models.ForeignKey(Evenement, on_delete=models.CASCADE, related_name="actions", verbose_name="événement")
+    evenement = models.ForeignKey(Evenement, null=True, blank=True, on_delete=models.CASCADE, related_name="actions", verbose_name="événement")
+    visite = models.ForeignKey("hse.Visite", null=True, blank=True, on_delete=models.CASCADE, related_name="actions",
+                               verbose_name="visite de sécurité")
     statut = models.CharField(max_length=7, choices=Statut.choices, default=Statut.A_FAIRE, editable=False)
     description = models.CharField("action", max_length=300)
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="actions_hse")
@@ -131,9 +133,17 @@ class ActionCorrective(Horodate):
         verbose_name = "action corrective"
         verbose_name_plural = "actions correctives"
         ordering = ["echeance", "id"]
+        constraints = [models.CheckConstraint(
+            name="action_evenement_ou_visite",
+            condition=models.Q(evenement__isnull=False, visite__isnull=True) | models.Q(evenement__isnull=True, visite__isnull=False))]
 
     def __str__(self):
         return self.description
+
+    @property
+    def origine(self):
+        """L'événement ou la visite d'où vient l'action."""
+        return self.evenement or self.visite
 
     @property
     def en_retard(self) -> bool:
@@ -179,3 +189,6 @@ def indicateurs(annee=None) -> dict:
         "a_traiter": Evenement.objects.exclude(statut=Evenement.Statut.CLOS).count(),
         "actions_en_retard": ActionCorrective.objects.filter(statut=A.A_FAIRE, echeance__lt=aujourd_hui).count(),
     }
+
+
+from .terrain import DotationEPI, Visite  # noqa: E402,F401  (modèles déclarés dans terrain.py)
