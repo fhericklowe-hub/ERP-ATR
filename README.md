@@ -72,6 +72,13 @@ L'application répond ensuite sur le port 80 du serveur.
 le rappel quotidien par e-mail (`rappels.declarer` ; l'attribut `lien` d'une source donne l'écran où la traiter).
 Le logo ramène à cette page.
 
+## Tableau de bord de direction
+
+Menu Direction, Tableau de bord : les chiffres clés de chaque module sur une page (demandes et commandes du mois,
+valeur du stock, disponibilité du parc, devis du mois, effectifs et absences, accidents et actions en retard). Les
+chiffres sont calculés à l'ouverture de la page (`backend/apps/core/pilotage.py`). La page est réservée au rôle
+« Direction - Tableau de bord », qui ne donne aucun autre accès : à attribuer dans l'administration.
+
 ## Droits
 
 Les rôles sont les groupes Django, gérés dans l'administration. Chaque rôle reçoit des droits

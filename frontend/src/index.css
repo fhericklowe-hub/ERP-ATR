@@ -101,3 +101,10 @@ header nav a[aria-current] { opacity: 1; font-weight: 600; border-bottom: 2px so
 .ligne.releve { grid-template-columns: 3fr 90px 90px 90px auto; align-items: start; }
 .ligne.releve button { margin-top: 22px; }
 @media (max-width: 720px) { .ligne.releve { grid-template-columns: 1fr 1fr; } .ligne.releve > label:first-child { grid-column: 1 / -1; } .ligne.releve button { margin-top: 0; } }
+
+/* Tableau de bord de direction : une carte par module */
+.pilotage { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.pilotage dl { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 0; }
+.pilotage dl > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.pilotage dt { color: inherit; }
+.pilotage dd { margin: 0; text-align: right; }

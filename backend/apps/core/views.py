@@ -1,4 +1,4 @@
-from rest_framework import permissions, viewsets
+from rest_framework import exceptions, permissions, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -48,3 +48,16 @@ class AccueilView(APIView):
         from . import rappels
 
         return Response(rappels.accueil(request.user))
+
+
+class PilotageView(APIView):
+    """Tableau de bord de direction : les chiffres clés de chaque module."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from . import pilotage
+
+        if not request.user.has_perm("core.voir_pilotage"):
+            raise exceptions.PermissionDenied()
+        return Response(pilotage.tableau())

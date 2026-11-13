@@ -23,6 +23,7 @@ import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
 import Accueil from './Accueil'
+import Pilotage from './Pilotage'
 import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
 import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
@@ -80,6 +81,9 @@ function Connexion({ onConnecte }: { onConnecte: () => void }) {
 type Lien = { chemin: string; texte: string; droit: string; aussi?: string[] }
 /** Le menu : un onglet par module, et sous chaque onglet ses rubriques. `aussi` : autres adresses de la même rubrique. */
 const MENU: { titre: string; liens: Lien[] }[] = [
+  { titre: 'Direction', liens: [
+    { chemin: '/pilotage', texte: 'Tableau de bord', droit: 'core.voir_pilotage' },
+  ] },
   { titre: 'Achats', liens: [
     { chemin: '/', texte: "Demandes d'achat", droit: 'achats.view_demandeachat', aussi: ['/demandes'] },
     { chemin: '/budget', texte: 'Demandes liées au budget', droit: 'achats.view_demandebudget' },
@@ -144,6 +148,7 @@ function useRoute() {
 function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const a = (droit: string) => moi.droits.includes(droit)
   if (route === '/accueil') return <Accueil moi={moi} />
+  if (route === '/pilotage') return a('core.voir_pilotage') ? <Pilotage /> : <p>Cette page est réservée à la direction.</p>
   if (route === '/interventions') return <ListeInterventions />
   if (route === '/interventions/nouvelle') return <FormulaireIntervention moi={moi} />
   const modifInt = route.match(/^\/interventions\/(\d+)\/modifier$/)
