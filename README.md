@@ -320,3 +320,22 @@ pour un salarié (maladie, par exemple) et donner l'accord à la place du respon
 - Le **planning des absences** montre qui est absent sur une période. Chacun voit ses demandes et celles de son
   équipe ; les RH voient tout.
 - Les demandes à traiter figurent dans le rappel quotidien par e-mail du responsable et des RH.
+
+## HSE : événements et actions correctives
+
+Tout salarié qui a un compte et le rôle « HSE - Déclarant » déclare un événement depuis son poste ou son téléphone :
+accident du travail, presqu'accident, premiers soins, dégât matériel, atteinte à l'environnement, situation
+dangereuse. Il indique la date, le site, le lieu, les faits, les mesures prises, le matériel en cause, et joint des
+photos. Il peut corriger sa déclaration tant qu'elle n'est pas analysée.
+
+Le responsable HSE (rôle « HSE - Responsable ») :
+
+- enregistre l'**analyse des causes**, et corrige au besoin la gravité et les jours d'arrêt ;
+- décide des **actions correctives**, chacune avec un responsable et une échéance ; le responsable de l'action la
+  marque faite, le responsable HSE peut l'abandonner avec un motif ;
+- **clôt** l'événement avec une conclusion, une fois toutes les actions faites ou abandonnées. Un événement clos
+  peut être rouvert.
+
+Chacun voit ses déclarations et les événements où une action lui est confiée ; le responsable HSE voit tout, avec
+les chiffres de l'année (événements par type, accidents avec arrêt, jours d'arrêt, jours sans accident avec arrêt).
+Le rappel quotidien par e-mail signale les déclarations à analyser et les actions en retard ou à faire sous 7 jours.
