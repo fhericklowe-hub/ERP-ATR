@@ -40,6 +40,20 @@ et la documentation de l'API sur http://localhost:8000/api/docs/.
 
 Tests : `python manage.py test` dans `backend/`.
 
+## Démonstration sur un poste Windows
+
+1. Installer [Python](https://www.python.org/downloads/) 3.12 ou plus (cocher « Add python.exe to PATH ») et
+   [Node.js](https://nodejs.org) LTS.
+2. Télécharger le dépôt (bouton vert « Code », « Download ZIP ») et le décompresser.
+3. Double-cliquer sur `demarrer-demo.bat`. La première fois, l'installation prend quelques minutes, puis l'ERP
+   s'ouvre dans le navigateur sur http://localhost:5173.
+
+Le script charge des données fictives (`manage.py donnees_demo`) : quelques fournisseurs, clients, articles en
+stock, matériels, et un compte par profil, tous avec le mot de passe `demo-atr` : `responsable` (tous les
+modules), `controleur`, `acheteur`, `magasinier`, `chef`, `mecanicien`, `commercial`. La base reste dans
+`backend/db.sqlite3` sur le poste ; la supprimer remet la démonstration à zéro. Cette commande refuse de tourner
+sur la base du serveur.
+
 ## Installer sur le serveur
 
 ```
