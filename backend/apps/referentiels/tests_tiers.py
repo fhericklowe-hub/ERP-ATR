@@ -93,3 +93,25 @@ class TiersTests(APITestCase):
         self.assertEqual(self.client.delete(url).status_code, 403)
         self.client.force_authenticate(self.acheteur)
         self.assertEqual(self.client.delete(url).status_code, 204)
+
+    def test_sites_du_client_tenus_par_qui_modifie_la_fiche(self):
+        from apps.core.models import Site
+
+        from .models import Emplacement
+        client = Tiers.objects.create(code="C-1", raison_sociale="Client Essai", est_client=True)
+        corps = {"type": "CLIENT", "client": client.id, "nom": "Chantier Essai", "ville": "San Pedro"}
+        self.client.force_authenticate(self.demandeur)
+        self.assertEqual(self.client.post("/api/emplacements/", corps, format="json").status_code, 403)
+        self.client.force_authenticate(self.acheteur)   # modifie les tiers, sans droit sur les emplacements
+        r = self.client.post("/api/emplacements/", corps, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        url = f"/api/emplacements/{r.data['id']}/"
+        self.assertEqual(self.client.patch(url, {"actif": False}, format="json").data["actif"], False)
+        self.assertEqual(self.client.get(f"{URL}{client.id}/").data["sites"][0]["nom"], "Chantier Essai")
+        self.assertIn(self.client.delete(url).status_code, (403, 405))
+        # Les sites de l'entreprise restent hors de portée : ni création, ni modification, ni changement de type.
+        site = Site.objects.first() or Site.objects.create(code="S", nom="Siège")
+        self.assertEqual(self.client.post("/api/emplacements/", {"type": "SITE", "site": site.id, "nom": "Magasin"}, format="json").status_code, 403)
+        magasin = Emplacement.objects.create(type="SITE", site=site, nom="Magasin Essai")
+        self.assertEqual(self.client.patch(f"/api/emplacements/{magasin.id}/", {"nom": "X"}, format="json").status_code, 403)
+        self.assertEqual(self.client.patch(url, {"type": "SITE", "site": site.id, "client": None}, format="json").status_code, 403)

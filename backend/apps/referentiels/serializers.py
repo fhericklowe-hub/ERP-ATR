@@ -9,14 +9,21 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = ["id", "tiers", "nom", "fonction", "telephone", "email"]
 
 
+class SiteClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Emplacement
+        fields = ["id", "nom", "adresse", "ville", "actif"]
+
+
 class TiersSerializer(serializers.ModelSerializer):
     contacts = ContactSerializer(many=True, read_only=True)
+    sites = SiteClientSerializer(source="emplacements", many=True, read_only=True)
 
     class Meta:
         model = Tiers
         fields = [
             "id", "code", "raison_sociale", "est_client", "est_fournisseur", "numero_contribuable",
-            "telephone", "email", "adresse", "ville", "actif", "contacts",
+            "telephone", "email", "adresse", "ville", "actif", "contacts", "sites",
         ]
         extra_kwargs = {"code": {"required": False, "allow_blank": True}}   # vide : numéro automatique
 
