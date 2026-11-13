@@ -4,6 +4,8 @@ from rest_framework import exceptions, mixins, permissions, serializers, viewset
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.export import ExportExcel
+
 from .commande import BonCommande, EvenementCommande, LigneBonCommande
 from .budget import DemandeBudget
 from .models import DemandeAchat
@@ -139,10 +141,19 @@ class BonCommandeSerializer(serializers.ModelSerializer):
         return instance
 
 
-class BonCommandeViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+class BonCommandeViewSet(ExportExcel, mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
                          mixins.ListModelMixin, viewsets.GenericViewSet):
     """Bons de commande. Pas de suppression : un bon se corrige ou s'annule."""
 
+    export_titre, export_fichier = "Bons de commande", "bons-commande"
+    export_colonnes = [
+        ("N°", "numero"), ("Ancien n°", "ancien_numero"), ("Date", "date", "date"), ("Statut", "statut_libelle"),
+        ("Fournisseur", "fournisseur_nom"), ("Objet", "objet"), ("Demande d'achat", "demande_numero"), ("Site", "site_nom"),
+        ("Service", "service_nom"), ("Activité", "activite_libelle"), ("Acheteur", "acheteur_nom"), ("Devise", "devise"),
+        ("Total HT", "totaux.total_ht", "nombre"), ("TVA", "totaux.total_tva", "nombre"), ("Total TTC", "totaux.total_ttc", "nombre"),
+        ("Contre-valeur XOF", "totaux.contre_valeur_xof", "nombre"), ("Livraison prévue", "date_livraison", "date"),
+        ("Réception", "etat_reception_libelle"),
+    ]
     serializer_class = BonCommandeSerializer
     queryset = BonCommande.objects.select_related("demande", "demande_budget", "fournisseur", "site", "service", "acheteur").prefetch_related(
         "lignes", "evenements__auteur", "receptions"

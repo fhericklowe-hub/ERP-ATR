@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.core.export import ExportExcel
 from apps.core.api import VueMetier
 from apps.core.models import Compteur
 from apps.core.permissions import DroitsModele
@@ -19,8 +20,14 @@ from .serializers import (
 )
 
 
-class TiersViewSet(VueMetier):
+class TiersViewSet(ExportExcel, VueMetier):
     queryset = Tiers.objects.prefetch_related("contacts", "emplacements")
+    export_titre, export_fichier = "Fournisseurs et clients", "tiers"
+    export_colonnes = [
+        ("Code", "code"), ("Raison sociale", "raison_sociale"), ("Client", "est_client", "oui_non"), ("Fournisseur", "est_fournisseur", "oui_non"),
+        ("N° contribuable", "numero_contribuable"), ("Téléphone", "telephone"), ("E-mail", "email"), ("Adresse", "adresse"),
+        ("Ville", "ville"), ("Actif", "actif", "oui_non"),
+    ]
     serializer_class = TiersSerializer
     filterset_fields = ["est_client", "est_fournisseur", "actif"]
     search_fields = ["code", "raison_sociale", "ville", "numero_contribuable"]
@@ -107,8 +114,13 @@ class FamilleArticleViewSet(viewsets.ModelViewSet):
     search_fields = ["code", "nom"]
 
 
-class ArticleViewSet(VueMetier):
+class ArticleViewSet(ExportExcel, VueMetier):
     queryset = Article.objects.select_related("famille", "unite")
+    export_titre, export_fichier = "Articles", "articles"
+    export_colonnes = [
+        ("Code", "code"), ("Désignation", "designation"), ("Nature", "nature_libelle"), ("Famille", "famille_nom"),
+        ("Unité", "unite_code"), ("Géré en stock", "gere_en_stock", "oui_non"), ("Actif", "actif", "oui_non"),
+    ]
     serializer_class = ArticleSerializer
     filterset_fields = ["nature", "famille", "gere_en_stock", "actif"]
     search_fields = ["code", "designation"]

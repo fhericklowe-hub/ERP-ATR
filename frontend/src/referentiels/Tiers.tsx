@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { api, type Page } from '../api'
+import BoutonExcel from '../BoutonExcel'
 
 type Qualite = 'fournisseur' | 'client'
 type Contact = { id: number; tiers: number; nom: string; fonction: string; telephone: string; email: string }
@@ -94,12 +95,11 @@ export function ListeTiers({ qualite, peutCreer, peutModifier }: { qualite: Qual
     <>
       <div className="barre">
         <h2>{mots.titre}</h2>
-        {peutCreer && (
-          <div className="actions">
-            <a className="bouton secondaire" href={`#${mots.base}/import`}>Importer depuis Excel</a>
-            <button onClick={() => { setErreur(''); setFiche(vide(qualite)) }}>{mots.nouveau}</button>
-          </div>
-        )}
+        <div className="actions">
+          <BoutonExcel chemin="/tiers/" nom={mots.base.replace('/', '')} filtres={{ [`est_${qualite}`]: 'true', search: filtre.search, actif: filtre.actif }} onErreur={setErreur} />
+          {peutCreer && <a className="bouton secondaire" href={`#${mots.base}/import`}>Importer depuis Excel</a>}
+          {peutCreer && <button onClick={() => { setErreur(''); setFiche(vide(qualite)) }}>{mots.nouveau}</button>}
+        </div>
       </div>
       <div className="grille filtres">
         <label>Recherche<input placeholder="Nom, code, ville, n° contribuable" value={filtre.search} onChange={(e) => setFiltre({ ...filtre, search: e.target.value })} /></label>

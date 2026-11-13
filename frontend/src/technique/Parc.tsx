@@ -3,6 +3,7 @@ import { api, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import HistoriqueMateriel from './Historique'
 import { ACTIVITES, ETATS_MATERIEL, type Materiel, TYPES_MATERIEL, pastilleEtat } from './types'
+import BoutonExcel from '../BoutonExcel'
 
 type Saisie = Pick<Materiel, 'code' | 'type' | 'designation' | 'marque' | 'modele' | 'numero_serie' | 'immatriculation' | 'annee' | 'capacite'
   | 'activite' | 'site' | 'emplacement' | 'etat' | 'compteur_heures' | 'compteur_km' | 'observations'> & { id?: number }
@@ -123,6 +124,7 @@ export default function Parc({ peutModifier }: { peutModifier: boolean }) {
       <div className="barre">
         <h2>Parc de matériels</h2>
         <div className="actions">
+          <BoutonExcel chemin="/technique/materiels/" nom="parc-materiels" filtres={filtre} onErreur={setErreur} />
           <a className="bouton secondaire" href="#/ordres">Ordres de réparation</a>
           {peutModifier && <a className="bouton secondaire" href="#/parc/import">Importer depuis Excel</a>}
           {peutModifier && <button onClick={() => setM(vide())}>Nouveau matériel</button>}

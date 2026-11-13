@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from apps.achats.views import executer_transition
 from apps.core.api import VueMetier
+from apps.core.export import ExportExcel
 from apps.core.models import Utilisateur
 
 from . import couts
@@ -44,10 +45,18 @@ class MaterielSerializer(serializers.ModelSerializer):
         return sum(1 for o in obj.ordres.all() if o.ouvert)
 
 
-class MaterielViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+class MaterielViewSet(ExportExcel, mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
                       mixins.ListModelMixin, viewsets.GenericViewSet):
     """Parc de matériels. Pas de suppression : un matériel sorti du parc passe à l'état réformé."""
 
+    export_titre, export_fichier = "Parc de matériels", "parc-materiels"
+    export_colonnes = [
+        ("N° de parc", "code"), ("Désignation", "designation"), ("Type", "type_libelle"), ("Marque", "marque"), ("Modèle", "modele"),
+        ("N° de série", "numero_serie"), ("Immatriculation", "immatriculation"), ("Année", "annee"), ("Capacité", "capacite"),
+        ("Activité", "activite_libelle"), ("Site", "site_nom"), ("Emplacement", "emplacement_nom"), ("État", "etat_libelle"),
+        ("Compteur heures", "compteur_heures", "nombre"), ("Compteur km", "compteur_km", "nombre"),
+        ("Mise en service", "date_mise_en_service", "date"),
+    ]
     serializer_class = MaterielSerializer
     queryset = Materiel.objects.select_related("site", "emplacement").prefetch_related("ordres")
     filterset_fields = ["type", "etat", "site", "activite", "emplacement"]
@@ -193,10 +202,17 @@ class OrdreSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class OrdreReparationViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+class OrdreReparationViewSet(ExportExcel, mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
                              mixins.ListModelMixin, viewsets.GenericViewSet):
     """Ordres de réparation. `?ouvert=1` : ceux sur lesquels on peut encore sortir des pièces."""
 
+    export_titre, export_fichier = "Ordres de réparation", "ordres-reparation"
+    export_colonnes = [
+        ("N°", "numero"), ("Date", "cree_le", "date"), ("Statut", "statut_libelle"), ("Matériel", "materiel_code"),
+        ("Désignation", "materiel_nom"), ("Site", "site_nom"), ("Type", "type_libelle"), ("Immobilisant", "immobilisant", "oui_non"),
+        ("Description", "description"), ("Demandeur", "demandeur_nom"), ("Mécanicien", "mecanicien_nom"),
+        ("Démarré le", "demarre_le", "date"), ("Terminé le", "termine_le", "date"), ("Clôturé le", "cloture_le", "date"),
+    ]
     serializer_class = OrdreSerializer
     queryset = OrdreReparation.objects.select_related("materiel__site", "demandeur", "mecanicien", "cloture_par", "plan")
     filterset_fields = ["statut", "type", "materiel", "mecanicien", "materiel__site"]

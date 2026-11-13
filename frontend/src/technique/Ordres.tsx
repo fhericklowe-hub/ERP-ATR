@@ -5,6 +5,7 @@ import { montant as enChiffres } from '../achats/commandes'
 import { dateFr, dateHeureFr } from '../achats/types'
 import { nombre } from '../stock/types'
 import { type Materiel, type Ordre, STATUTS_ORDRE, TYPES_ORDRE } from './types'
+import BoutonExcel from '../BoutonExcel'
 
 type Personne = { id: number; first_name: string; last_name: string; username: string }
 const montant = (n: string) => `${enChiffres(n)} XOF`
@@ -29,6 +30,7 @@ export function ListeOrdres({ materiel, peutCreer }: { materiel?: string; peutCr
       <div className="barre">
         <h2>Ordres de réparation</h2>
         <div className="actions">
+          <BoutonExcel chemin="/technique/ordres/" nom="ordres-reparation" filtres={{ ...filtre, materiel: materiel ?? '' }} onErreur={setErreur} />
           <a className="bouton secondaire" href="#/parc">Parc de matériels</a>
           {peutCreer && <a className="bouton" href={`#/ordres/nouveau${materiel ? `?materiel=${materiel}` : ''}`}>Nouvel OR</a>}
         </div>

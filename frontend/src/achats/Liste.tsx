@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, type Page } from '../api'
 import { type Demande, URGENCES, dateFr, dateHeureFr } from './types'
+import BoutonExcel from '../BoutonExcel'
 
 const FILTRES = [
   ['', 'Toutes'],
@@ -29,7 +30,10 @@ export default function Liste() {
     <>
       <div className="barre">
         <h2>Demandes d'achat</h2>
-        <a className="bouton" href="#/demandes/nouvelle">Nouvelle demande</a>
+        <div className="actions">
+          <BoutonExcel chemin="/achats/demandes/" nom="demandes-achat" filtres={{ statut }} onErreur={setErreur} />
+          <a className="bouton" href="#/demandes/nouvelle">Nouvelle demande</a>
+        </div>
       </div>
       <label className="filtre">
         Statut

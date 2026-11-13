@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page } from '../api'
+import BoutonExcel from '../BoutonExcel'
 
 type Article = {
   id: number; code: string; designation: string; nature: string; nature_libelle: string; famille: number | null; famille_nom: string
@@ -92,7 +93,10 @@ export default function Articles({ peutCreer, peutModifier }: { peutCreer: boole
     <>
       <div className="barre">
         <h2>Articles</h2>
-        {peutCreer && <div className="actions"><button onClick={() => { setErreur(''); setFiche(VIDE) }}>Nouvel article</button></div>}
+        <div className="actions">
+          <BoutonExcel chemin="/articles/" nom="articles" filtres={{ search: filtre.search, nature: filtre.nature, actif: filtre.actif }} onErreur={setErreur} />
+          {peutCreer && <button onClick={() => { setErreur(''); setFiche(VIDE) }}>Nouvel article</button>}
+        </div>
       </div>
       <div className="grille filtres">
         <label>Recherche<input placeholder="Code ou désignation" value={filtre.search} onChange={(e) => setFiltre({ ...filtre, search: e.target.value })} /></label>
