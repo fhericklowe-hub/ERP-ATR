@@ -474,3 +474,14 @@ du même équipement au même salarié éteint l'alerte. Le responsable HSE choi
 (nom, matricule, site) : le dossier RH reste fermé.
 
 Après la mise à jour : `manage.py migrate` crée le rôle « HSE - Visiteur » et complète les rôles HSE existants.
+
+## Exports Excel
+
+Un bouton « Exporter vers Excel » figure sur les demandes d'achat, les bons de commande, le parc de matériels,
+les ordres de réparation, le catalogue d'articles, les fournisseurs et les clients.
+
+- Le fichier reprend les filtres affichés à l'écran et les droits de la personne : elle n'exporte que ce qu'elle voit.
+- Limite de 5 000 lignes par export ; au-delà, un message demande de préciser les filtres.
+- Les dossiers du personnel ne sont volontairement pas exportables (données confidentielles).
+- Un nouvel écran s'ajoute en deux lignes : `ExportExcel` dans la vue et la liste `export_colonnes` (voir `apps/core/export.py`),
+  puis le composant `BoutonExcel` côté écran.

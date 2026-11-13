@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api, type Page } from '../api'
 import { type Commande, montant } from './commandes'
 import { dateFr } from './types'
+import BoutonExcel from '../BoutonExcel'
 
 const FILTRES = [
   ['', 'Tous'],
@@ -31,6 +32,7 @@ export default function ListeCommandes() {
     <>
       <div className="barre">
         <h2>Bons de commande</h2>
+        <BoutonExcel chemin="/achats/bons-commande/" nom="bons-commande" filtres={{ statut }} onErreur={setErreur} />
       </div>
       <p className="aide">Un bon de commande se crée depuis une demande d'achat validée.</p>
       <label className="filtre">

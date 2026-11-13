@@ -5,6 +5,7 @@ from rest_framework import exceptions, mixins, parsers, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.export import ExportExcel
 from apps.core.permissions import DroitsModele
 
 from .models import Acheteur, DemandeAchat, PieceJointe
@@ -32,10 +33,17 @@ class AcheteurViewSet(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.G
         return Acheteur.avec_charge()
 
 
-class DemandeAchatViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
+class DemandeAchatViewSet(ExportExcel, mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin,
                           mixins.ListModelMixin, viewsets.GenericViewSet):
     """Demandes d'achat. Pas de suppression : une demande reste dans l'historique."""
 
+    export_titre, export_fichier = "Demandes d'achat", "demandes-achat"
+    export_colonnes = [
+        ("N°", "numero"), ("Ancien n°", "ancien_numero"), ("Date", "date_demande", "date"), ("Statut", "statut_libelle"),
+        ("Demandeur", "demandeur_nom"), ("Service", "service_nom"), ("Site", "site_nom"), ("N° OR", "numero_or"),
+        ("Équipement", "equipement_designation"), ("Urgence", "urgence"), ("Date de besoin", "date_besoin", "date"),
+        ("Acheteur", "acheteur_nom"), ("Échéance de commande", "echeance_commande", "date"), ("En retard", "en_retard", "oui_non"),
+    ]
     serializer_class = DemandeAchatSerializer
     queryset = DemandeAchat.objects.select_related("demandeur", "service", "site", "acheteur").prefetch_related(
         "lignes__unite", "pieces_jointes", "evenements__auteur"

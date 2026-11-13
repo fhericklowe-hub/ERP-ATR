@@ -115,3 +115,20 @@ class TiersTests(APITestCase):
         magasin = Emplacement.objects.create(type="SITE", site=site, nom="Magasin Essai")
         self.assertEqual(self.client.patch(f"/api/emplacements/{magasin.id}/", {"nom": "X"}, format="json").status_code, 403)
         self.assertEqual(self.client.patch(url, {"type": "SITE", "site": site.id, "client": None}, format="json").status_code, 403)
+
+    def test_export_excel_des_tiers_et_des_articles(self):
+        import io
+
+        from openpyxl import load_workbook
+        self.importer(classeur(["F-1", "Pneus Essai", "", "0700000001", "", "", "San Pedro"], ["", "Autre Essai", "", "", "", "", "Ferké"]))
+        self.client.force_authenticate(self.acheteur)
+        r = self.client.get(f"{URL}exporter/?est_fournisseur=true&search=Pneus")
+        self.assertEqual(r.status_code, 200)
+        lignes = list(load_workbook(io.BytesIO(r.content)).active.iter_rows(values_only=True))
+        self.assertEqual(len(lignes), 2)
+        champs = dict(zip(*lignes))
+        self.assertEqual((champs["Code"], champs["Raison sociale"], champs["Fournisseur"], champs["Client"], champs["Actif"]),
+                         ("F-1", "Pneus Essai", "Oui", "Non", "Oui"))
+        self.client.force_authenticate(self.demandeur)   # peut lire les articles, pas les tiers
+        self.assertEqual(self.client.get("/api/articles/exporter/").status_code, 200)
+        self.assertEqual(self.client.get(f"{URL}exporter/").status_code, 403)
