@@ -1,0 +1,2 @@
+# Le script de sauvegarde tourne dans un conteneur Linux : il doit garder ses fins de ligne Unix.
+*.sh text eol=lf

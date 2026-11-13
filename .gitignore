@@ -7,3 +7,4 @@ backend/media/
 backend/staticfiles/
 node_modules/
 frontend/dist/
+sauvegardes/
