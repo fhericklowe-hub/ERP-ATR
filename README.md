@@ -66,6 +66,18 @@ docker compose exec backend python manage.py createsuperuser
 
 L'application répond ensuite sur le port 80 du serveur.
 
+## Fournisseurs et clients : écran et import depuis Excel
+
+Achats, « Fournisseurs » et Commercial, « Clients » : recherche, création, modification. Une fiche ne se supprime pas,
+elle se désactive (elle n'est alors plus proposée dans les listes). Sans code saisi, un numéro est attribué (T00001…).
+
+« Importer depuis Excel » (droit de créer et de modifier les tiers) : première feuille, titres en première ligne :
+Raison sociale, puis au besoin Code, N° contribuable, Téléphone, E-mail, Adresse, Ville. Une fiche déjà connue (même
+code, ou à défaut même raison sociale) est mise à jour, une case vide ne change rien ; les autres sont créées. On
+contrôle d'abord le fichier : à la moindre ligne en erreur, rien n'est importé.
+
+Le fichier des fournisseurs ou des clients ne doit jamais être déposé dans ce dépôt.
+
 ## RH : import du personnel depuis Excel
 
 RH, Personnel, « Importer depuis Excel » (gestionnaire RH), ou en ligne de commande :

@@ -18,6 +18,12 @@ class TiersSerializer(serializers.ModelSerializer):
             "id", "code", "raison_sociale", "est_client", "est_fournisseur", "numero_contribuable",
             "telephone", "email", "adresse", "ville", "actif", "contacts",
         ]
+        extra_kwargs = {"code": {"required": False, "allow_blank": True}}   # vide : numéro automatique
+
+    def validate(self, attrs):
+        if self.instance and "code" in attrs and not attrs["code"]:
+            raise serializers.ValidationError({"code": "Le code ne peut pas être vidé."})
+        return attrs
 
 
 class EmplacementSerializer(serializers.ModelSerializer):
