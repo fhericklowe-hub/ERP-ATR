@@ -52,9 +52,23 @@ class FamilleArticleSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
+    nature_libelle = serializers.CharField(source="get_nature_display", read_only=True)
+    famille_nom = serializers.CharField(source="famille.nom", read_only=True, default="")
+    unite_code = serializers.CharField(source="unite.code", read_only=True)
+
     class Meta:
         model = Article
-        fields = ["id", "code", "designation", "nature", "famille", "unite", "gere_en_stock", "actif"]
+        fields = ["id", "code", "designation", "nature", "nature_libelle", "famille", "famille_nom", "unite", "unite_code",
+                  "gere_en_stock", "actif"]
+
+    def validate_code(self, code):
+        code = code.strip()
+        autres = Article.objects.filter(code__iexact=code)
+        if self.instance:
+            autres = autres.exclude(pk=self.instance.pk)
+        if autres.exists():   # l'import du stock reconnaît les codes sans tenir compte des majuscules
+            raise serializers.ValidationError("Un article porte déjà ce code.")
+        return code
 
 
 class CompteChargeSerializer(serializers.ModelSerializer):
