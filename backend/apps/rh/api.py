@@ -4,11 +4,13 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from rest_framework import exceptions, permissions, serializers, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.achats.views import executer_transition
 from apps.core.api import VueMetier
 
+from .imports import importer
 from .models import Contrat, PieceSalarie, Salarie, echeances
 
 
@@ -103,6 +105,25 @@ class SalarieViewSet(VueMetier):
     http_method_names = ["get", "post", "patch", "put", "head", "options"]
 
     transition = dict(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+
+    @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated],
+            parser_classes=[MultiPartParser, JSONParser])
+    def importer(self, request):
+        """Crée ou met à jour les dossiers depuis un classeur Excel. `simuler=1` contrôle sans écrire."""
+        from django.core.exceptions import PermissionDenied
+
+        fichier = request.FILES.get("fichier")
+        if not fichier:
+            raise exceptions.ValidationError({"detail": "Choisissez un classeur Excel."})
+        if fichier.size > 5 * 1024 * 1024:
+            raise exceptions.ValidationError({"detail": "Fichier trop lourd : 5 Mo au plus."})
+        try:
+            bilan = importer(request.user, fichier, simuler=str(request.data.get("simuler", "")).lower() in ("1", "true", "on"))
+        except PermissionDenied as e:
+            raise exceptions.PermissionDenied(str(e))
+        except DjangoValidationError as e:
+            raise exceptions.ValidationError({"detail": e.messages})
+        return Response(bilan)
 
     def _transition(self, request, nom, *args):
         if not request.user.has_perm("rh.view_salarie"):
