@@ -2,11 +2,8 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
+import ActionsCorrectives, { type Action, lienOrigine } from './Actions'
 
-type Action = {
-  id: number; evenement: number; evenement_numero: string; statut: string; statut_libelle: string; description: string; responsable: number
-  responsable_nom: string; echeance: string; faite_le: string | null; commentaire: string; en_retard: boolean; peut_agir: boolean
-}
 type Evenement = {
   id: number; numero: string; statut: string; statut_libelle: string; type: string; type_libelle: string; gravite: string; gravite_libelle: string
   date: string; site: number | ''; site_nom: string; lieu: string; description: string; personnes: string; materiel: number | null; materiel_nom: string
@@ -15,7 +12,6 @@ type Evenement = {
 }
 type Indicateurs = { annee: number; total: number; par_type: { type: string; libelle: string; nombre: number }[]; accidents_avec_arret: number; jours_arret: number; jours_sans_accident: number | null; a_traiter: number; actions_en_retard: number }
 type Materiel = { id: number; code: string; designation: string }
-type Compte = { id: number; username: string; first_name: string; last_name: string }
 
 const TYPES = [['PRESQUE', "Presqu'accident"], ['DANGER', 'Situation dangereuse'], ['ACCIDENT', 'Accident du travail'], ['SOIN', 'Premiers soins'],
   ['MATERIEL', 'Dégât matériel'], ['ENVIRON', "Atteinte à l'environnement"]]
@@ -54,7 +50,7 @@ export function ListeEvenements({ peutTraiter }: { peutTraiter: boolean }) {
       {miennes.length > 0 && (
         <fieldset>
           <legend>Mes actions à faire</legend>
-          <ul>{miennes.map((a) => <li key={a.id}><a href={`#/hse/${a.evenement}`}>{a.evenement_numero}</a> · {a.description} · avant le {dateFr(a.echeance)} {a.en_retard && <span className="pastille u1">en retard</span>}</li>)}</ul>
+          <ul>{miennes.map((a) => <li key={a.id}><a href={lienOrigine(a)}>{a.evenement_numero || a.visite_numero}</a> · {a.description} · avant le {dateFr(a.echeance)} {a.en_retard && <span className="pastille u1">en retard</span>}</li>)}</ul>
         </fieldset>
       )}
       <div className="grille filtres large">
@@ -146,9 +142,7 @@ export function FormulaireEvenement({ id }: { id?: number }) {
 
 export function DetailEvenement({ id }: { id: number }) {
   const [e, setE] = useState<Evenement | null>(null)
-  const [comptes, setComptes] = useState<Compte[]>([])
   const [an, setAn] = useState({ causes: '', gravite: '1', jours_arret: 0, conclusion: '' })
-  const [ac, setAc] = useState({ description: '', responsable: '', echeance: '' })
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
   const recevoir = useCallback((x: Evenement) => {
@@ -159,9 +153,6 @@ export function DetailEvenement({ id }: { id: number }) {
     api<Evenement>(`/hse/evenements/${id}/`).then(recevoir).catch((err: Error) => setErreur(err.message))
   }, [id, recevoir])
   useEffect(charger, [charger])
-  useEffect(() => {
-    if (e?.peut_traiter && comptes.length === 0) api<Page<Compte>>('/utilisateurs/?is_active=true&page_size=200').then((p) => setComptes(p.results)).catch(() => undefined)
-  }, [e?.peut_traiter, comptes.length])
 
   async function envoyer(chemin: string, corps: object) {
     setErreur('')
@@ -177,12 +168,6 @@ export function DetailEvenement({ id }: { id: number }) {
       setEnCours(false)
     }
   }
-  async function ajouterAction(ev: FormEvent) {
-    ev.preventDefault()
-    if (await envoyer('/hse/actions/', { evenement: id, ...ac, responsable: Number(ac.responsable) })) setAc({ description: '', responsable: '', echeance: '' })
-  }
-  const terminer = (a: Action) => { const c = prompt('Commentaire (facultatif) :', ''); if (c !== null) envoyer(`/hse/actions/${a.id}/terminer/`, { commentaire: c }) }
-  const abandonner = (a: Action) => { const c = prompt("Pourquoi l'action est-elle abandonnée ?", ''); if (c) envoyer(`/hse/actions/${a.id}/abandonner/`, { commentaire: c }) }
 
   if (!e) return erreur ? <p className="erreur">{erreur}</p> : <p>Chargement…</p>
   const ouvert = e.statut !== 'CLOS'
@@ -221,33 +206,7 @@ export function DetailEvenement({ id }: { id: number }) {
         </fieldset>
       )}
 
-      {(e.actions.length > 0 || (e.peut_traiter && ouvert)) && (
-        <fieldset>
-          <legend>Actions correctives</legend>
-          {e.actions.length === 0 && <p className="aide">Aucune action décidée.</p>}
-          {e.actions.length > 0 && (
-            <div className="defilant"><table>
-              <thead><tr><th>Action</th><th>Responsable</th><th>Échéance</th><th>État</th><th></th></tr></thead>
-              <tbody>{e.actions.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.description}{a.commentaire && <><br /><span className="aide">{a.commentaire}</span></>}</td><td>{a.responsable_nom}</td>
-                  <td>{dateFr(a.echeance)}</td>
-                  <td><span className={`pastille ${a.statut === 'FAITE' ? 'complete' : a.en_retard ? 'u1' : a.statut === 'A_FAIRE' ? 'partielle' : ''}`}>{a.en_retard ? 'En retard' : a.statut_libelle}{a.faite_le ? ` le ${dateFr(a.faite_le)}` : ''}</span></td>
-                  <td>{a.peut_agir && <button type="button" className="lien" disabled={enCours} onClick={() => terminer(a)}>Terminer</button>}{a.statut === 'A_FAIRE' && e.peut_traiter && <> <button type="button" className="lien" disabled={enCours} onClick={() => abandonner(a)}>Abandonner</button></>}</td>
-                </tr>
-              ))}</tbody>
-            </table></div>
-          )}
-          {e.peut_traiter && ouvert && (
-            <form className="grille" onSubmit={ajouterAction}>
-              <label>Action à mener<input required maxLength={300} value={ac.description} onChange={(ev) => setAc({ ...ac, description: ev.target.value })} /></label>
-              <label>Responsable<select required value={ac.responsable} onChange={(ev) => setAc({ ...ac, responsable: ev.target.value })}><option value="">Choisir</option>{comptes.map((c) => <option key={c.id} value={c.id}>{[c.last_name, c.first_name].filter(Boolean).join(' ') || c.username}</option>)}</select></label>
-              <label>À faire avant le<input type="date" required value={ac.echeance} onChange={(ev) => setAc({ ...ac, echeance: ev.target.value })} /></label>
-              <div className="actions"><button className="secondaire" disabled={enCours}>Ajouter l'action</button></div>
-            </form>
-          )}
-        </fieldset>
-      )}
+      <ActionsCorrectives actions={e.actions} origine={{ evenement: id }} peutAjouter={e.peut_traiter && ouvert} peutAbandonner={e.peut_traiter} recharger={charger} />
 
       {e.peut_traiter && e.statut === 'ANALYSE' && (
         <fieldset>

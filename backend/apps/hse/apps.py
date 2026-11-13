@@ -11,10 +11,13 @@ class HseConfig(AppConfig):
         from apps.core import rappels as rappels_du_jour
 
         from .api import EvenementViewSet
-        from .rappels import actions, evenements
+        from .rappels import actions, epi, evenements
         from .roles import creer_roles
+        from .terrain_api import VisiteViewSet
 
         post_migrate.connect(creer_roles, sender=self)
         pieces.declarer(EvenementViewSet)
         rappels_du_jour.declarer(evenements)
         rappels_du_jour.declarer(actions)
+        pieces.declarer(VisiteViewSet)
+        rappels_du_jour.declarer(epi)

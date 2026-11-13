@@ -6,35 +6,50 @@ from rest_framework.response import Response
 
 from apps.achats.views import executer_transition
 
-from .models import ActionCorrective, Evenement, indicateurs
+from .models import ActionCorrective, Evenement, Visite, indicateurs
 
 
 class ActionSerializer(serializers.ModelSerializer):
     statut_libelle = serializers.CharField(source="get_statut_display", read_only=True)
     responsable_nom = serializers.SerializerMethodField()
-    evenement_numero = serializers.CharField(source="evenement.numero", read_only=True)
+    evenement_numero = serializers.SerializerMethodField()
+    visite_numero = serializers.SerializerMethodField()
     en_retard = serializers.BooleanField(read_only=True)
     peut_agir = serializers.SerializerMethodField()
 
     class Meta:
         model = ActionCorrective
-        fields = ["id", "evenement", "evenement_numero", "statut", "statut_libelle", "description", "responsable", "responsable_nom",
-                  "echeance", "faite_le", "commentaire", "en_retard", "peut_agir"]
+        fields = ["id", "evenement", "evenement_numero", "visite", "visite_numero", "statut", "statut_libelle", "description",
+                  "responsable", "responsable_nom", "echeance", "faite_le", "commentaire", "en_retard", "peut_agir"]
 
     def get_responsable_nom(self, obj) -> str:
         return str(obj.responsable)
+
+    def get_evenement_numero(self, obj) -> str:
+        return obj.evenement.numero if obj.evenement_id else ""
+
+    def get_visite_numero(self, obj) -> str:
+        return obj.visite.numero if obj.visite_id else ""
 
     def get_peut_agir(self, obj) -> bool:
         return obj.peut_agir(self.context["request"].user)
 
     def validate(self, attrs):
-        if not self.context["request"].user.has_perm("hse.traiter_evenement"):
-            raise exceptions.PermissionDenied("Seul le responsable HSE décide des actions correctives.")
-        evenement = attrs.get("evenement") or self.instance.evenement
-        if self.instance and (evenement != self.instance.evenement or self.instance.statut != ActionCorrective.Statut.A_FAIRE):
-            raise serializers.ValidationError("Seule une action à faire se modifie, sans changer d'événement.")
-        if evenement.statut == Evenement.Statut.CLOS:
+        u, a = self.context["request"].user, self.instance
+        evenement = attrs.get("evenement", a.evenement if a else None)
+        visite = attrs.get("visite", a.visite if a else None)
+        if bool(evenement) == bool(visite):
+            raise serializers.ValidationError("Une action vient d'un événement ou d'une visite de sécurité.")
+        # Le visiteur décide des actions de sa propre visite ; tout le reste revient au responsable HSE.
+        du_visiteur = not a and visite and visite.visiteur_id == u.id and u.has_perm("hse.add_visite")
+        if not u.has_perm("hse.traiter_evenement") and not du_visiteur:
+            raise exceptions.PermissionDenied("Les actions sont décidées par le responsable HSE, ou par le visiteur pour sa propre visite.")
+        if a and ((evenement, visite) != (a.evenement, a.visite) or a.statut != ActionCorrective.Statut.A_FAIRE):
+            raise serializers.ValidationError("Seule une action à faire se modifie, sans changer d'origine.")
+        if evenement and evenement.statut == Evenement.Statut.CLOS:
             raise serializers.ValidationError("Cet événement est clos.")
+        if visite and visite.statut == Visite.Statut.CLOSE:
+            raise serializers.ValidationError("Cette visite est close.")
         return attrs
 
 
@@ -170,18 +185,20 @@ class EvenementViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixin
 
 
 class ActionViewSet(mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Actions correctives. `?miennes=1` : celles qui me sont confiées."""
+    """Actions correctives, nées d'un événement ou d'une visite de sécurité. `?miennes=1` : celles qui me sont confiées."""
 
     serializer_class = ActionSerializer
     queryset = ActionCorrective.objects.all()
-    filterset_fields = ["statut", "evenement", "responsable"]
+    filterset_fields = ["statut", "evenement", "visite", "responsable"]
     ordering_fields = ["echeance"]
 
     def get_queryset(self):
         u = self.request.user
-        actions = ActionCorrective.objects.select_related("evenement", "responsable")
-        if self.request.query_params.get("miennes") or not u.has_perm("hse.traiter_evenement"):
+        actions = ActionCorrective.objects.select_related("evenement", "visite", "responsable")
+        if self.request.query_params.get("miennes"):
             actions = actions.filter(responsable=u)
+        elif not u.has_perm("hse.traiter_evenement"):
+            actions = actions.filter(Q(responsable=u) | Q(visite__visiteur=u))
         return actions
 
     def perform_create(self, serializer):

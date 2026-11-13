@@ -339,3 +339,22 @@ Le responsable HSE (rôle « HSE - Responsable ») :
 Chacun voit ses déclarations et les événements où une action lui est confiée ; le responsable HSE voit tout, avec
 les chiffres de l'année (événements par type, accidents avec arrêt, jours d'arrêt, jours sans accident avec arrêt).
 Le rappel quotidien par e-mail signale les déclarations à analyser et les actions en retard ou à faire sous 7 jours.
+
+## HSE : visites de sécurité et équipements de protection
+
+**Visites de sécurité** (HSE, Visites de sécurité). L'encadrement qui a le rôle « HSE - Visiteur » enregistre ses
+visites depuis son téléphone : date, site, lieu ou activité, participants, bonnes pratiques et écarts constatés,
+photos en pièces jointes. La visite reçoit un numéro `VS-AAAA-NNNN`. Le visiteur décide des actions correctives de
+sa visite (responsable, échéance) ; elles suivent le même circuit que celles des événements et figurent dans les
+mêmes rappels. Le responsable HSE voit toutes les visites, peut y ajouter des actions, et clôt la visite quand
+toutes les actions sont faites ou abandonnées. Chacun voit les visites qu'il a menées et celles où une action lui
+est confiée.
+
+**Équipements de protection** (HSE, Équipements de protection), pour le responsable HSE : chaque remise à un salarié
+(casque, chaussures, gants, gilet, lunettes, protections auditives, masque, harnais, tenue), avec le modèle ou la
+taille, la quantité, la date de remise et, si besoin, la date de renouvellement. L'écran liste ce qui est à
+renouveler dans les 30 jours ou en retard, et le rappel quotidien par e-mail le signale aussi. Une nouvelle remise
+du même équipement au même salarié éteint l'alerte. Le responsable HSE choisit le salarié dans une liste réduite
+(nom, matricule, site) : le dossier RH reste fermé.
+
+Après la mise à jour : `manage.py migrate` crée le rôle « HSE - Visiteur » et complète les rôles HSE existants.
