@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from apps.core.api import VueMetier
 from apps.core.models import Compteur
+from apps.core.permissions import DroitsModele
 
 from .imports import importer
 from .models import Article, CompteCharge, Projet, Contact, Emplacement, FamilleArticle, Tiers, Unite
@@ -19,7 +20,7 @@ from .serializers import (
 
 
 class TiersViewSet(VueMetier):
-    queryset = Tiers.objects.prefetch_related("contacts")
+    queryset = Tiers.objects.prefetch_related("contacts", "emplacements")
     serializer_class = TiersSerializer
     filterset_fields = ["est_client", "est_fournisseur", "actif"]
     search_fields = ["code", "raison_sociale", "ville", "numero_contribuable"]
@@ -68,7 +69,27 @@ class ContactViewSet(VueMetier):
     search_fields = ["nom", "email"]
 
 
+class DroitsEmplacement(DroitsModele):
+    """Les sites de l'entreprise suivent les droits du modèle. Les sites d'un client se tiennent aussi
+    par ceux qui peuvent modifier la fiche du client."""
+
+    def _par_la_fiche(self, request, type_actuel):
+        return (request.method in ("POST", "PATCH", "PUT") and type_actuel == Emplacement.Type.CLIENT
+                and request.data.get("type", Emplacement.Type.CLIENT) == Emplacement.Type.CLIENT
+                and request.user.is_authenticated and request.user.has_perm("referentiels.change_tiers"))
+
+    def has_permission(self, request, view):
+        if super().has_permission(request, view):
+            return True
+        # En modification, le type se contrôle sur l'objet (has_object_permission).
+        return self._par_la_fiche(request, request.data.get("type") if request.method == "POST" else Emplacement.Type.CLIENT)
+
+    def has_object_permission(self, request, view, obj):
+        return super().has_permission(request, view) or self._par_la_fiche(request, obj.type)
+
+
 class EmplacementViewSet(VueMetier):
+    permission_classes = [DroitsEmplacement]
     queryset = Emplacement.objects.select_related("site", "client")
     serializer_class = EmplacementSerializer
     filterset_fields = ["type", "site", "client", "actif"]

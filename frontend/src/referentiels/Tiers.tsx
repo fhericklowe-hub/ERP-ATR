@@ -3,12 +3,14 @@ import { api, type Page } from '../api'
 
 type Qualite = 'fournisseur' | 'client'
 type Contact = { id: number; tiers: number; nom: string; fonction: string; telephone: string; email: string }
+type SiteClient = { id: number; nom: string; adresse: string; ville: string; actif: boolean }
 type Fiche = {
   contacts?: Contact[]
+  sites?: SiteClient[]
   id: number; code: string; raison_sociale: string; est_client: boolean; est_fournisseur: boolean; numero_contribuable: string
   telephone: string; email: string; adresse: string; ville: string; actif: boolean
 }
-type Saisie = Omit<Fiche, 'id' | 'contacts'>
+type Saisie = Omit<Fiche, 'id' | 'contacts' | 'sites'>
 type Bilan = { lues: number; crees: number; modifies: number; inchanges: number; erreurs: string[]; simulation: boolean; ecrit: boolean }
 
 const MOTS = {
@@ -26,7 +28,7 @@ export function ListeTiers({ qualite, peutCreer, peutModifier }: { qualite: Qual
   const [liste, setListe] = useState<Fiche[] | null>(null)
   const [total, setTotal] = useState(0)
   const [filtre, setFiltre] = useState({ search: '', actif: 'true' })
-  const [fiche, setFiche] = useState<(Saisie & { id?: number; contacts?: Contact[] }) | null>(null)
+  const [fiche, setFiche] = useState<(Saisie & { id?: number; contacts?: Contact[]; sites?: SiteClient[] }) | null>(null)
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
 
@@ -43,7 +45,7 @@ export function ListeTiers({ qualite, peutCreer, peutModifier }: { qualite: Qual
     setErreur('')
     setEnCours(true)
     try {
-      const { id, contacts: _contacts, ...corps } = fiche
+      const { id, contacts: _contacts, sites: _sites, ...corps } = fiche
       await api(id ? `/tiers/${id}/` : '/tiers/', { method: id ? 'PATCH' : 'POST', body: JSON.stringify(corps) })
       setFiche(null)
       charger()
@@ -77,8 +79,8 @@ export function ListeTiers({ qualite, peutCreer, peutModifier }: { qualite: Qual
           {fiche.id && <label className="case"><input type="checkbox" checked={fiche.actif} onChange={(e) => setFiche({ ...fiche, actif: e.target.checked })} /> Actif (décoché : n'est plus proposé dans les listes)</label>}
         </fieldset>
         {fiche.id
-          ? <Contacts tiers={fiche.id} depart={fiche.contacts ?? []} />
-          : <p className="aide">Les contacts s'ajoutent une fois la fiche enregistrée.</p>}
+          ? <><Contacts tiers={fiche.id} depart={fiche.contacts ?? []} />{fiche.est_client && <Sites client={fiche.id} depart={fiche.sites ?? []} />}</>
+          : <p className="aide">Les contacts{fiche.est_client ? ' et les sites du client' : ''} s'ajoutent une fois la fiche enregistrée.</p>}
         {erreur && <p className="erreur" role="alert">{erreur}</p>}
         <div className="actions">
           <button type="button" className="secondaire" onClick={() => { setFiche(null); setErreur(''); charger() }}>Annuler</button>
@@ -195,6 +197,67 @@ function Contacts({ tiers, depart }: { tiers: number; depart: Contact[] }) {
       <div className="actions">
         {saisie.id && <button type="button" className="secondaire" onClick={() => setSaisie(CONTACT_VIDE)}>Annuler la modification</button>}
         <button type="button" className="secondaire" onClick={valider}>{saisie.id ? 'Enregistrer le contact' : 'Ajouter le contact'}</button>
+      </div>
+    </fieldset>
+  )
+}
+
+const SITE_VIDE = { nom: '', ville: '', adresse: '' }
+
+/** Les lieux où le client reçoit nos matériels (chantier, usine, dépôt). Un site ne se supprime pas, il se désactive. */
+function Sites({ client, depart }: { client: number; depart: SiteClient[] }) {
+  const [liste, setListe] = useState(depart)
+  const [saisie, setSaisie] = useState<typeof SITE_VIDE & { id?: number }>(SITE_VIDE)
+  const [erreur, setErreur] = useState('')
+
+  async function envoyer(id: number | undefined, corps: object) {
+    setErreur('')
+    try {
+      const s = await api<SiteClient>(id ? `/emplacements/${id}/` : '/emplacements/', { method: id ? 'PATCH' : 'POST', body: JSON.stringify(corps) })
+      setListe((l) => (id ? l.map((x) => (x.id === id ? s : x)) : [...l, s]))
+      setSaisie(SITE_VIDE)
+    } catch (err) {
+      setErreur((err as Error).message)
+    }
+  }
+  function valider() {
+    if (!saisie.nom.trim()) return setErreur('Indiquez le nom du site.')
+    const { id, ...corps } = saisie
+    return envoyer(id, id ? corps : { ...corps, type: 'CLIENT', client })
+  }
+  const champ = (nom: keyof typeof SITE_VIDE) => ({ value: saisie[nom], onChange: (e: { target: { value: string } }) => setSaisie({ ...saisie, [nom]: e.target.value }) })
+
+  return (
+    <fieldset>
+      <legend>Sites du client</legend>
+      <p className="aide">Les lieux où le client reçoit nos matériels. Ils sont proposés dans les mises à disposition et dans le parc.</p>
+      {liste.length > 0 && (
+        <div className="defilant">
+          <table>
+            <thead><tr><th>Nom</th><th>Ville</th><th>Adresse</th><th></th></tr></thead>
+            <tbody>
+              {liste.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.nom}{!s.actif && <> <span className="pastille">Désactivé</span></>}</td><td>{s.ville}</td><td>{s.adresse}</td>
+                  <td>
+                    <button type="button" className="secondaire" onClick={() => setSaisie({ id: s.id, nom: s.nom, ville: s.ville, adresse: s.adresse })}>Modifier</button>{' '}
+                    <button type="button" className="secondaire" onClick={() => envoyer(s.id, { actif: !s.actif })}>{s.actif ? 'Désactiver' : 'Réactiver'}</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="grille">
+        <label>Nom du site<input maxLength={150} aria-label="Nom du site" {...champ('nom')} /></label>
+        <label>Ville<input maxLength={100} aria-label="Ville du site" {...champ('ville')} /></label>
+        <label>Adresse<input aria-label="Adresse du site" {...champ('adresse')} /></label>
+      </div>
+      {erreur && <p className="erreur" role="alert">{erreur}</p>}
+      <div className="actions">
+        {saisie.id && <button type="button" className="secondaire" onClick={() => setSaisie(SITE_VIDE)}>Annuler la modification</button>}
+        <button type="button" className="secondaire" onClick={valider}>{saisie.id ? 'Enregistrer le site' : 'Ajouter le site'}</button>
       </div>
     </fieldset>
   )
