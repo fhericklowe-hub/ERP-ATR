@@ -5,6 +5,7 @@ import { montant } from '../achats/commandes'
 import { dateFr } from '../achats/types'
 import { nombre } from '../stock/types'
 import { type Mise, pastilleMise } from '../exploitation/Mises'
+import { RelevesDuDevis } from '../exploitation/Releves'
 import type { Materiel } from '../technique/types'
 
 type Ligne = { materiel: number | null; materiel_nom?: string; designation: string; quantite: string; prix_unitaire: string; remise: string; duree: string; prix_net?: string; montant_ht?: string }
@@ -239,7 +240,7 @@ export function FormulaireDevis({ id }: { id?: number }) {
   )
 }
 
-export function DetailDevis({ id, voitMises, peutPreparer }: { id: number; voitMises: boolean; peutPreparer: boolean }) {
+export function DetailDevis({ id, voitMises, peutPreparer, voitReleves, peutRelever }: { id: number; voitMises: boolean; peutPreparer: boolean; voitReleves: boolean; peutRelever: boolean }) {
   const [d, setD] = useState<Devis | null>(null)
   const [mises, setMises] = useState<Mise[]>([])
   const [s, setS] = useState({ reference_client: '', accepte_le: aujourdhui(), motif: '' })
@@ -371,6 +372,7 @@ export function DetailDevis({ id, voitMises, peutPreparer }: { id: number; voitM
           {!d.lignes.some((l) => l.materiel) && <p className="aide">Aucune ligne du devis ne cite un matériel du parc.</p>}
         </fieldset>
       )}
+      {d.statut === 'ACCEPTE' && voitReleves && <RelevesDuDevis devis={id} peutPreparer={peutRelever && d.peut_agir} />}
       <PiecesJointes modele="commercial.devis" objet={id} aide="Joignez ici le bon de commande du client ou le devis signé." />
     </div>
   )
