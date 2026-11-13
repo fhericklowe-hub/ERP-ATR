@@ -77,3 +77,19 @@ class TiersTests(APITestCase):
             self.assertIn(attendu, erreurs)
         self.assertEqual((r.data["ecrit"], Tiers.objects.count()), (False, 2))
         self.assertEqual(self.importer(classeur(titres=["Code", "Ville"])).status_code, 400)
+
+    def test_contacts_suivent_les_droits_de_la_fiche(self):
+        tiers = Tiers.objects.create(code="F-1", raison_sociale="Essai", est_fournisseur=True)
+        corps = {"tiers": tiers.id, "nom": "Contact Essai", "fonction": "Commercial", "telephone": "0700000000"}
+        self.client.force_authenticate(self.demandeur)
+        self.assertEqual(self.client.post("/api/contacts/", corps, format="json").status_code, 403)
+        self.client.force_authenticate(self.acheteur)
+        r = self.client.post("/api/contacts/", corps, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        url = f"/api/contacts/{r.data['id']}/"
+        self.assertEqual(self.client.patch(url, {"fonction": "Directeur"}, format="json").data["fonction"], "Directeur")
+        self.assertEqual(self.client.get(f"{URL}{tiers.id}/").data["contacts"][0]["nom"], "Contact Essai")
+        self.client.force_authenticate(self.demandeur)
+        self.assertEqual(self.client.delete(url).status_code, 403)
+        self.client.force_authenticate(self.acheteur)
+        self.assertEqual(self.client.delete(url).status_code, 204)
