@@ -109,5 +109,11 @@ class Command(BaseCommand):
             Salarie.objects.get_or_create(utilisateur=u, defaults={
                 "nom": u.last_name.upper(), "prenoms": u.first_name, "site": siege, "service": u.service, "date_embauche": embauche,
                 "responsable": None if identifiant in ("responsable", "chef") else Salarie.objects.filter(utilisateur=chef if identifiant == "mecanicien" else responsable).first()})
+        from apps.achats.models import DemandeAchat
+
+        if not DemandeAchat.objects.exists():   # une seule fois : des documents en cours dans chaque module
+            from ._scenario_demo import jouer
+
+            jouer(comptes, siege, service("TECHNI"))
         self.stdout.write(self.style.SUCCESS(
             f"Données de démonstration prêtes. Comptes : {', '.join(COMPTES)} (mot de passe : {mot_de_passe})."))
