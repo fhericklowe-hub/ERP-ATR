@@ -42,8 +42,9 @@ Tests : `python manage.py test` dans `backend/`.
 
 ## Démonstration sur un poste Windows
 
-1. Installer [Python](https://www.python.org/downloads/) 3.12 ou plus (cocher « Add python.exe to PATH ») et
-   [Node.js](https://nodejs.org) LTS.
+1. Installer [Python 3.13](https://www.python.org/downloads/release/python-3139/) (« Windows installer 64-bit ») et
+   [Node.js](https://nodejs.org) LTS. Une version plus récente de Python (3.15) ne convient pas encore ; elle peut
+   rester installée à côté, le script choisit la bonne.
 2. Télécharger le dépôt (bouton vert « Code », « Download ZIP ») et le décompresser.
 3. Double-cliquer sur `demarrer-demo.bat`. La première fois, l'installation prend quelques minutes, puis l'ERP
    s'ouvre dans le navigateur sur http://localhost:5173.
