@@ -70,6 +70,7 @@ L'application répond ensuite sur le port 80 du serveur.
 
 Achats, « Fournisseurs » et Commercial, « Clients » : recherche, création, modification. Une fiche ne se supprime pas,
 elle se désactive (elle n'est alors plus proposée dans les listes). Sans code saisi, un numéro est attribué (T00001…).
+Les contacts (nom, fonction, téléphone, e-mail) se tiennent dans la fiche, par ceux qui peuvent la modifier.
 
 « Importer depuis Excel » (droit de créer et de modifier les tiers) : première feuille, titres en première ligne :
 Raison sociale, puis au besoin Code, N° contribuable, Téléphone, E-mail, Adresse, Ville. Une fiche déjà connue (même

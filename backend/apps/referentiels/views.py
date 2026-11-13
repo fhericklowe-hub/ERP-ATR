@@ -52,7 +52,16 @@ class TiersViewSet(VueMetier):
         return Response(bilan)
 
 
+class DroitsContact(permissions.BasePermission):
+    """Les contacts suivent les droits de la fiche du tiers : les voir avec elle, les tenir à jour si on peut la modifier."""
+
+    def has_permission(self, request, view):
+        droit = "view_tiers" if request.method in permissions.SAFE_METHODS else "change_tiers"
+        return bool(request.user and request.user.is_authenticated and request.user.has_perm(f"referentiels.{droit}"))
+
+
 class ContactViewSet(VueMetier):
+    permission_classes = [DroitsContact]
     queryset = Contact.objects.select_related("tiers")
     serializer_class = ContactSerializer
     filterset_fields = ["tiers"]
