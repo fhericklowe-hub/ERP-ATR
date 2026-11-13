@@ -24,6 +24,7 @@ import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
 import Accueil from './Accueil'
 import Pilotage from './Pilotage'
+import Comptes from './Comptes'
 import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
 import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
@@ -131,6 +132,9 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/echeances', texte: 'Échéances', droit: 'moyens.view_echeance' },
     { chemin: '/contrats', texte: 'Contrats', droit: 'moyens.view_contrat' },
   ] },
+  { titre: 'Administration', liens: [
+    { chemin: '/comptes', texte: 'Comptes', droit: 'core.gerer_comptes' },
+  ] },
 ]
 
 /** La rubrique à laquelle appartient une adresse : la plus précise de celles dont l'adresse commence pareil. */
@@ -154,6 +158,7 @@ function useRoute() {
 function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const a = (droit: string) => moi.droits.includes(droit)
   if (route === '/accueil') return <Accueil moi={moi} />
+  if (route === '/comptes') return a('core.gerer_comptes') ? <Comptes moi={moi.id} /> : <p>Cette page est réservée à ceux qui gèrent les comptes.</p>
   if (route === '/pilotage') return a('core.voir_pilotage') ? <Pilotage /> : <p>Cette page est réservée à la direction.</p>
   if (route === '/interventions') return <ListeInterventions />
   if (route === '/interventions/nouvelle') return <FormulaireIntervention moi={moi} />

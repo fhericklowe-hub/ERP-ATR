@@ -100,7 +100,8 @@ class Societe(models.Model):
 
     class Meta:
         verbose_name = "société"
-        permissions = [("voir_pilotage", "Voir le tableau de bord de direction")]
+        permissions = [("voir_pilotage", "Voir le tableau de bord de direction"),
+                       ("gerer_comptes", "Gérer les comptes des utilisateurs et leurs rôles")]
 
     def __str__(self):
         return self.nom

@@ -1,6 +1,9 @@
-"""Rôle de direction : la lecture du tableau de bord, sans droit d'écriture dans les modules."""
+"""Rôle de direction : la lecture du tableau de bord, sans droit d'écriture dans les modules.
+Rôle d'administration : créer les comptes et attribuer les rôles, sans droit dans les modules non plus."""
 
-ROLES = {"Direction - Tableau de bord": ["core.voir_pilotage"]}
+ROLE_COMPTES = "Administration - Comptes"
+ROLES = {"Direction - Tableau de bord": ["core.voir_pilotage"],
+         ROLE_COMPTES: ["core.gerer_comptes", "core.view_utilisateur", "core.view_site", "core.view_service"]}
 
 
 def creer_roles(sender, **kwargs):

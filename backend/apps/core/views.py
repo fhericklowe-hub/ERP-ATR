@@ -1,10 +1,13 @@
+from django.contrib.auth.models import Group
+from django.db import transaction
 from rest_framework import exceptions, permissions, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .api import VueMetier
 from .models import Service, Site, Utilisateur
-from .serializers import ServiceSerializer, SiteSerializer, UtilisateurSerializer
+from .serializers import CompteSerializer, ServiceSerializer, SiteSerializer, UtilisateurSerializer
 
 
 class SiteViewSet(VueMetier):
@@ -28,6 +31,35 @@ class UtilisateurViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UtilisateurSerializer
     filterset_fields = ["site", "service", "is_active"]
     search_fields = ["username", "first_name", "last_name", "email"]
+
+
+class GereLesComptes(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.has_perm("core.gerer_comptes"))
+
+
+class CompteViewSet(viewsets.ModelViewSet):
+    """Gestion des comptes : création, rôles, mot de passe, désactivation. Un compte ne se supprime pas."""
+
+    permission_classes = [GereLesComptes]
+    queryset = Utilisateur.objects.select_related("site", "service").prefetch_related("groups")
+    serializer_class = CompteSerializer
+    filterset_fields = ["site", "service", "is_active"]
+    search_fields = ["username", "first_name", "last_name", "email", "fonction"]
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        serializer.save()
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        serializer.save()
+
+    @action(detail=False)
+    def roles(self, request):
+        """Les rôles attribuables, par ordre alphabétique (donc regroupés par module)."""
+        return Response(list(Group.objects.order_by("name").values_list("name", flat=True)))
 
 
 class MoiView(APIView):
