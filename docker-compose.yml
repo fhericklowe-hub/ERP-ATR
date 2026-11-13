@@ -38,6 +38,26 @@ services:
     <<: *backend
     command: celery -A config worker -B -l info
 
+  # Sauvegarde et restauration : ne tourne que sur demande (sauvegarder.bat, restaurer.bat).
+  sauvegarde:
+    image: postgres:17
+    profiles: ["outils"]
+    entrypoint: ["sh", "/outils/sauvegarde.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      TZ: ${TIME_ZONE:-Africa/Abidjan}
+      SAUVEGARDES_JOURS: ${SAUVEGARDES_JOURS:-30}
+    volumes:
+      - media:/data/media
+      - ./sauvegardes:/sauvegardes
+      - ./outils:/outils:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
     build: ./frontend
     restart: unless-stopped

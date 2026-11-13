@@ -66,6 +66,32 @@ docker compose exec backend python manage.py createsuperuser
 
 L'application répond ensuite sur le port 80 du serveur.
 
+## Sauvegardes
+
+Sur le serveur, avant la mise en service, trois fichiers à la racine s'occupent des sauvegardes. Ils sauvegardent la
+base de données et le dossier des pièces jointes (signatures comprises).
+
+- `sauvegarder.bat` : une sauvegarde datée dans le dossier `sauvegardes` (`erp-AAAAMMJJ-HHMMSS.dump` pour la base,
+  `media-AAAAMMJJ-HHMMSS.tar.gz` pour les pièces jointes), puis efface celles de plus de 30 jours (réglable avec
+  `SAUVEGARDES_JOURS` dans `.env`). Chaque sauvegarde est relue avant d'être gardée ; une sauvegarde qui échoue ne
+  supprime rien. Le résultat s'ajoute à `sauvegardes\journal.txt`.
+- `planifier-sauvegarde.bat [heure]` : programme `sauvegarder.bat` chaque nuit à 02:00 dans le Planificateur de tâches de
+  Windows (à lancer en administrateur). Pour qu'elle tourne sans session ouverte, cocher « Exécuter même si l'utilisateur
+  n'est pas connecté » dans les propriétés de la tâche. Docker doit être démarré à ce moment-là.
+- `restaurer.bat AAAAMMJJ-HHMMSS` : remet la base et les pièces jointes de cette date (sans date, liste les sauvegardes).
+  Il demande de taper OUI, fait d'abord une sauvegarde de l'état actuel, arrête l'application, restaure la base en une
+  seule fois (en cas d'échec elle reste comme avant), puis relance l'application. Les pièces jointes présentes sur le
+  serveur mais absentes de la sauvegarde sont laissées en place.
+
+**Une sauvegarde qui reste sur le disque du serveur ne protège pas d'une panne de ce disque.** Renseigner `COPIE_VERS` dans
+`.env` (un autre disque, un partage réseau : `COPIE_VERS=D:\sauvegardes-erp`) : `sauvegarder.bat` y copie chaque nouvelle
+sauvegarde (sans rien y effacer : ce dossier se vide à la main). Garder aussi, ailleurs, une copie du fichier `.env`
+(il contient `SECRET_KEY` et les mots de passe, donc pas dans le dépôt, qui est public) : sans lui, une restauration sur un
+nouveau serveur ne peut pas démarrer. Et essayer une restauration sur un autre poste avant d'en avoir besoin.
+
+Le dossier `sauvegardes` contient toutes les données de l'entreprise : il est ignoré par git et ne doit jamais être déposé
+dans le dépôt.
+
 ## Fournisseurs et clients : écran et import depuis Excel
 
 Achats, « Fournisseurs » et Commercial, « Clients » : recherche, création, modification. Une fiche ne se supprime pas,
