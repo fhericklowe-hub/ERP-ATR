@@ -17,3 +17,7 @@ def sous_le_seuil(utilisateur):
             lignes.append(f"{r.article.designation} ({r.article.code}) à {r.magasin.nom} : {nombre(quantite) if quantite else '0'} "
                           f"en stock, seuil {nombre(r.seuil_mini)}")
     return "Stock au seuil d'alerte ou en dessous", lignes
+
+
+# Où traiter chaque rubrique dans l'application (page d'accueil).
+sous_le_seuil.lien = "/stock"

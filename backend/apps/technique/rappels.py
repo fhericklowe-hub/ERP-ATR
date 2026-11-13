@@ -22,3 +22,8 @@ def ordres_a_cloturer(utilisateur):
         return None
     ordres = OrdreReparation.objects.filter(statut=OrdreReparation.Statut.TERMINE).select_related("materiel").order_by("termine_le")
     return "Ordres de réparation terminés, à clôturer", [f"{o.numero} · {o.materiel.code}" for o in ordres]
+
+
+# Où traiter chaque rubrique dans l'application (page d'accueil).
+entretiens.lien = "/entretien"
+ordres_a_cloturer.lien = "/ordres"

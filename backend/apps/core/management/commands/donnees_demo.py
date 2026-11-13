@@ -18,7 +18,7 @@ from apps.referentiels.models import Article, Emplacement, Tiers, Unite
 # identifiant : (prénom, nom, service, rôles). Le compte « responsable » cumule les rôles de pilotage pour tout montrer.
 COMPTES = {
     "responsable": ("Démo", "Responsable", "ACHATS", [
-        "Achats - Demandeur", "Achats - Responsable achats", "Moyens généraux - Gestionnaire", "Moyens généraux - Demandeur",
+        "Achats - Demandeur", "Achats - Responsable achats", "Achats - Directeur technique", "Moyens généraux - Gestionnaire", "Moyens généraux - Demandeur",
         "Stock - Responsable", "Technique - Chef d'atelier", "Commercial - Responsable", "Exploitation - Agent",
         "RH - Gestionnaire", "RH - Salarié", "HSE - Responsable"]),
     "controleur": ("Démo", "Contrôleur", "FINANCES", ["Achats - Contrôleur de gestion", "RH - Salarié", "HSE - Déclarant"]),
@@ -65,6 +65,7 @@ class Command(BaseCommand):
     def handle(self, mot_de_passe, **options):
         if "sqlite" not in settings.DATABASES["default"]["ENGINE"]:
             raise CommandError("Les données de démonstration ne se chargent que sur une base d'essai SQLite, jamais sur le serveur.")
+        from apps.achats.models import Acheteur
         from apps.rh.models import Salarie
         from apps.stock.models import ajuster, quantite_en_stock
         from apps.technique.models import Materiel
@@ -83,9 +84,10 @@ class Command(BaseCommand):
             if cree:
                 u.set_password(mot_de_passe)
                 u.save()
-                u.groups.set(Group.objects.filter(name__in=roles))
+            u.groups.add(*Group.objects.filter(name__in=roles))   # à chaque lancement : les rôles ajoutés depuis sont donnés
             comptes[identifiant] = u
         chef, responsable = comptes["chef"], comptes["responsable"]
+        Acheteur.objects.get_or_create(utilisateur=comptes["acheteur"])   # sans acheteur, aucune demande n'est attribuée
         for s in Service.objects.filter(responsable__isnull=True):
             s.responsable = chef if s == service("TECHNI") else responsable
             s.save(update_fields=["responsable"])

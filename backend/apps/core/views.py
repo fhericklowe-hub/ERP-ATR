@@ -37,3 +37,14 @@ class MoiView(APIView):
 
     def get(self, request):
         return Response(UtilisateurSerializer(request.user).data)
+
+
+class AccueilView(APIView):
+    """Ce qui attend l'utilisateur connecté, toutes rubriques confondues : les mêmes points que le rappel par e-mail."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from . import rappels
+
+        return Response(rappels.accueil(request.user))

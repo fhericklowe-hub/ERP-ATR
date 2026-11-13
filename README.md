@@ -65,6 +65,13 @@ docker compose exec backend python manage.py createsuperuser
 
 L'application répond ensuite sur le port 80 du serveur.
 
+## Page d'accueil
+
+À la connexion, chacun arrive sur une page « ce qui attend votre action » : demandes d'achat et bons de commande
+à valider, demandes d'absence, actions HSE, échéances, alertes de stock, entretiens. Ce sont les mêmes rubriques que
+le rappel quotidien par e-mail (`rappels.declarer` ; l'attribut `lien` d'une source donne l'écran où la traiter).
+Le logo ramène à cette page.
+
 ## Droits
 
 Les rôles sont les groupes Django, gérés dans l'administration. Chaque rôle reçoit des droits
