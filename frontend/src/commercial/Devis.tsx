@@ -4,6 +4,7 @@ import PiecesJointes from '../PiecesJointes'
 import { montant } from '../achats/commandes'
 import { dateFr } from '../achats/types'
 import { nombre } from '../stock/types'
+import { type Mise, pastilleMise } from '../exploitation/Mises'
 import type { Materiel } from '../technique/types'
 
 type Ligne = { materiel: number | null; materiel_nom?: string; designation: string; quantite: string; prix_unitaire: string; remise: string; duree: string; prix_net?: string; montant_ht?: string }
@@ -238,8 +239,9 @@ export function FormulaireDevis({ id }: { id?: number }) {
   )
 }
 
-export function DetailDevis({ id }: { id: number }) {
+export function DetailDevis({ id, voitMises, peutPreparer }: { id: number; voitMises: boolean; peutPreparer: boolean }) {
   const [d, setD] = useState<Devis | null>(null)
+  const [mises, setMises] = useState<Mise[]>([])
   const [s, setS] = useState({ reference_client: '', accepte_le: aujourdhui(), motif: '' })
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
@@ -247,6 +249,23 @@ export function DetailDevis({ id }: { id: number }) {
     api<Devis>(`/commercial/devis/${id}/`).then(setD).catch((e: Error) => setErreur(e.message))
   }, [id])
   useEffect(charger, [charger])
+  const chargerMises = useCallback(() => {
+    if (voitMises) api<Page<Mise>>(`/exploitation/mises-a-disposition/?devis=${id}&page_size=100`).then((p) => setMises(p.results)).catch(() => undefined)
+  }, [id, voitMises])
+  useEffect(chargerMises, [chargerMises])
+
+  async function preparer() {
+    setErreur('')
+    setEnCours(true)
+    try {
+      await api<Mise[]>('/exploitation/mises-a-disposition/preparer/', { method: 'POST', body: JSON.stringify({ devis: id }) })
+      chargerMises()
+    } catch (err) {
+      setErreur((err as Error).message)
+    } finally {
+      setEnCours(false)
+    }
+  }
 
   async function agir(action: string, corps: object = {}) {
     setErreur('')
@@ -337,6 +356,19 @@ export function DetailDevis({ id }: { id: number }) {
             {d.statut === 'ENVOYE' && <button className="secondaire" disabled={enCours} onClick={() => agir('refuser', { motif: s.motif })}>Le client a refusé</button>}
             <button className="danger" disabled={enCours} onClick={() => agir('annuler', { motif: s.motif })}>Annuler {d.statut === 'ACCEPTE' ? 'la commande' : 'le devis'}</button>
           </div>
+        </fieldset>
+      )}
+      {d.statut === 'ACCEPTE' && voitMises && (
+        <fieldset>
+          <legend>Mise à disposition du matériel</legend>
+          {mises.length === 0 && <p className="aide">Rien n'est encore prévu pour cette commande.</p>}
+          {mises.length > 0 && (
+            <ul>
+              {mises.map((m) => <li key={m.id}><a href={`#/mises/${m.id}`}>{m.numero}</a> · {m.materiel_nom} · <span className={`pastille ${pastilleMise(m)}`}>{m.statut_libelle}</span></li>)}
+            </ul>
+          )}
+          {peutPreparer && d.lignes.some((l) => l.materiel && !mises.some((m) => m.materiel === l.materiel && m.statut !== 'ANNULEE')) && <div className="actions"><button className="secondaire" disabled={enCours} onClick={preparer}>Préparer la mise à disposition</button></div>}
+          {!d.lignes.some((l) => l.materiel) && <p className="aide">Aucune ligne du devis ne cite un matériel du parc.</p>}
         </fieldset>
       )}
       <PiecesJointes modele="commercial.devis" objet={id} aide="Joignez ici le bon de commande du client ou le devis signé." />

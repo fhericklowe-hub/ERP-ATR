@@ -233,3 +233,21 @@ Ces textes se chargent dans l'administration, ils ne sont pas dans le dépôt.
 
 Rôles : « Commercial - Consultation », « Commercial - Commercial » (ses propres devis, création de clients) et
 « Commercial - Responsable » (tous les devis, annulation d'une commande acceptée).
+
+## Exploitation : mise à disposition du matériel
+
+Sur un devis accepté, « Préparer la mise à disposition » crée une fiche par matériel du parc cité dans les lignes.
+L'exploitation complète le lieu, les dates prévues, l'opérateur et les accessoires remis, puis enregistre :
+
+- **la livraison** : personne qui reçoit le matériel chez le client, date, compteur, niveau de carburant. Le matériel
+  doit être disponible ; il passe « en exploitation » chez le client ;
+- **le retour** : personne qui le restitue, compteur, carburant, réserves sur l'état. Le matériel redevient
+  disponible, et les heures utilisées sont calculées d'après les compteurs. S'il y a des réserves, la fiche propose
+  d'ouvrir un ordre de réparation.
+
+Un compteur ne peut pas être inférieur au dernier relevé du matériel. Une mise à disposition non livrée peut être
+annulée avec un motif. Le bon de livraison et le bon de retour sortent en PDF, avec les cadres de signature ; les bons
+signés et les photos se joignent à la fiche. Un retour prévu dépassé est signalé dans la liste.
+
+Rôles : « Exploitation - Consultation » et « Exploitation - Agent ». Les rôles du Commercial voient les mises à
+disposition de leurs devis.
