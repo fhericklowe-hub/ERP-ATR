@@ -81,6 +81,11 @@ export async function api<T>(chemin: string, options: RequestInit = {}): Promise
   return r.status === 204 ? (undefined as T) : r.json()
 }
 
+/** Change le mot de passe de l'utilisateur connecté. Le serveur ferme ses autres sessions et renvoie de nouveaux jetons pour celle-ci. */
+export async function changerMotDePasse(actuel: string, nouveau: string) {
+  ecrire(await api<Jetons>('/moi/mot-de-passe/', { method: 'POST', body: JSON.stringify({ actuel, nouveau }) }))
+}
+
 /** Ouvre dans un nouvel onglet un fichier protégé par la connexion (un PDF par exemple). */
 export async function ouvrirFichier(chemin: string) {
   const onglet = window.open('', '_blank')

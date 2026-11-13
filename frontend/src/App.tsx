@@ -25,6 +25,7 @@ import Parc from './technique/Parc'
 import Accueil from './Accueil'
 import Pilotage from './Pilotage'
 import Comptes from './Comptes'
+import MonCompte from './MonCompte'
 import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
 import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
@@ -158,6 +159,7 @@ function useRoute() {
 function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const a = (droit: string) => moi.droits.includes(droit)
   if (route === '/accueil') return <Accueil moi={moi} />
+  if (route === '/mon-compte') return <MonCompte moi={moi} />
   if (route === '/comptes') return a('core.gerer_comptes') ? <Comptes moi={moi.id} /> : <p>Cette page est réservée à ceux qui gèrent les comptes.</p>
   if (route === '/pilotage') return a('core.voir_pilotage') ? <Pilotage /> : <p>Cette page est réservée à la direction.</p>
   if (route === '/interventions') return <ListeInterventions />
@@ -305,7 +307,7 @@ export default function App() {
             <a key={m.titre} href={`#${m.liens[0].chemin}`} aria-current={m === moduleActif ? 'page' : undefined}>{m.titre}</a>
           ))}
         </nav>
-        <span>{moi ? `${moi.first_name} ${moi.last_name}`.trim() || moi.username : ''}</span>
+        <span>{moi && <a href="#/mon-compte" title="Mon compte, mon mot de passe">{`${moi.first_name} ${moi.last_name}`.trim() || moi.username}</a>}</span>
         <button onClick={quitter}>Se déconnecter</button>
       </header>
       {moduleActif && moduleActif.liens.length > 1 && (
