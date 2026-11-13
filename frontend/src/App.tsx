@@ -22,6 +22,7 @@ import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
+import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
 import { DetailAbsence, FormulaireAbsence, ListeAbsences, PlanningAbsences } from './rh/Absences'
 import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
@@ -106,6 +107,9 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/absences', texte: 'Congés et absences', droit: 'rh.view_demandeabsence' },
     { chemin: '/absences/planning', texte: 'Planning des absences', droit: 'rh.view_demandeabsence' },
   ] },
+  { titre: 'HSE', liens: [
+    { chemin: '/hse', texte: 'Événements', droit: 'hse.view_evenement' },
+  ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
     { chemin: '/biens', texte: 'Biens', droit: 'moyens.view_bien' },
@@ -150,6 +154,12 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (modifDevis) return <FormulaireDevis id={Number(modifDevis[1])} />
   const devis = chemin.match(/^\/devis\/(\d+)$/)
   if (devis) return <DetailDevis id={Number(devis[1])} voitMises={a('exploitation.view_miseadisposition')} peutPreparer={a('exploitation.add_miseadisposition')} voitReleves={a('exploitation.view_relevelocation')} peutRelever={a('exploitation.add_relevelocation')} />
+  if (chemin === '/hse') return <ListeEvenements peutTraiter={a('hse.traiter_evenement')} />
+  if (chemin === '/hse/nouveau') return <FormulaireEvenement />
+  const modifHse = chemin.match(/^\/hse\/(\d+)\/modifier$/)
+  if (modifHse) return <FormulaireEvenement id={Number(modifHse[1])} />
+  const evenement = chemin.match(/^\/hse\/(\d+)$/)
+  if (evenement) return <DetailEvenement id={Number(evenement[1])} />
   if (chemin === '/absences') return <ListeAbsences voitTout={a('rh.approuver_demandeabsence') || a('rh.view_salarie')} />
   if (chemin === '/absences/planning') return <PlanningAbsences />
   if (chemin === '/absences/nouvelle') return <FormulaireAbsence pourAutrui={a('rh.approuver_demandeabsence')} />

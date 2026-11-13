@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.commercial",
     "apps.exploitation",
     "apps.rh",
+    "apps.hse",
 ]
 
 MIDDLEWARE = [
