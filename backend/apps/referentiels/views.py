@@ -91,6 +91,8 @@ class ArticleViewSet(VueMetier):
     serializer_class = ArticleSerializer
     filterset_fields = ["nature", "famille", "gere_en_stock", "actif"]
     search_fields = ["code", "designation"]
+    ordering_fields = ["designation", "code"]
+    http_method_names = ["get", "post", "patch", "put", "head", "options"]   # un article ne se supprime pas : on le désactive
 
 
 class CompteChargeViewSet(viewsets.ModelViewSet):

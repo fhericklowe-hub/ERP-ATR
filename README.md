@@ -79,6 +79,13 @@ contrôle d'abord le fichier : à la moindre ligne en erreur, rien n'est import�
 
 Le fichier des fournisseurs ou des clients ne doit jamais être déposé dans ce dépôt.
 
+## Catalogue des articles
+
+Stock, « Articles » : recherche, création, modification. Un article ne se supprime pas, il se désactive. Deux codes
+qui ne diffèrent que par les majuscules sont refusés. Le catalogue est tenu par les rôles « Stock - Responsable »,
+« Achats - Acheteur » et « Achats - Responsable achats » (la migration `stock/0006` leur donne ce droit) ; les autres
+continuent de le consulter depuis leurs écrans. L'import du stock de départ crée toujours les articles inconnus.
+
 ## RH : import du personnel depuis Excel
 
 RH, Personnel, « Importer depuis Excel » (gestionnaire RH), ou en ligne de commande :

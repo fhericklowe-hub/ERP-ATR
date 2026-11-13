@@ -30,6 +30,7 @@ import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
 import { DetailAbsence, FormulaireAbsence, ListeAbsences, PlanningAbsences } from './rh/Absences'
 import ImportPersonnel from './rh/ImportPersonnel'
 import { ImportTiers, ListeTiers } from './referentiels/Tiers'
+import Articles from './referentiels/Articles'
 import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
 import ValeurStock from './stock/Valeur'
@@ -98,6 +99,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/stock', texte: 'État du stock', droit: 'stock.view_mouvement', aussi: ['/stock/import'] },
     { chemin: '/stock/sorties', texte: 'Bons de sortie', droit: 'stock.view_bonsortie' },
     { chemin: '/stock/valeur', texte: 'Valeur du stock', droit: 'stock.voir_valeur_stock' },
+    { chemin: '/articles', texte: 'Articles', droit: 'referentiels.change_article' },
   ] },
   { titre: 'Technique', liens: [
     { chemin: '/parc', texte: 'Parc de matériels', droit: 'technique.view_materiel' },
@@ -199,6 +201,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
     if (chemin === `/${qualite}s`) return <ListeTiers key={qualite} qualite={qualite} peutCreer={a('referentiels.add_tiers')} peutModifier={a('referentiels.change_tiers')} />
     if (chemin === `/${qualite}s/import`) return a('referentiels.add_tiers') ? <ImportTiers key={qualite} qualite={qualite} /> : <p>L'import est réservé à ceux qui créent les fiches.</p>
   }
+  if (chemin === '/articles') return <Articles peutCreer={a('referentiels.add_article')} peutModifier={a('referentiels.change_article')} />
   if (chemin === '/releves') return <ListeReleves />
   const releve = chemin.match(/^\/releves\/(\d+)$/)
   if (releve) return <DetailReleve id={Number(releve[1])} />
