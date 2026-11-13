@@ -302,3 +302,21 @@ de période d'essai. Les gestionnaires RH les reçoivent aussi dans le rappel qu
 
 Ces données sont confidentielles : seuls les rôles « RH - Consultation » et « RH - Gestionnaire » y ont accès. La
 paie n'est pas traitée. Les dossiers se saisissent dans l'application, ils ne sont pas dans le dépôt.
+
+### Congés et absences
+
+Tout salarié qui a un compte, le rôle « RH - Salarié » et un dossier relié à ce compte demande ses absences dans
+RH > Congés et absences : congé annuel, permission exceptionnelle, maladie, maternité ou paternité, absence sans
+solde. Circuit : accord du responsable (le responsable hiérarchique du dossier, sinon le responsable du service),
+puis approbation des RH. Sans responsable, la demande va directement aux RH. Les RH peuvent aussi saisir une absence
+pour un salarié (maladie, par exemple) et donner l'accord à la place du responsable.
+
+- Les jours se comptent en **jours ouvrables**, du lundi au samedi. Les jours fériés ne sont pas déduits.
+- **Solde de congés** : droits acquis par mois entier de service (2,2 jours par défaut, réglable dans
+  l'administration : RH > Réglages RH), moins les congés approuvés. Pour reprendre l'existant, saisir sur le dossier
+  le solde et la date à laquelle il a été arrêté ; sinon les droits sont comptés depuis l'embauche.
+- Un congé qui dépasse le solde ne peut pas être approuvé. Deux absences d'un salarié ne se chevauchent pas.
+- Le demandeur annule sa demande tant qu'elle n'est pas approuvée ; ensuite seules les RH l'annulent, avec un motif.
+- Le **planning des absences** montre qui est absent sur une période. Chacun voit ses demandes et celles de son
+  équipe ; les RH voient tout.
+- Les demandes à traiter figurent dans le rappel quotidien par e-mail du responsable et des RH.
