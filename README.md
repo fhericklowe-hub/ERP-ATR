@@ -212,3 +212,24 @@ Pour voir qui recevrait quoi sans rien envoyer : `python manage.py envoyer_rappe
 commande envoie tout de suite.
 
 Un module ajoute ses rappels avec `rappels.declarer(fonction)` dans son `apps.py` (voir `apps/core/rappels.py`).
+
+## Commercial : devis de location
+
+Le commercial saisit un devis (client, libellé, type de loyer, lignes avec quantité, prix, remise et durée). Un
+matériel du parc peut être choisi sur une ligne. Circuit : brouillon, envoyé au client, puis accepté (le devis devient
+la commande du client, avec son n° de bon de commande), refusé ou annulé. Un devis envoyé est figé ; « Reprendre » le
+remet en brouillon. Sans date de validité, il est valable 30 jours.
+
+Le PDF reprend le modèle de l'entreprise : « DEVIS » puis « COMMANDE CLIENT » une fois accepté, mention PROJET tant
+qu'il est en brouillon, montant en lettres, cadres de signature.
+
+Dans l'administration, Commercial > Réglages du commercial :
+
+- **Conditions générales de location (PDF)** : le fichier est ajouté à la suite de chaque devis ;
+- **Extrait des conditions** : le court texte imprimé en pied de première page ;
+- **Validité d'un devis**, en jours.
+
+Ces textes se chargent dans l'administration, ils ne sont pas dans le dépôt.
+
+Rôles : « Commercial - Consultation », « Commercial - Commercial » (ses propres devis, création de clients) et
+« Commercial - Responsable » (tous les devis, annulation d'une commande acceptée).
