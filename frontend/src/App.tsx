@@ -26,6 +26,7 @@ import Accueil from './Accueil'
 import Pilotage from './Pilotage'
 import Comptes from './Comptes'
 import MonCompte from './MonCompte'
+import Journal from './Journal'
 import Organisation from './Organisation'
 import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
@@ -137,6 +138,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Administration', liens: [
     { chemin: '/comptes', texte: 'Comptes', droit: 'core.gerer_comptes' },
     { chemin: '/organisation', texte: 'Sites et services', droit: 'core.change_service' },
+    { chemin: '/journal', texte: 'Journal', droit: 'core.view_trace' },
   ] },
 ]
 
@@ -163,6 +165,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (route === '/accueil') return <Accueil moi={moi} />
   if (route === '/mon-compte') return <MonCompte moi={moi} />
   if (route === '/organisation') return a('core.change_service') ? <Organisation /> : <p>Cette page est réservée à l'administration.</p>
+  if (route === '/journal') return a('core.view_trace') ? <Journal /> : <p>Cette page est réservée à l'administration.</p>
   if (route === '/comptes') return a('core.gerer_comptes') ? <Comptes moi={moi.id} /> : <p>Cette page est réservée à ceux qui gèrent les comptes.</p>
   if (route === '/pilotage') return a('core.voir_pilotage') ? <Pilotage /> : <p>Cette page est réservée à la direction.</p>
   if (route === '/interventions') return <ListeInterventions />

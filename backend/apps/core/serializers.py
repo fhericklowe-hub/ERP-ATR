@@ -1,9 +1,10 @@
+from django.apps import apps
 from django.contrib.auth.models import Group
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as ErreurDjango
 from rest_framework import serializers
 
-from .models import Service, Site, Utilisateur
+from .models import Service, Site, Trace, Utilisateur
 
 
 class SiteSerializer(serializers.ModelSerializer):
@@ -107,3 +108,40 @@ class CompteSerializer(serializers.ModelSerializer):
 
     def update(self, compte, donnees):
         return self._enregistrer(compte, donnees)
+
+
+class TraceSerializer(serializers.ModelSerializer):
+    utilisateur_nom = serializers.SerializerMethodField()
+    action_libelle = serializers.CharField(source="get_action_display", read_only=True)
+    modele_libelle = serializers.SerializerMethodField()
+    details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Trace
+        fields = ["id", "date", "utilisateur", "utilisateur_nom", "action", "action_libelle", "modele", "modele_libelle", "objet_id", "objet_libelle", "details"]
+
+    def get_utilisateur_nom(self, t):
+        u = t.utilisateur
+        return (u.get_full_name() or u.username) if u else "(compte supprimé)"
+
+    def _modele(self, t):
+        try:
+            return apps.get_model(t.modele)
+        except LookupError:
+            return None
+
+    def get_modele_libelle(self, t):
+        m = self._modele(t)
+        return str(m._meta.verbose_name).capitalize() if m else t.modele
+
+    def get_details(self, t):
+        """Les champs modifiés avec leur libellé ; valeur absente pour les données confidentielles."""
+        m = self._modele(t)
+        lignes = []
+        for champ, valeurs in t.changements.items():
+            try:
+                libelle = str(m._meta.get_field(champ.removesuffix("_id")).verbose_name).capitalize()
+            except Exception:
+                libelle = champ
+            lignes.append({"champ": libelle, "avant": valeurs[0] if valeurs else None, "apres": valeurs[1] if valeurs else None, "masque": valeurs is None})
+        return lignes

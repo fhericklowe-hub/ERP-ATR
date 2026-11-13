@@ -151,3 +151,26 @@ class Utilisateur(AbstractUser):
     def __str__(self):
         return self.get_full_name() or self.username
 from .pieces import PieceJointe  # noqa: E402,F401
+
+
+class Trace(models.Model):
+    """Une ligne du journal des modifications (voir journal.py). Jamais modifiée à la main."""
+
+    CREATION, MODIFICATION, SUPPRESSION = "CREATION", "MODIFICATION", "SUPPRESSION"
+    ACTIONS = [(CREATION, "Création"), (MODIFICATION, "Modification"), (SUPPRESSION, "Suppression")]
+
+    date = models.DateTimeField(auto_now_add=True, db_index=True)
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    action = models.CharField(max_length=12, choices=ACTIONS)
+    modele = models.CharField(max_length=60, db_index=True)
+    objet_id = models.PositiveBigIntegerField(null=True)
+    objet_libelle = models.CharField(max_length=200, blank=True)
+    # {champ: [avant, après]} ; {champ: null} quand la valeur est confidentielle
+    changements = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+        indexes = [models.Index(fields=["modele", "objet_id"])]
+
+    def __str__(self):
+        return f"{self.get_action_display()} {self.modele} {self.objet_libelle}"

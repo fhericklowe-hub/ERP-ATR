@@ -485,3 +485,16 @@ les ordres de réparation, le catalogue d'articles, les fournisseurs et les clie
 - Les dossiers du personnel ne sont volontairement pas exportables (données confidentielles).
 - Un nouvel écran s'ajoute en deux lignes : `ExportExcel` dans la vue et la liste `export_colonnes` (voir `apps/core/export.py`),
   puis le composant `BoutonExcel` côté écran.
+
+## Journal des modifications
+
+L'écran Administration > Journal (droit « voir le journal », donné au rôle « Administration - Comptes ») montre qui a créé,
+modifié ou supprimé quoi, et quand, avec pour chaque modification les champs touchés (avant → après). Filtres : recherche,
+action, utilisateur, dates ; export Excel.
+
+- Sont tracées toutes les écritures faites par un utilisateur connecté (application ou administration Django), sur tous les
+  modules. Ne sont pas tracés : les commandes en console (imports), les tâches de fond, les compteurs de numérotation, les
+  historiques propres aux documents (événements) et la simple connexion.
+- Les mots de passe et toutes les données du module RH ne sont jamais écrits : le journal garde seulement le nom des champs modifiés.
+- Le journal est en lecture seule, y compris pour l'administrateur dans l'écran. Il grossit avec l'usage ; une purge des
+  entrées anciennes pourra s'ajouter si besoin. Il est dans la base : il est donc compris dans les sauvegardes.
