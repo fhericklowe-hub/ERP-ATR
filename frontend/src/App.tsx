@@ -22,6 +22,7 @@ import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
+import Accueil from './Accueil'
 import Epi from './hse/Epi'
 import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Evenements'
 import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
@@ -137,11 +138,12 @@ function useRoute() {
     addEventListener('hashchange', maj)
     return () => removeEventListener('hashchange', maj)
   }, [])
-  return hash.replace(/^#/, '') || '/'
+  return hash.replace(/^#/, '') || '/accueil'
 }
 
 function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const a = (droit: string) => moi.droits.includes(droit)
+  if (route === '/accueil') return <Accueil moi={moi} />
   if (route === '/interventions') return <ListeInterventions />
   if (route === '/interventions/nouvelle') return <FormulaireIntervention moi={moi} />
   const modifInt = route.match(/^\/interventions\/(\d+)\/modifier$/)
@@ -275,7 +277,7 @@ export default function App() {
   return (
     <>
       <header>
-        <a href="#/" className="marque"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
+        <a href="#/accueil" className="marque" title="Accueil"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
         <nav aria-label="Modules">
           {modules.map((m) => (
             <a key={m.titre} href={`#${m.liens[0].chemin}`} aria-current={m === moduleActif ? 'page' : undefined}>{m.titre}</a>

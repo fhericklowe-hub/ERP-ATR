@@ -25,6 +25,17 @@ def composer(utilisateur) -> list:
     return rubriques
 
 
+def accueil(utilisateur) -> list:
+    """Les mêmes rubriques pour la page d'accueil, avec l'adresse de l'écran où les traiter."""
+    rubriques = []
+    for source in SOURCES:
+        rubrique = source(utilisateur)
+        if rubrique and rubrique[1]:
+            titre, lignes = rubrique
+            rubriques.append({"titre": titre, "lien": getattr(source, "lien", ""), "nombre": len(lignes), "lignes": lignes[:LIGNES_MAX]})
+    return rubriques
+
+
 def texte(utilisateur, rubriques) -> str:
     lignes = [f"Bonjour {utilisateur.first_name or utilisateur.username},", "",
               f"Voici ce qui attend votre attention dans l'ERP au {timezone.localdate():%d/%m/%Y}."]

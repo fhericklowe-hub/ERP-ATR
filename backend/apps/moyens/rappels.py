@@ -15,3 +15,7 @@ def echeances(utilisateur):
         elif jours <= e.rappel_jours:
             lignes.append(f"{e.libelle} : le {e.date_echeance:%d/%m/%Y}" + (" (aujourd'hui)" if jours == 0 else f" (dans {jours} jour(s))"))
     return "Échéances des moyens généraux", lignes
+
+
+# Où traiter chaque rubrique dans l'application (page d'accueil).
+echeances.lien = "/echeances"

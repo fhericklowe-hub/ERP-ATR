@@ -26,3 +26,8 @@ def absences_a_traiter(utilisateur):
     demandes = DemandeAbsence.objects.filter(filtre).exclude(salarie__utilisateur=utilisateur).select_related("salarie").order_by("date_debut")
     return "Demandes d'absence à traiter", [
         f"{d.numero} : {d.salarie}, {d.get_type_display().lower()} du {d.date_debut:%d/%m/%Y} au {d.date_fin:%d/%m/%Y} ({d.jours:n} j)" for d in demandes]
+
+
+# Où traiter chaque rubrique dans l'application (page d'accueil).
+echeances_du_personnel.lien = "/personnel/echeances"
+absences_a_traiter.lien = "/absences"

@@ -37,3 +37,9 @@ def epi(utilisateur):
     return "Équipements de protection à renouveler", [
         f"{d.salarie} ({d.salarie.matricule}) : {d.get_equipement_display().lower()}, le {d.a_renouveler_le:%d/%m/%Y}"
         + (" (dépassé)" if d.a_renouveler_le < aujourd_hui else "") for d in renouvellements()]
+
+
+# Où traiter chaque rubrique dans l'application (page d'accueil).
+evenements.lien = "/hse"
+actions.lien = "/hse"
+epi.lien = "/hse/epi"

@@ -19,3 +19,10 @@ class AchatsConfig(AppConfig):
 
         for vue in (DemandeAchatViewSet, DemandeBudgetViewSet, BonCommandeViewSet, BonReceptionViewSet):
             pieces.declarer(vue)
+
+        from apps.core import rappels as rappels_du_jour
+
+        from .rappels import commandes_a_valider, demandes_a_valider
+
+        rappels_du_jour.declarer(demandes_a_valider)
+        rappels_du_jour.declarer(commandes_a_valider)
