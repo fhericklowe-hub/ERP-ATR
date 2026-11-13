@@ -16,6 +16,7 @@ import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demande
 import ImportStock from './stock/ImportStock'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
 import { DetailDevis, FormulaireDevis, ListeDevis } from './commercial/Devis'
+import { DetailMise, ListeMises } from './exploitation/Mises'
 import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
@@ -90,6 +91,9 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Commercial', liens: [
     { chemin: '/devis', texte: 'Devis de location', droit: 'commercial.view_devis' },
   ] },
+  { titre: 'Exploitation', liens: [
+    { chemin: '/mises', texte: 'Mises à disposition', droit: 'exploitation.view_miseadisposition' },
+  ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
     { chemin: '/biens', texte: 'Biens', droit: 'moyens.view_bien' },
@@ -133,7 +137,10 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const modifDevis = chemin.match(/^\/devis\/(\d+)\/modifier$/)
   if (modifDevis) return <FormulaireDevis id={Number(modifDevis[1])} />
   const devis = chemin.match(/^\/devis\/(\d+)$/)
-  if (devis) return <DetailDevis id={Number(devis[1])} />
+  if (devis) return <DetailDevis id={Number(devis[1])} voitMises={a('exploitation.view_miseadisposition')} peutPreparer={a('exploitation.add_miseadisposition')} />
+  if (chemin === '/mises') return <ListeMises />
+  const mise = chemin.match(/^\/mises\/(\d+)$/)
+  if (mise) return <DetailMise id={Number(mise[1])} peutOuvrirOr={a('technique.add_ordrereparation')} />
   if (chemin === '/parc/import') return <ImportParc />
   const materiel = chemin.match(/^\/parc\/(\d+)$/)
   if (materiel) return <HistoriqueMateriel seul id={Number(materiel[1])} />

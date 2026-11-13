@@ -66,7 +66,9 @@ class Materiel(Horodate):
         elif ouverts.exists():
             etat = self.Etat.EN_PANNE
         elif self.etat in (self.Etat.EN_PANNE, self.Etat.EN_REPARATION):
-            etat = self.Etat.DISPONIBLE
+            # Réparé chez le client : il reprend son exploitation, sinon il redevient disponible.
+            chez_un_client = hasattr(self, "mises_a_disposition") and self.mises_a_disposition.filter(statut="EN_COURS").exists()
+            etat = self.Etat.EN_EXPLOITATION if chez_un_client else self.Etat.DISPONIBLE
         else:
             return
         if etat != self.etat:
