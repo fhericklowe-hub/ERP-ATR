@@ -134,6 +134,10 @@ class Utilisateur(AbstractUser):
     service = models.ForeignKey(Service, null=True, blank=True, on_delete=models.PROTECT, related_name="utilisateurs")
     telephone = models.CharField("téléphone", max_length=30, blank=True)
     fonction = models.CharField(max_length=100, blank=True)
+    mot_de_passe_a_changer = models.BooleanField(
+        "mot de passe à changer", default=False,
+        help_text="Mot de passe donné par l'administrateur : la personne doit en choisir un autre à sa prochaine connexion.",
+    )
     signature = models.ImageField(
         upload_to=chemin_signature, blank=True,
         help_text="Image de la signature (fond blanc ou transparent). Elle s'imprime automatiquement sur les "

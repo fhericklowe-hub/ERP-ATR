@@ -3,13 +3,13 @@ import { api, type Page, type Service, type Site } from './api'
 
 type Compte = {
   id: number; username: string; first_name: string; last_name: string; email: string; telephone: string; fonction: string
-  site: number | null; site_nom: string; service: number | null; service_nom: string; roles: string[]; is_active: boolean
+  site: number | null; site_nom: string; service: number | null; service_nom: string; roles: string[]; is_active: boolean; mot_de_passe_a_changer: boolean
   administrateur: boolean; derniere_connexion: string | null
 }
-type Saisie = Pick<Compte, 'username' | 'first_name' | 'last_name' | 'email' | 'telephone' | 'fonction' | 'site' | 'service' | 'roles' | 'is_active'>
+type Saisie = Pick<Compte, 'username' | 'first_name' | 'last_name' | 'email' | 'telephone' | 'fonction' | 'site' | 'service' | 'roles' | 'is_active' | 'mot_de_passe_a_changer'>
   & { id?: number; mot_de_passe: string; administrateur?: boolean }
 
-const VIDE: Saisie = { username: '', first_name: '', last_name: '', email: '', telephone: '', fonction: '', site: null, service: null, roles: [], is_active: true, mot_de_passe: '' }
+const VIDE: Saisie = { username: '', first_name: '', last_name: '', email: '', telephone: '', fonction: '', site: null, service: null, roles: [], is_active: true, mot_de_passe_a_changer: true, mot_de_passe: '' }
 const nomDe = (c: Compte) => `${c.first_name} ${c.last_name}`.trim() || c.username
 
 /** Les comptes des utilisateurs et leurs rôles. Un compte ne se supprime pas, il se désactive. */
@@ -83,9 +83,10 @@ export default function Comptes({ moi }: { moi: number }) {
             </label>
             <label>{fiche.id ? 'Nouveau mot de passe' : 'Mot de passe de départ'}
               <input type="password" autoComplete="new-password" required={!fiche.id} minLength={8} placeholder={fiche.id ? 'Laisser vide pour ne pas le changer' : ''}
-                value={fiche.mot_de_passe} onChange={(e) => setFiche({ ...fiche, mot_de_passe: e.target.value })} />
+                value={fiche.mot_de_passe} onChange={(e) => setFiche({ ...fiche, mot_de_passe: e.target.value, ...(e.target.value && !moiMeme ? { mot_de_passe_a_changer: true } : {}) })} />
             </label>
           </div>
+          {!moiMeme && <label className="case"><input type="checkbox" checked={fiche.mot_de_passe_a_changer} onChange={(e) => setFiche({ ...fiche, mot_de_passe_a_changer: e.target.checked })} /> La personne doit choisir son propre mot de passe à sa prochaine connexion</label>}
           <p className="aide">Mot de passe : 8 caractères au moins, pas uniquement des chiffres, pas un mot de passe courant.</p>
           {fiche.id && !moiMeme && <label className="case"><input type="checkbox" checked={fiche.is_active} onChange={(e) => setFiche({ ...fiche, is_active: e.target.checked })} /> Compte actif (décoché : la personne ne peut plus se connecter)</label>}
         </fieldset>
@@ -137,7 +138,7 @@ export default function Comptes({ moi }: { moi: number }) {
                 {liste.map((c) => (
                   <tr key={c.id}>
                     <td>{c.username}</td>
-                    <td>{nomDe(c)}{!c.is_active && <> <span className="pastille">Désactivé</span></>}{c.administrateur && <> <span className="pastille complete">Administrateur</span></>}</td>
+                    <td>{nomDe(c)}{!c.is_active && <> <span className="pastille">Désactivé</span></>}{c.administrateur && <> <span className="pastille complete">Administrateur</span></>}{c.mot_de_passe_a_changer && <> <span className="pastille">Mot de passe à changer</span></>}</td>
                     <td>{c.fonction}{c.service_nom && <><br /><span className="aide">{c.service_nom}</span></>}</td><td>{c.site_nom}</td>
                     <td>{c.roles.length === 0 ? <span className="aide">Aucun</span> : c.roles.length <= 2 ? c.roles.join(', ') : <span title={c.roles.join('\n')}>{c.roles.length} rôles</span>}</td>
                     <td>{c.derniere_connexion ? new Date(c.derniere_connexion).toLocaleDateString('fr-FR') : <span className="aide">Jamais</span>}</td>

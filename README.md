@@ -118,6 +118,12 @@ administrateur (accès à l'administration Django) ne se modifie que par un admi
 un changement de mot de passe ferme les sessions ouvertes de ce compte. Celui qui tient ce rôle peut donner n'importe
 quel rôle à un autre compte : ne le confier qu'à une ou deux personnes de confiance.
 
+Un compte créé par l'administrateur, ou dont il a redonné le mot de passe, est marqué « Mot de passe à changer » :
+à sa connexion, la personne ne voit que l'écran « Choisissez votre mot de passe » et l'application s'ouvre ensuite. La
+case se décoche dans la fiche du compte (par exemple pour un compte partagé par un poste). Ce blocage est appliqué par
+l'application, pas par l'interface de programmation : il protège contre l'oubli, pas contre une personne qui appellerait
+l'API à la main.
+
 Chacun change son propre mot de passe en cliquant sur son nom, en haut à droite (« Mon compte ») : il donne
 l'actuel, puis le nouveau deux fois. Ses autres appareils sont déconnectés.
 

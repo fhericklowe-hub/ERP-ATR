@@ -296,9 +296,10 @@ export default function App() {
     setConnecte(false)
   }
 
+  const imposeChangement = !!moi?.mot_de_passe_a_changer   // mot de passe donné par l'administrateur : on ne va nulle part avant de l'avoir changé
   const a = (droit: string) => !!moi && moi.droits.includes(droit)
   const active = rubrique(route.split('?')[0])
-  const modules = MENU.map((m) => ({ ...m, liens: m.liens.filter((l) => a(l.droit)) })).filter((m) => m.liens.length > 0)
+  const modules = imposeChangement ? [] : MENU.map((m) => ({ ...m, liens: m.liens.filter((l) => a(l.droit)) })).filter((m) => m.liens.length > 0)
   const moduleActif = modules.find((m) => m.liens.some((l) => l.chemin === active?.chemin))
 
   return (
@@ -321,7 +322,9 @@ export default function App() {
         </nav>
       )}
       <main>
-        {moi && <Page moi={moi} route={route} />}
+        {moi && (imposeChangement
+          ? <MonCompte moi={moi} obligatoire apres={() => setMoi({ ...moi, mot_de_passe_a_changer: false })} />
+          : <Page moi={moi} route={route} />)}
       </main>
     </>
   )

@@ -36,9 +36,9 @@ class UtilisateurSerializer(serializers.ModelSerializer):
         model = Utilisateur
         fields = [
             "id", "username", "first_name", "last_name", "email", "telephone", "fonction",
-            "site", "service", "roles", "droits", "is_active",
+            "site", "service", "roles", "droits", "is_active", "mot_de_passe_a_changer",
         ]
-        read_only_fields = ["username", "is_active"]
+        read_only_fields = ["username", "is_active", "mot_de_passe_a_changer"]
 
     def get_droits(self, obj) -> list[str]:
         return sorted(obj.get_all_permissions())
@@ -57,7 +57,7 @@ class CompteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Utilisateur
         fields = ["id", "username", "first_name", "last_name", "email", "telephone", "fonction", "site", "site_nom",
-                  "service", "service_nom", "roles", "is_active", "mot_de_passe", "administrateur", "derniere_connexion"]
+                  "service", "service_nom", "roles", "is_active", "mot_de_passe", "mot_de_passe_a_changer", "administrateur", "derniere_connexion"]
 
     def get_administrateur(self, compte) -> bool:
         return compte.is_superuser or compte.is_staff
@@ -94,12 +94,15 @@ class CompteSerializer(serializers.ModelSerializer):
             setattr(compte, champ, valeur)
         if mot:
             compte.set_password(mot)
+            if "mot_de_passe_a_changer" not in donnees and compte.pk != self.context["request"].user.pk:
+                compte.mot_de_passe_a_changer = True   # un mot de passe redonné par l'administrateur est à changer lui aussi
         compte.save()
         if roles is not None:
             compte.groups.set(roles)
         return compte
 
     def create(self, donnees):
+        donnees.setdefault("mot_de_passe_a_changer", True)   # un compte neuf démarre avec un mot de passe donné par l'administrateur
         return self._enregistrer(Utilisateur(), donnees)
 
     def update(self, compte, donnees):
