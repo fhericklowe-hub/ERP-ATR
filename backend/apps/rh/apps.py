@@ -11,9 +11,10 @@ class RhConfig(AppConfig):
         from apps.core import rappels as rappels_du_jour
 
         from .api import SalarieViewSet
-        from .rappels import echeances_du_personnel
+        from .rappels import absences_a_traiter, echeances_du_personnel
         from .roles import creer_roles
 
         post_migrate.connect(creer_roles, sender=self)
         pieces.declarer(SalarieViewSet)
         rappels_du_jour.declarer(echeances_du_personnel)
+        rappels_du_jour.declarer(absences_a_traiter)

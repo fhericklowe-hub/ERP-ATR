@@ -22,6 +22,7 @@ import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
+import { DetailAbsence, FormulaireAbsence, ListeAbsences, PlanningAbsences } from './rh/Absences'
 import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
 import ValeurStock from './stock/Valeur'
@@ -102,6 +103,8 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'RH', liens: [
     { chemin: '/personnel', texte: 'Personnel', droit: 'rh.view_salarie' },
     { chemin: '/personnel/echeances', texte: 'Échéances', droit: 'rh.view_salarie' },
+    { chemin: '/absences', texte: 'Congés et absences', droit: 'rh.view_demandeabsence' },
+    { chemin: '/absences/planning', texte: 'Planning des absences', droit: 'rh.view_demandeabsence' },
   ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
@@ -147,6 +150,11 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (modifDevis) return <FormulaireDevis id={Number(modifDevis[1])} />
   const devis = chemin.match(/^\/devis\/(\d+)$/)
   if (devis) return <DetailDevis id={Number(devis[1])} voitMises={a('exploitation.view_miseadisposition')} peutPreparer={a('exploitation.add_miseadisposition')} voitReleves={a('exploitation.view_relevelocation')} peutRelever={a('exploitation.add_relevelocation')} />
+  if (chemin === '/absences') return <ListeAbsences voitTout={a('rh.approuver_demandeabsence') || a('rh.view_salarie')} />
+  if (chemin === '/absences/planning') return <PlanningAbsences />
+  if (chemin === '/absences/nouvelle') return <FormulaireAbsence pourAutrui={a('rh.approuver_demandeabsence')} />
+  const absence = chemin.match(/^\/absences\/(\d+)$/)
+  if (absence) return <DetailAbsence id={Number(absence[1])} />
   if (chemin === '/personnel') return <ListeSalaries peutCreer={a('rh.add_salarie')} />
   if (chemin === '/personnel/echeances') return <EcheancesPersonnel />
   if (chemin === '/personnel/nouveau') return <FormulaireSalarie />

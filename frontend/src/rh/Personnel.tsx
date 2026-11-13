@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
+import { BlocSolde, type Solde } from './Absences'
 
 type Contrat = { id: number; salarie: number; type: string; type_libelle: string; date_debut: string; date_fin: string | null; fin_essai: string | null; fonction: string; observations: string }
 type Piece = { id: number; salarie: number; type: string; type_libelle: string; libelle: string; numero: string; date_delivrance: string | null; date_expiration: string | null }
@@ -11,7 +12,7 @@ type Salarie = {
   telephone: string; email: string; adresse: string; contact_urgence: string; telephone_urgence: string; numero_cnps: string
   site: number | ''; site_nom: string; service: number | null; service_nom: string; fonction: string; categorie: string; categorie_libelle: string
   responsable: number | null; responsable_nom: string; utilisateur: number | null; utilisateur_nom: string; date_embauche: string | null
-  date_sortie: string | null; motif_sortie: string; observations: string; anciennete: number | null; contrat: string
+  date_sortie: string | null; motif_sortie: string; observations: string; conges_solde_depart: string; conges_depuis: string | null; anciennete: number | null; contrat: string
   contrats: Contrat[]; pieces: Piece[]; peut_modifier: boolean; peut_sortir: boolean
 }
 type Echeance = { salarie: number; salarie_nom: string; matricule: string; genre: string; libelle: string; date: string; jours: number }
@@ -19,7 +20,7 @@ type Service = { id: number; nom: string }
 type Compte = { id: number; username: string; first_name: string; last_name: string }
 type Saisie = Pick<Salarie, 'matricule' | 'nom' | 'prenoms' | 'sexe' | 'date_naissance' | 'lieu_naissance' | 'nationalite' | 'situation_familiale' | 'enfants'
   | 'telephone' | 'email' | 'adresse' | 'contact_urgence' | 'telephone_urgence' | 'numero_cnps' | 'site' | 'service' | 'fonction' | 'categorie'
-  | 'responsable' | 'utilisateur' | 'date_embauche' | 'observations'>
+  | 'responsable' | 'utilisateur' | 'date_embauche' | 'observations' | 'conges_solde_depart' | 'conges_depuis'>
 
 const CATEGORIES = [['', 'Non précisée'], ['CADRE', 'Cadre'], ['MAITRISE', 'Agent de maîtrise'], ['EMPLOYE', 'Employé'], ['OUVRIER', 'Ouvrier']]
 const SITUATIONS = [['', 'Non précisée'], ['CELIB', 'Célibataire'], ['MARIE', 'Marié(e)'], ['DIVORCE', 'Divorcé(e)'], ['VEUF', 'Veuf ou veuve']]
@@ -97,7 +98,7 @@ export function ListeSalaries({ peutCreer }: { peutCreer: boolean }) {
 const vide = (): Saisie => ({
   matricule: '', nom: '', prenoms: '', sexe: '', date_naissance: null, lieu_naissance: '', nationalite: '', situation_familiale: '', enfants: 0,
   telephone: '', email: '', adresse: '', contact_urgence: '', telephone_urgence: '', numero_cnps: '', site: '', service: null, fonction: '', categorie: '',
-  responsable: null, utilisateur: null, date_embauche: null, observations: '',
+  responsable: null, utilisateur: null, date_embauche: null, observations: '', conges_solde_depart: '0', conges_depuis: null,
 })
 
 export function FormulaireSalarie({ id }: { id?: number }) {
@@ -131,7 +132,7 @@ export function FormulaireSalarie({ id }: { id?: number }) {
   const texte = (k: 'matricule' | 'nom' | 'prenoms' | 'lieu_naissance' | 'nationalite' | 'telephone' | 'email' | 'adresse' | 'contact_urgence' | 'telephone_urgence' | 'numero_cnps' | 'fonction', libelle: string, requis = false, type = 'text') => (
     <label>{libelle}<input type={type} required={requis} value={s[k]} onChange={(e) => champ(k, e.target.value)} /></label>
   )
-  const date = (k: 'date_naissance' | 'date_embauche', libelle: string) => (
+  const date = (k: 'date_naissance' | 'date_embauche' | 'conges_depuis', libelle: string) => (
     <label>{libelle}<input type="date" max={aujourdhui()} value={s[k] ?? ''} onChange={(e) => champ(k, e.target.value || null)} /></label>
   )
   if (!pret) return erreur ? <p className="erreur">{erreur}</p> : <p>Chargement…</p>
@@ -171,6 +172,14 @@ export function FormulaireSalarie({ id }: { id?: number }) {
         </div>
         <label>Observations<textarea value={s.observations} onChange={(e) => champ('observations', e.target.value)} /></label>
       </fieldset>
+      <fieldset>
+        <legend>Congés : reprise de l'existant</legend>
+        <p className="aide">Si le salarié a déjà des congés dus, indiquez son solde et la date à laquelle il a été arrêté. Les droits s'ajoutent ensuite chaque mois. Sans ces valeurs, les droits sont comptés depuis l'embauche.</p>
+        <div className="grille">
+          <label>Solde repris (jours ouvrables)<input type="number" step="0.5" value={s.conges_solde_depart} onChange={(e) => champ('conges_solde_depart', e.target.value)} /></label>
+          {date('conges_depuis', 'Solde arrêté au')}
+        </div>
+      </fieldset>
       {erreur && <p className="erreur" role="alert">{erreur}</p>}
       <div className="actions"><button disabled={enCours}>Enregistrer</button></div>
     </form>
@@ -184,8 +193,10 @@ export function DetailSalarie({ id }: { id: number }) {
   const [sortie, setSortie] = useState({ date_sortie: aujourdhui(), motif: '' })
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
+  const [solde, setSolde] = useState<Solde | null>(null)
   const charger = useCallback(() => {
     api<Salarie>(`/rh/salaries/${id}/`).then(setS).catch((e: Error) => setErreur(e.message))
+    api<Solde>(`/rh/absences/solde/?salarie=${id}`).then(setSolde).catch(() => undefined)
   }, [id])
   useEffect(charger, [charger])
 
@@ -236,6 +247,7 @@ export function DetailSalarie({ id }: { id: number }) {
         {s.utilisateur_nom && <><dt>Compte ERP</dt><dd>{s.utilisateur_nom}</dd></>}
         {s.observations && <><dt>Observations</dt><dd style={{ whiteSpace: 'pre-line' }}>{s.observations}</dd></>}
       </dl>
+      {solde?.salarie && s.statut === 'ACTIF' && <BlocSolde solde={solde} />}
       {erreur && <p className="erreur" role="alert">{erreur}</p>}
 
       <fieldset>

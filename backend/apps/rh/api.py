@@ -67,7 +67,7 @@ class SalarieSerializer(_Verifie):
                   "lieu_naissance", "nationalite", "situation_familiale", "situation_libelle", "enfants", "telephone", "email",
                   "adresse", "contact_urgence", "telephone_urgence", "numero_cnps", "site", "site_nom", "service", "service_nom",
                   "fonction", "categorie", "categorie_libelle", "responsable", "responsable_nom", "utilisateur", "utilisateur_nom",
-                  "date_embauche", "date_sortie", "motif_sortie", "observations", "anciennete", "contrat", "contrats", "pieces",
+                  "date_embauche", "date_sortie", "motif_sortie", "observations", "conges_solde_depart", "conges_depuis", "anciennete", "contrat", "contrats", "pieces",
                   "peut_modifier", "peut_sortir"]
         verifies = ["date_naissance", "date_embauche", "responsable"]
 

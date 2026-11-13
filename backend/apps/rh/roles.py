@@ -6,10 +6,17 @@ LECTURE = ["core.view_site", "core.view_service", "core.view_utilisateur", "rh.v
 SAISIE = ["rh.add_salarie", "rh.change_salarie", "rh.add_contrat", "rh.change_contrat", "rh.delete_contrat",
           "rh.add_piecesalarie", "rh.change_piecesalarie", "rh.delete_piecesalarie", "rh.gerer_sortie_salarie"]
 
+ABSENCES_VOIR = ["rh.view_demandeabsence"]
+ABSENCES = ABSENCES_VOIR + ["rh.add_demandeabsence"]
+
 ROLES = {
-    "RH - Consultation": LECTURE,
-    "RH - Gestionnaire": LECTURE + SAISIE,
+    # Tout salarié qui a un compte : il demande ses congés et voit ses demandes et celles de son équipe.
+    "RH - Salarié": ABSENCES,
+    "RH - Consultation": LECTURE + ABSENCES_VOIR,
+    "RH - Gestionnaire": LECTURE + SAISIE + ABSENCES + ["rh.approuver_demandeabsence"],
 }
+# Ajoutés par migration aux rôles créés avant les congés.
+DROITS_ABSENCES = {"RH - Consultation": ABSENCES_VOIR, "RH - Gestionnaire": ABSENCES + ["rh.approuver_demandeabsence"]}
 
 
 def creer_roles(sender, **kwargs):

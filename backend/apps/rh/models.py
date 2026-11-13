@@ -62,6 +62,10 @@ class Salarie(Horodate):
     date_sortie = models.DateField("date de sortie", null=True, blank=True, editable=False)
     motif_sortie = models.CharField("motif de la sortie", max_length=200, blank=True, editable=False)
     observations = models.TextField(blank=True)
+    conges_solde_depart = models.DecimalField("solde de congés repris", max_digits=6, decimal_places=1, default=0,
+                                              help_text="Jours ouvrables restant dus à la date ci-dessous (reprise de l'existant).")
+    conges_depuis = models.DateField("solde arrêté au", null=True, blank=True,
+                                     help_text="Les droits s'acquièrent à partir de cette date ; vide : depuis l'embauche.")
 
     class Meta:
         verbose_name = "salarié"
@@ -227,3 +231,6 @@ def echeances(jours=RAPPEL_JOURS, salaries=None) -> list:
     for c in contrats.filter(fin_essai__gte=aujourd_hui, fin_essai__lte=limite):
         ajouter(c.salarie, "ESSAI", "Fin de la période d'essai", c.fin_essai, c.id)
     return sorted(lignes, key=lambda l: (l["date"], l["salarie_nom"]))
+
+
+from .conges import DemandeAbsence, ReglageRH  # noqa: E402,F401  (modèles déclarés dans conges.py)
