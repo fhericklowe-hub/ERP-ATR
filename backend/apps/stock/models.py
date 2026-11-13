@@ -48,7 +48,8 @@ class Mouvement(models.Model):
         ordering = ["-date", "-id"]
         indexes = [models.Index(fields=["article", "magasin"])]
         constraints = [models.CheckConstraint(name="mouvement_quantite_non_nulle", condition=~models.Q(quantite=0))]
-        permissions = [("ajuster_stock", "Peut ajuster le stock (inventaire) et transférer entre magasins")]
+        permissions = [("ajuster_stock", "Peut ajuster le stock (inventaire) et transférer entre magasins"),
+                       ("voir_valeur_stock", "Peut voir la valeur du stock et des consommations")]
 
     def __str__(self):
         return f"{self.get_type_display()} {self.quantite:+} {self.article.code}"
