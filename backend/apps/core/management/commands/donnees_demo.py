@@ -20,7 +20,7 @@ COMPTES = {
     "responsable": ("Démo", "Responsable", "ACHATS", [
         "Achats - Demandeur", "Achats - Responsable achats", "Achats - Directeur technique", "Moyens généraux - Gestionnaire", "Moyens généraux - Demandeur",
         "Stock - Responsable", "Technique - Chef d'atelier", "Commercial - Responsable", "Exploitation - Agent",
-        "RH - Gestionnaire", "RH - Salarié", "HSE - Responsable"]),
+        "RH - Gestionnaire", "RH - Salarié", "HSE - Responsable", "Direction - Tableau de bord"]),
     "controleur": ("Démo", "Contrôleur", "FINANCES", ["Achats - Contrôleur de gestion", "RH - Salarié", "HSE - Déclarant"]),
     "acheteur": ("Démo", "Acheteur", "ACHATS", ["Achats - Acheteur", "Achats - Demandeur", "RH - Salarié", "HSE - Déclarant"]),
     "magasinier": ("Démo", "Magasinier", "STOCK", ["Achats - Magasinier", "Stock - Magasinier", "RH - Salarié", "HSE - Déclarant"]),
