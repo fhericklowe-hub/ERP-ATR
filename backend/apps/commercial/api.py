@@ -14,9 +14,12 @@ from .pdf import pdf_devis
 
 
 class LigneSerializer(serializers.ModelSerializer):
-    materiel_nom = serializers.CharField(source="materiel.__str__", read_only=True, default="")
+    materiel_nom = serializers.SerializerMethodField()
     prix_net = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     montant_ht = serializers.DecimalField(max_digits=16, decimal_places=2, read_only=True)
+
+    def get_materiel_nom(self, obj) -> str:
+        return str(obj.materiel) if obj.materiel_id else ""
 
     class Meta:
         model = LigneDevis
