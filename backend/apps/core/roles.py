@@ -4,6 +4,9 @@ Rôle d'administration : créer les comptes et attribuer les rôles, sans droit 
 ROLE_COMPTES = "Administration - Comptes"
 ROLES = {"Direction - Tableau de bord": ["core.voir_pilotage"],
          ROLE_COMPTES: ["core.gerer_comptes", "core.view_utilisateur", "core.view_site", "core.view_service"]}
+# Le même rôle tient l'organisation : les sites, les services et le responsable de chaque service.
+DROITS_ORGANISATION = {ROLE_COMPTES: ["core.add_site", "core.change_site", "core.add_service", "core.change_service"]}
+ROLES[ROLE_COMPTES] += DROITS_ORGANISATION[ROLE_COMPTES]
 
 
 def creer_roles(sender, **kwargs):

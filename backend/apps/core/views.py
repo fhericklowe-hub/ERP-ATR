@@ -18,7 +18,7 @@ class SiteViewSet(VueMetier):
 
 
 class ServiceViewSet(VueMetier):
-    queryset = Service.objects.all()
+    queryset = Service.objects.select_related("responsable")
     serializer_class = ServiceSerializer
     filterset_fields = ["actif"]
     search_fields = ["code", "nom"]

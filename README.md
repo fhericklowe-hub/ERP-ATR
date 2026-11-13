@@ -95,6 +95,10 @@ quel rôle à un autre compte : ne le confier qu'à une ou deux personnes de con
 Chacun change son propre mot de passe en cliquant sur son nom, en haut à droite (« Mon compte ») : il donne
 l'actuel, puis le nouveau deux fois. Ses autres appareils sont déconnectés.
 
+Administration, « Sites et services » (même rôle, complété par la migration `core/0011`) : créer, corriger ou désactiver
+un site ou un service, et désigner le **responsable de chaque service**, qui valide les demandes de ce service. L'écran
+signale les services actifs sans responsable. Les magasins de stock restent dans l'administration Django.
+
 ## Catalogue des articles
 
 Stock, « Articles » : recherche, création, modification. Un article ne se supprime pas, il se désactive. Deux codes

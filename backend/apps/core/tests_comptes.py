@@ -86,3 +86,23 @@ class MonMotDePasseTests(APITestCase):
         self.client.credentials()
         self.assertEqual(self.jetons("Depart-2026-atr").status_code, 401)
         self.assertEqual(self.jetons("Ferke-2027-autre").status_code, 200)
+
+
+class OrganisationTests(APITestCase):
+    def test_sites_et_services_tenus_par_le_role_d_administration(self):
+        gestionnaire = Utilisateur.objects.create_user("gestionnaire", password="x")
+        gestionnaire.groups.add(Group.objects.get(name=ROLE_COMPTES))
+        chef = Utilisateur.objects.create_user("chef", password="x", first_name="Chef", last_name="Essai")
+        parti = Utilisateur.objects.create_user("parti", password="x", is_active=False)
+        self.client.force_authenticate(chef)
+        self.assertEqual(self.client.post("/api/services/", {"code": "ESSAI", "nom": "Essai"}, format="json").status_code, 403)
+        self.client.force_authenticate(gestionnaire)
+        r = self.client.post("/api/services/", {"code": "ESSAI", "nom": "Service d'essai", "responsable": chef.id}, format="json")
+        self.assertEqual((r.status_code, r.data["responsable_nom"]), (201, "Chef Essai"))
+        url = f"/api/services/{r.data['id']}/"
+        self.assertEqual(self.client.patch(url, {"responsable": parti.id}, format="json").status_code, 400)
+        self.assertEqual(self.client.patch(url, {"responsable": None, "actif": False}, format="json").data["responsable_nom"], "")
+        self.assertEqual(self.client.delete(url).status_code, 403)
+        r = self.client.post("/api/sites/", {"code": "ESSAI", "nom": "Site d'essai", "ville": "Bouaké"}, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(self.client.patch(f"/api/sites/{r.data['id']}/", {"actif": False}, format="json").data["actif"], False)

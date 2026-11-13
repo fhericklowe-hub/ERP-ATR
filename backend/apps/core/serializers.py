@@ -13,9 +13,19 @@ class SiteSerializer(serializers.ModelSerializer):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
+    responsable_nom = serializers.SerializerMethodField()
+
     class Meta:
         model = Service
-        fields = ["id", "code", "nom", "responsable", "actif"]
+        fields = ["id", "code", "nom", "responsable", "responsable_nom", "actif"]
+
+    def get_responsable_nom(self, service) -> str:
+        return str(service.responsable) if service.responsable_id else ""
+
+    def validate_responsable(self, personne):
+        if personne and not personne.is_active:
+            raise serializers.ValidationError("Ce compte est désactivé : il ne peut pas valider les demandes du service.")
+        return personne
 
 
 class UtilisateurSerializer(serializers.ModelSerializer):
