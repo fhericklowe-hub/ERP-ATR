@@ -22,6 +22,7 @@ import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
+import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
 import ValeurStock from './stock/Valeur'
 import Biens from './moyens/Biens'
@@ -98,6 +99,10 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Exploitation', liens: [
     { chemin: '/mises', texte: 'Mises à disposition', droit: 'exploitation.view_miseadisposition' },
   ] },
+  { titre: 'RH', liens: [
+    { chemin: '/personnel', texte: 'Personnel', droit: 'rh.view_salarie' },
+    { chemin: '/personnel/echeances', texte: 'Échéances', droit: 'rh.view_salarie' },
+  ] },
   { titre: 'Moyens généraux', liens: [
     { chemin: '/interventions', texte: 'Interventions', droit: 'moyens.view_demandeintervention' },
     { chemin: '/biens', texte: 'Biens', droit: 'moyens.view_bien' },
@@ -142,6 +147,13 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (modifDevis) return <FormulaireDevis id={Number(modifDevis[1])} />
   const devis = chemin.match(/^\/devis\/(\d+)$/)
   if (devis) return <DetailDevis id={Number(devis[1])} voitMises={a('exploitation.view_miseadisposition')} peutPreparer={a('exploitation.add_miseadisposition')} voitReleves={a('exploitation.view_relevelocation')} peutRelever={a('exploitation.add_relevelocation')} />
+  if (chemin === '/personnel') return <ListeSalaries peutCreer={a('rh.add_salarie')} />
+  if (chemin === '/personnel/echeances') return <EcheancesPersonnel />
+  if (chemin === '/personnel/nouveau') return <FormulaireSalarie />
+  const modifSalarie = chemin.match(/^\/personnel\/(\d+)\/modifier$/)
+  if (modifSalarie) return <FormulaireSalarie id={Number(modifSalarie[1])} />
+  const salarie = chemin.match(/^\/personnel\/(\d+)$/)
+  if (salarie) return <DetailSalarie id={Number(salarie[1])} />
   if (chemin === '/releves') return <ListeReleves />
   const releve = chemin.match(/^\/releves\/(\d+)$/)
   if (releve) return <DetailReleve id={Number(releve[1])} />

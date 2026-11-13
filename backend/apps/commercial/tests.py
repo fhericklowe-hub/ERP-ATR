@@ -64,6 +64,7 @@ class DevisTests(APITestCase):
         self.assertEqual((d["statut"], d["commercial_nom"], d["lignes"][0]["materiel_nom"]), ("BROUILLON", "Vendeur", str(self.grue)))
         self.assertEqual(d["validite"], str(datetime.date.today() + datetime.timedelta(days=30)))
         self.assertEqual([Decimal(l["montant_ht"]) for l in d["lignes"]], [1575000, 300000])
+        self.assertEqual(d["lignes"][1]["materiel_nom"], "")                           # ligne sans matériel du parc
         t = d["totaux"]
         self.assertEqual((t["total_ht"], t["total_tva"], t["total_ttc"]), (1875000, 337500, 2212500))
         self.assertIn("deux millions deux cent douze mille cinq cents", t["en_lettres"].lower())

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "apps.technique",
     "apps.commercial",
     "apps.exploitation",
+    "apps.rh",
 ]
 
 MIDDLEWARE = [

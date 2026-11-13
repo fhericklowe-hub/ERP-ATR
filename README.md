@@ -283,3 +283,22 @@ peuvent pas se chevaucher ; un relevé annulé libère sa période. Le relevé s
 
 Droits : les rôles Commercial préparent et corrigent, « Commercial - Responsable » valide et annule un relevé facturé,
 les rôles Exploitation consultent.
+
+## RH : dossiers du personnel
+
+Chaque salarié a un dossier : état civil, coordonnées, personne à prévenir, n° CNPS, poste (site, service, fonction,
+catégorie, responsable), date d'embauche, et le compte ERP qui lui correspond s'il en a un. Le matricule est
+automatique s'il est laissé vide. Un salarié ne se supprime pas : on enregistre sa sortie des effectifs (date, motif).
+
+Sur le dossier :
+
+- les **contrats** successifs (CDI, CDD, stage, journalier, prestataire), avec la fin de période d'essai ;
+- les **pièces à validité** : permis de conduire, autorisation de conduite d'engins, habilitations, visite médicale,
+  pièce d'identité, carte de séjour ;
+- les copies en pièces jointes.
+
+RH > Échéances liste ce qui arrive à terme pour les salariés en poste : pièces à renouveler, fins de contrat, fins
+de période d'essai. Les gestionnaires RH les reçoivent aussi dans le rappel quotidien par e-mail, 30 jours avant.
+
+Ces données sont confidentielles : seuls les rôles « RH - Consultation » et « RH - Gestionnaire » y ont accès. La
+paie n'est pas traitée. Les dossiers se saisissent dans l'application, ils ne sont pas dans le dépôt.
