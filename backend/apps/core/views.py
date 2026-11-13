@@ -71,6 +71,32 @@ class MoiView(APIView):
         return Response(UtilisateurSerializer(request.user).data)
 
 
+class MonMotDePasseView(APIView):
+    """Chacun change son propre mot de passe, en donnant l'actuel. Les autres sessions du compte sont fermées ;
+    celle-ci reçoit de nouveaux jetons pour rester ouverte."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        from rest_framework_simplejwt.tokens import RefreshToken
+
+        actuel, nouveau = str(request.data.get("actuel", "")), str(request.data.get("nouveau", ""))
+        if not request.user.check_password(actuel):
+            raise exceptions.ValidationError({"actuel": "Le mot de passe actuel n'est pas le bon."})
+        if nouveau == actuel:
+            raise exceptions.ValidationError({"nouveau": "Le nouveau mot de passe doit être différent de l'actuel."})
+        try:
+            validate_password(nouveau, request.user)
+        except ValidationError as e:
+            raise exceptions.ValidationError({"nouveau": list(e.messages)})
+        request.user.set_password(nouveau)
+        request.user.save(update_fields=["password"])
+        jetons = RefreshToken.for_user(request.user)
+        return Response({"access": str(jetons.access_token), "refresh": str(jetons)})
+
+
 class AccueilView(APIView):
     """Ce qui attend l'utilisateur connecté, toutes rubriques confondues : les mêmes points que le rappel par e-mail."""
 

@@ -92,6 +92,9 @@ administrateur (accès à l'administration Django) ne se modifie que par un admi
 un changement de mot de passe ferme les sessions ouvertes de ce compte. Celui qui tient ce rôle peut donner n'importe
 quel rôle à un autre compte : ne le confier qu'à une ou deux personnes de confiance.
 
+Chacun change son propre mot de passe en cliquant sur son nom, en haut à droite (« Mon compte ») : il donne
+l'actuel, puis le nouveau deux fois. Ses autres appareils sont déconnectés.
+
 ## Catalogue des articles
 
 Stock, « Articles » : recherche, création, modification. Un article ne se supprime pas, il se désactive. Deux codes

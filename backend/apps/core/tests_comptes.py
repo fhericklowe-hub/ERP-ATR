@@ -57,3 +57,32 @@ class ComptesTests(APITestCase):
         r = self.client.post(URL, {"username": "ruse", "mot_de_passe": "Abidjan-2026-essai", "is_superuser": True, "is_staff": True}, format="json")
         ruse = Utilisateur.objects.get(username="ruse")
         self.assertEqual((r.status_code, ruse.is_superuser, ruse.is_staff), (201, False, False))
+
+
+class MonMotDePasseTests(APITestCase):
+    URL = "/api/moi/mot-de-passe/"
+
+    def jetons(self, mot):
+        return self.client.post("/api/auth/token/", {"username": "moi", "password": mot}, format="json")
+
+    def test_chacun_change_son_mot_de_passe(self):
+        Utilisateur.objects.create_user("moi", password="Depart-2026-atr")
+        self.assertEqual(self.client.post(self.URL, {"actuel": "Depart-2026-atr", "nouveau": "Ferke-2027-autre"}, format="json").status_code, 401)
+        ancien = self.jetons("Depart-2026-atr").data
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {ancien['access']}")
+        for corps in ({"actuel": "faux", "nouveau": "Ferke-2027-autre"}, {"actuel": "Depart-2026-atr", "nouveau": "12345678"},
+                      {"actuel": "Depart-2026-atr", "nouveau": "Depart-2026-atr"}, {"actuel": "Depart-2026-atr"}):
+            self.assertEqual(self.client.post(self.URL, corps, format="json").status_code, 400, corps)
+        r = self.client.post(self.URL, {"actuel": "Depart-2026-atr", "nouveau": "Ferke-2027-autre"}, format="json")
+        self.assertEqual(r.status_code, 200, r.data)
+        # Les anciens jetons ne valent plus rien, les nouveaux gardent la session ouverte.
+        self.assertEqual(self.client.get("/api/moi/").status_code, 401)
+        renouvele = self.client.post("/api/auth/token/refresh/", {"refresh": ancien["refresh"]}, format="json")
+        if renouvele.status_code == 200:   # un jeton tiré de l'ancien porte l'ancienne empreinte : il est refusé lui aussi
+            self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {renouvele.data['access']}")
+            self.assertEqual(self.client.get("/api/moi/").status_code, 401)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {r.data['access']}")
+        self.assertEqual(self.client.get("/api/moi/").status_code, 200)
+        self.client.credentials()
+        self.assertEqual(self.jetons("Depart-2026-atr").status_code, 401)
+        self.assertEqual(self.jetons("Ferke-2027-autre").status_code, 200)
