@@ -29,6 +29,7 @@ import { DetailEvenement, FormulaireEvenement, ListeEvenements } from './hse/Eve
 import { DetailVisite, FormulaireVisite, ListeVisites } from './hse/Visites'
 import { DetailAbsence, FormulaireAbsence, ListeAbsences, PlanningAbsences } from './rh/Absences'
 import ImportPersonnel from './rh/ImportPersonnel'
+import { ImportTiers, ListeTiers } from './referentiels/Tiers'
 import { DetailSalarie, EcheancesPersonnel, FormulaireSalarie, ListeSalaries } from './rh/Personnel'
 import Stock from './stock/Stock'
 import ValeurStock from './stock/Valeur'
@@ -90,6 +91,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/budget', texte: 'Demandes liées au budget', droit: 'achats.view_demandebudget' },
     { chemin: '/commandes', texte: 'Bons de commande', droit: 'achats.view_boncommande' },
     { chemin: '/receptions', texte: 'Bons de réception', droit: 'achats.view_bonreception' },
+    { chemin: '/fournisseurs', texte: 'Fournisseurs', droit: 'achats.view_boncommande' },
   ] },
   { titre: 'Stock', liens: [
     { chemin: '/stock/demandes', texte: 'Demandes de sortie', droit: 'stock.view_demandesortie' },
@@ -105,6 +107,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Commercial', liens: [
     { chemin: '/devis', texte: 'Devis de location', droit: 'commercial.view_devis' },
     { chemin: '/releves', texte: 'Relevés de location', droit: 'exploitation.view_relevelocation' },
+    { chemin: '/clients', texte: 'Clients', droit: 'commercial.view_devis' },
   ] },
   { titre: 'Exploitation', liens: [
     { chemin: '/mises', texte: 'Mises à disposition', droit: 'exploitation.view_miseadisposition' },
@@ -192,6 +195,10 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (modifSalarie) return <FormulaireSalarie id={Number(modifSalarie[1])} />
   const salarie = chemin.match(/^\/personnel\/(\d+)$/)
   if (salarie) return <DetailSalarie id={Number(salarie[1])} />
+  for (const qualite of ['fournisseur', 'client'] as const) {
+    if (chemin === `/${qualite}s`) return <ListeTiers key={qualite} qualite={qualite} peutCreer={a('referentiels.add_tiers')} peutModifier={a('referentiels.change_tiers')} />
+    if (chemin === `/${qualite}s/import`) return a('referentiels.add_tiers') ? <ImportTiers key={qualite} qualite={qualite} /> : <p>L'import est réservé à ceux qui créent les fiches.</p>
+  }
   if (chemin === '/releves') return <ListeReleves />
   const releve = chemin.match(/^\/releves\/(\d+)$/)
   if (releve) return <DetailReleve id={Number(releve[1])} />
