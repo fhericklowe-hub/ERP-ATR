@@ -18,3 +18,11 @@ class DonneesDemoTests(APITestCase):
             self.assertEqual(r.status_code, 200, adresse)
             if minimum:
                 self.assertGreaterEqual(r.data["count"], minimum, adresse)
+        # le scénario laisse du travail à chacun, et ne se rejoue pas
+        from apps.achats.models import DemandeAchat
+
+        self.assertEqual(DemandeAchat.objects.count(), 2)
+        attendus = {"chef": "Demandes d'achat à traiter", "responsable": "Bons de commande à valider", "mecanicien": "Actions correctives HSE"}
+        for identifiant, titre in attendus.items():
+            self.client.force_authenticate(Utilisateur.objects.get(username=identifiant))
+            self.assertIn(titre, [x["titre"] for x in self.client.get("/api/accueil/").data], identifiant)

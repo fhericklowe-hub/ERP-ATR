@@ -26,7 +26,12 @@ class PilotageTests(APITestCase):
         panne = modules["Technique"]["En panne ou en réparation"]
         self.assertEqual((panne["valeur"], panne["alerte"]), ("1 (20 %)", True))
         self.assertEqual(modules["Personnel"]["Salariés en poste"]["valeur"], "7")
-        self.assertEqual(modules["Achats"]["Commandé ce mois (TTC)"]["valeur"], "0 FCFA")
-        self.assertEqual(modules["HSE"]["Jours sans accident avec arrêt"]["valeur"], "aucun accident enregistré")
+        # le scénario de démonstration : un bon de 4×18500 + 8×3200 HT, TVA 18 %, en attente de validation
+        self.assertEqual(modules["Achats"]["Commandé ce mois (TTC)"]["valeur"], "117\u202f528 FCFA")
+        self.assertEqual(modules["Achats"]["Bons de commande à valider"]["valeur"], "1")
+        self.assertEqual(modules["Achats"]["Demandes d'achat en cours de circuit"]["valeur"], "1")
+        self.assertEqual(modules["Stock"]["Articles au seuil d'alerte ou en dessous"]["alerte"], True)
+        self.assertEqual(modules["Commercial et Exploitation"]["Montant des devis du mois (HT)"]["valeur"], "2\u202f250\u202f000 FCFA")
+        self.assertEqual(modules["HSE"]["Événements déclarés en %d" % __import__("datetime").date.today().year]["valeur"], "1")
         # la direction lit le tableau de bord mais n'entre pas dans les dossiers
         self.assertEqual(self.client.get("/api/rh/salaries/").status_code, 403)

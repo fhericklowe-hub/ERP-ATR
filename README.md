@@ -50,7 +50,8 @@ Tests : `python manage.py test` dans `backend/`.
    s'ouvre dans le navigateur sur http://localhost:5173.
 
 Le script charge des données fictives (`manage.py donnees_demo`) : quelques fournisseurs, clients, articles en
-stock, matériels, et un compte par profil, tous avec le mot de passe `demo-atr` : `responsable` (tous les
+stock, matériels, des documents en cours dans chaque module (une demande d'achat à valider, un bon de commande à
+valider, un ordre de réparation, un devis envoyé, un presqu'accident, une visite de sécurité), et un compte par profil, tous avec le mot de passe `demo-atr` : `responsable` (tous les
 modules), `controleur`, `acheteur`, `magasinier`, `chef`, `mecanicien`, `commercial`. La base reste dans
 `backend/db.sqlite3` sur le poste ; la supprimer remet la démonstration à zéro. Cette commande refuse de tourner
 sur la base du serveur.
