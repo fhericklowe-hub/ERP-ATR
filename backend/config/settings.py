@@ -107,6 +107,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "UPDATE_LAST_LOGIN": True,     # la date de dernière connexion s'affiche dans la gestion des comptes
+    "CHECK_REVOKE_TOKEN": True,    # un changement de mot de passe déconnecte les sessions ouvertes
 }
 
 SPECTACULAR_SETTINGS = {"TITLE": "ERP", "VERSION": "0.1.0", "SERVE_INCLUDE_SCHEMA": False}

@@ -81,6 +81,17 @@ contrôle d'abord le fichier : à la moindre ligne en erreur, rien n'est import�
 
 Le fichier des fournisseurs ou des clients ne doit jamais être déposé dans ce dépôt.
 
+## Comptes des utilisateurs et rôles
+
+Administration, « Comptes » : créer un compte, lui donner ses rôles, changer son mot de passe, le désactiver. Un compte
+ne se supprime pas. La rubrique est réservée au rôle « Administration - Comptes » (droit `core.gerer_comptes`), à
+attribuer une première fois dans l'administration Django, et aux administrateurs.
+
+Garde-fous : on ne change pas ses propres rôles et on ne désactive pas son propre compte ; le compte d'un
+administrateur (accès à l'administration Django) ne se modifie que par un administrateur, et cet écran n'en crée pas ;
+un changement de mot de passe ferme les sessions ouvertes de ce compte. Celui qui tient ce rôle peut donner n'importe
+quel rôle à un autre compte : ne le confier qu'à une ou deux personnes de confiance.
+
 ## Catalogue des articles
 
 Stock, « Articles » : recherche, création, modification. Un article ne se supprime pas, il se désactive. Deux codes
