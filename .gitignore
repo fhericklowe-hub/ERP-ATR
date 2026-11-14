@@ -8,3 +8,4 @@ backend/staticfiles/
 node_modules/
 frontend/dist/
 sauvegardes/
+migration.tmp

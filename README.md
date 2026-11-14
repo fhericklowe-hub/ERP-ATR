@@ -66,6 +66,17 @@ docker compose exec backend python manage.py createsuperuser
 
 L'application répond ensuite sur le port 80 du serveur.
 
+## Mettre à jour le serveur
+
+Après une nouvelle version (nouveaux fichiers dans le dossier du projet), lancer `mettre-a-jour.bat` sur le serveur. Il :
+
+1. fait une sauvegarde (et s'arrête là si elle échoue : rien n'est modifié) ;
+2. récupère la dernière version si le dossier vient de git (sinon il suppose que les fichiers ont déjà été remplacés) ;
+3. reconstruit et redémarre les services (`docker compose up -d --build`) ;
+4. applique les migrations de la base et vérifie qu'il n'en reste aucune.
+
+En cas de problème, la sauvegarde de l'étape 1 permet de revenir en arrière avec `restaurer.bat`.
+
 ## Sauvegardes
 
 Sur le serveur, avant la mise en service, trois fichiers à la racine s'occupent des sauvegardes. Ils sauvegardent la
