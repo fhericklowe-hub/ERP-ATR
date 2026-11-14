@@ -32,6 +32,7 @@ class PilotageTests(APITestCase):
         self.assertEqual(modules["Achats"]["Demandes d'achat en cours de circuit"]["valeur"], "1")
         self.assertEqual(modules["Stock"]["Articles au seuil d'alerte ou en dessous"]["alerte"], True)
         self.assertEqual(modules["Commercial et Exploitation"]["Montant des devis du mois (HT)"]["valeur"], "2\u202f250\u202f000 FCFA")
+        self.assertRegex(modules["Commercial et Exploitation"]["Taux d'utilisation des équipements (mois en cours)"]["valeur"], r"^\d+(,\d)? %$")
         self.assertEqual(modules["HSE"]["Événements déclarés en %d" % __import__("datetime").date.today().year]["valeur"], "1")
         # la direction lit le tableau de bord mais n'entre pas dans les dossiers
         self.assertEqual(self.client.get("/api/rh/salaries/").status_code, 403)
