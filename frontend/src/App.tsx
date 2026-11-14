@@ -323,7 +323,7 @@ export default function App() {
   return (
     <>
       <header>
-        <a href="#/accueil" className="marque" title="Accueil"><img src="/logo.png" alt="ATR" height="36" /><strong>ERP</strong></a>
+        <a href="#/accueil" className="marque" title="Accueil"><img src="/logo-blanc.png" alt="ATR" height="46" /><strong>ERP</strong></a>
         <nav aria-label="Modules">
           {modules.map((m) => (
             <a key={m.titre} href={`#${m.liens[0].chemin}`} aria-current={m === moduleActif ? 'page' : undefined}>{m.titre}</a>

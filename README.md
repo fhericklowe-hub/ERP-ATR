@@ -331,6 +331,13 @@ achats » et « Achats - Contrôleur de gestion ».
 - **Parc** : engins de manutention et de levage, camions, remorques, véhicules, groupes. N° de parc, type,
   marque, modèle, série, immatriculation, capacité, activité, site de rattachement, lieu où il se trouve
   (site ou client), état, compteurs heures et kilomètres.
+- **Import du parc** (écran Parc, chef d'atelier) : soit un classeur simple (première feuille, titres en première ligne),
+  soit le classeur de l'exploitation à un onglet par site et par activité (`ABJ-Transport`, `ABJ-Manutention`,
+  `ABJ-Levage`, `SP-…`, `FKE-…`). Dans ce cas le site et l'activité viennent du nom de l'onglet, les titres sont
+  cherchés sous les en-têtes, la nature (RMQ, TRAC, CHEL…) donne le type, le statut donne l'état, un client connu de
+  l'annuaire place le matériel chez lui, et le n° de matériel de IE est gardé. Les autres onglets sont laissés de côté.
+  Un matériel sans n° de parc reçoit le code `M` + son n° de matériel. Contrôle d'abord, écriture ensuite, rien n'est écrit
+  si une ligne est en erreur ; rejouer le fichier ne change rien.
 - **Ordre de réparation** (`OR-2026-0001`) : ouvert par un mécanicien ou le chef d'atelier sur un matériel
   (panne, entretien, accident, modification). Démarrage avec diagnostic et relevé de compteur, fin des travaux
   avec compte rendu, clôture par le chef d'atelier, qui peut aussi affecter, rouvrir et annuler.

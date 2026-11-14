@@ -36,7 +36,7 @@ class MaterielSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Materiel
-        fields = ["id", "code", "type", "type_libelle", "designation", "marque", "modele", "numero_serie", "immatriculation",
+        fields = ["id", "code", "type", "type_libelle", "designation", "numero_ie", "marque", "modele", "numero_serie", "immatriculation",
                   "annee", "capacite", "activite", "activite_libelle", "site", "site_nom", "emplacement", "emplacement_nom",
                   "etat", "etat_libelle", "compteur_heures", "compteur_km", "date_mise_en_service", "observations",
                   "ordres_ouverts"]
@@ -51,7 +51,7 @@ class MaterielViewSet(ExportExcel, mixins.CreateModelMixin, mixins.RetrieveModel
 
     export_titre, export_fichier = "Parc de matériels", "parc-materiels"
     export_colonnes = [
-        ("N° de parc", "code"), ("Désignation", "designation"), ("Type", "type_libelle"), ("Marque", "marque"), ("Modèle", "modele"),
+        ("N° de parc", "code"), ("Désignation", "designation"), ("N° dans IE", "numero_ie"), ("Type", "type_libelle"), ("Marque", "marque"), ("Modèle", "modele"),
         ("N° de série", "numero_serie"), ("Immatriculation", "immatriculation"), ("Année", "annee"), ("Capacité", "capacite"),
         ("Activité", "activite_libelle"), ("Site", "site_nom"), ("Emplacement", "emplacement_nom"), ("État", "etat_libelle"),
         ("Compteur heures", "compteur_heures", "nombre"), ("Compteur km", "compteur_km", "nombre"),
@@ -60,7 +60,7 @@ class MaterielViewSet(ExportExcel, mixins.CreateModelMixin, mixins.RetrieveModel
     serializer_class = MaterielSerializer
     queryset = Materiel.objects.select_related("site", "emplacement").prefetch_related("ordres")
     filterset_fields = ["type", "etat", "site", "activite", "emplacement"]
-    search_fields = ["code", "designation", "marque", "modele", "numero_serie", "immatriculation"]
+    search_fields = ["code", "numero_ie", "designation", "marque", "modele", "numero_serie", "immatriculation"]
     ordering_fields = ["code", "designation"]
 
     perform_create = VueMetier.perform_create

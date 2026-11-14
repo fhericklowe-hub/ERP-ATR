@@ -13,7 +13,7 @@ export default defineConfig({
         lang: 'fr',
         display: 'standalone',
         start_url: '/',
-        theme_color: '#14532d',
+        theme_color: '#1d1a4c',
         background_color: '#ffffff',
         icons: [{ src: '/icone.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
       },
