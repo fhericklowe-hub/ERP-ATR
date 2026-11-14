@@ -20,6 +20,7 @@ import { DetailDevis, FormulaireDevis, ListeDevis } from './commercial/Devis'
 import FicheOpportunite, { ListeOpportunites } from './commercial/Opportunites'
 import { DetailMise, ListeMises } from './exploitation/Mises'
 import { DetailReleve, ListeReleves } from './exploitation/Releves'
+import Disponibilite from './exploitation/Disponibilite'
 import Utilisation from './exploitation/Utilisation'
 import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
@@ -122,6 +123,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   ] },
   { titre: 'Exploitation', liens: [
     { chemin: '/mises', texte: 'Mises à disposition', droit: 'exploitation.view_miseadisposition' },
+    { chemin: '/disponibilite', texte: 'Disponibilité', droit: 'exploitation.view_miseadisposition' },
     { chemin: '/utilisation', texte: 'Taux d\'utilisation', droit: 'exploitation.view_miseadisposition' },
   ] },
   { titre: 'RH', liens: [
@@ -230,6 +232,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (releve) return <DetailReleve id={Number(releve[1])} />
   if (chemin === '/mises') return <ListeMises />
   if (chemin === '/utilisation') return <Utilisation />
+  if (chemin === '/disponibilite') return <Disponibilite />
   const mise = chemin.match(/^\/mises\/(\d+)$/)
   if (mise) return <DetailMise id={Number(mise[1])} peutOuvrirOr={a('technique.add_ordrereparation')} />
   if (chemin === '/parc/import') return <ImportParc />
