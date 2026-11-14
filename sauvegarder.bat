@@ -27,3 +27,4 @@ if defined COPIE (
   )
   echo Copie faite vers %COPIE%
 )
+exit /b 0
