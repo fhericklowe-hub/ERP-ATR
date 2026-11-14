@@ -486,6 +486,19 @@ les ordres de réparation, le catalogue d'articles, les fournisseurs et les clie
 - Un nouvel écran s'ajoute en deux lignes : `ExportExcel` dans la vue et la liste `export_colonnes` (voir `apps/core/export.py`),
   puis le composant `BoutonExcel` côté écran.
 
+## Achats : factures fournisseurs
+
+Menu Achats > Factures fournisseurs (ou « Enregistrer une facture » depuis un bon de commande transmis ou clôturé). On saisit
+la facture reçue (n°, date, échéance, montants HT et TTC) ; l'ERP la compare à la valeur des réceptions validées de la commande
+(HT, en tenant compte des autres factures déjà saisies sur la même commande).
+
+- Circuit : À vérifier, puis Bon à payer (responsable achats ; en cas d'écart, une justification est obligatoire), puis Payée
+  (date et référence du paiement). Une facture se corrige tant qu'elle est « À vérifier » ; ensuite on l'annule avec un motif.
+- Le paiement et la comptabilité restent dans IE : l'ERP n'émet ni ne règle rien.
+- Une même facture d'un fournisseur ne s'enregistre qu'une fois (hors factures annulées).
+- Droits : acheteur et responsable achats saisissent ; le responsable achats donne le bon à payer ; responsable achats et
+  direction financière marquent le paiement ; le contrôleur de gestion consulte. Export Excel de la liste.
+- Après mise à jour, `migrate` ajoute ces droits aux rôles existants.
 ## Journal des modifications
 
 L'écran Administration > Journal (droit « voir le journal », donné au rôle « Administration - Comptes ») montre qui a créé,
