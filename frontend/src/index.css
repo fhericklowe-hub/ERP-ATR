@@ -108,3 +108,10 @@ header nav a[aria-current] { opacity: 1; font-weight: 600; border-bottom: 2px so
 .pilotage dl > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
 .pilotage dt { color: inherit; }
 .pilotage dd { margin: 0; text-align: right; }
+
+.jauge { display: inline-block; vertical-align: middle; width: 90px; height: 10px; border-radius: 5px; background: var(--bleu-clair, #e4e4e7); overflow: hidden; margin-right: 6px; }
+.jauge > span { display: block; height: 100%; background: var(--vert); }
+.jauge > span.moyen { background: var(--ocre, #d97706); }
+.jauge > span.faible { background: #b45309; }
+.chiffre-cle { font-size: 1.1em; margin: 8px 0 0; }
+.chiffre-cle strong { font-size: 2em; color: var(--vert); }
