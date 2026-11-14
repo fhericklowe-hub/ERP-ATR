@@ -145,8 +145,16 @@ class MouvementViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         if fichier.size > 5 * 1024 * 1024:
             raise exceptions.ValidationError({"detail": "Fichier trop lourd : 5 Mo au plus."})
         try:
-            bilan = importer(request.user, fichier, _magasin(request.data.get("magasin")),
-                             simuler=str(request.data.get("simuler", "")).lower() in ("1", "true", "on"))
+            import json
+
+            try:
+                associations = json.loads(request.data.get("succursales") or "{}")
+                assert isinstance(associations, dict)
+            except (ValueError, AssertionError):
+                raise exceptions.ValidationError({"detail": "Associations de succursales illisibles."})
+            bilan = importer(request.user, fichier, _magasin(request.data.get("magasin")) if request.data.get("magasin") else None,
+                             simuler=str(request.data.get("simuler", "")).lower() in ("1", "true", "on"),
+                             succursales={k: _magasin(v) for k, v in associations.items()})
         except PermissionDenied as e:
             raise exceptions.PermissionDenied(str(e))
         except ValidationError as e:

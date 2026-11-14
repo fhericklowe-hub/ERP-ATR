@@ -259,6 +259,42 @@ class StockTests(SocleCommande):
         r = self.importer(self.LIGNES)
         self.assertEqual((r.data["stocks_modifies"], r.data["inchanges"], r.data["articles_crees"]), (0, 2, 0))
 
+    def test_import_d_un_export_par_succursale_avec_plusieurs_entrees_par_article(self):
+        import json
+
+        titres = ("Succursale", "Constructeur", "Référence", "Désignation", "Entrée stock - Date", "Famille comptable", "PMP du stock", "Val stk",
+                  "Quantité", "Casier", "Année")
+        lignes = [("Export du stock au 11/11/2026",) , (), titres,
+                  ("01", "BAL", "BF1372", "FILTRE A GASOIL", None, "PDRT", 7500, 30000, 4, "E06E03", "Antérieures"),
+                  ("01", "BAL", "BF1372", "FILTRE A GASOIL", None, "PDRT", 9000, 18000, 2, "E06E04", "N"),
+                  ("11", "BAL", "BF1372", "FILTRE A GASOIL", None, "PDRT", 8000, 16000, 2, "Z01", "N"),
+                  ("11", "DON", "P-1", "JOINT", None, "PDRT", -2, -4, 2, "Z02", "N")]
+        wb = Workbook()
+        for l in lignes:
+            wb.active.append(list(l))
+        tampon = BytesIO()
+        wb.save(tampon)
+        self.client.force_authenticate(self.chef_stock)
+
+        def envoyer(**champs):
+            tampon.seek(0)
+            return self.client.post(f"{MOUVEMENTS}importer/", {"fichier": SimpleUploadedFile("stock.xlsx", tampon.getvalue()), **champs}, format="multipart")
+
+        r = envoyer(simuler="1")                                      # sans association : on liste les succursales
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual([(x["code"], x["articles"], x["quantite"]) for x in r.data["succursales"]], [("01", 1, "6.00"), ("11", 2, "4.00")])
+        self.assertIn("Associez", r.data["erreurs"][0])
+        associations = json.dumps({"01": self.siege.id, "11": self.marcory.id})
+        r = envoyer(succursales=associations)
+        self.assertEqual((r.data["erreurs"], r.data["ecrit"], r.data["articles_crees"], r.data["stocks_modifies"]), ([], True, 2, 3), r.data)
+        self.assertIn("prix ignoré", r.data["avertissements"][0])
+        article = Article.objects.get(code="BAL-BF1372")
+        self.assertEqual((self.stock(article), self.stock(article, self.marcory)), (6, 2))     # entrées additionnées par succursale
+        prix = Mouvement.objects.filter(article=article, magasin=self.siege).latest("id").prix_unitaire
+        self.assertEqual(prix, Decimal("8000.00"))                                             # (30000 + 18000) / 6
+        self.assertEqual(ReglageStock.objects.get(article=article, magasin=self.siege).casier, "E06E03")   # là où il y a le plus de pièces
+        self.assertEqual(envoyer(succursales=associations).data["inchanges"], 3)
+
     def test_import_refuse_en_bloc(self):
         r = self.importer([("FIL-001", "Filtre", "U", 5, None, None, None), ("X-1", "Sans quantité", "U", None, None, None, None),
                            ("X-2", "Unité inconnue", "PALETTE", 1, None, None, None), ("fil-001", "Doublon", "U", 1, None, None, None),
