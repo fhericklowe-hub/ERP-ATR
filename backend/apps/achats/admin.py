@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Acheteur, DemandeBudget, DevisDemande, LigneBudgetaire, BonCommande, BonReception, LigneBonReception, DemandeAchat, LigneBonCommande, Evenement, LigneDemandeAchat, PieceJointe
+from .models import Acheteur, DemandeBudget, FactureFournisseur, DevisDemande, LigneBudgetaire, BonCommande, BonReception, LigneBonReception, DemandeAchat, LigneBonCommande, Evenement, LigneDemandeAchat, PieceJointe
 
 
 class LigneInline(admin.TabularInline):
@@ -99,3 +99,14 @@ class DemandeBudgetAdmin(admin.ModelAdmin):
     search_fields = ["numero", "ancien_numero", "intitule"]
     readonly_fields = ["numero", "statut", "acheteur", "montant"]
     inlines = [DevisDemandeInline]
+
+
+@admin.register(FactureFournisseur)
+class FactureFournisseurAdmin(admin.ModelAdmin):
+    """Consultation. La saisie et le circuit se font dans l'application."""
+
+    list_display = ["numero", "numero_facture", "commande", "date_facture", "montant_ht", "montant_ttc", "statut"]
+    list_filter = ["statut"]
+    search_fields = ["numero", "numero_facture", "commande__numero"]
+    readonly_fields = ["numero", "statut", "commentaire_ecart", "bon_a_payer_par", "bon_a_payer_le", "payee_le", "reference_paiement", "motif_annulation"]
+    autocomplete_fields = ["commande"]

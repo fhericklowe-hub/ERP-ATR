@@ -50,8 +50,18 @@ ROLES = {
         "achats.view_acheteur", "achats.change_acheteur",
     ],
 }
+FACTURE_LECTURE = ["achats.view_facturefournisseur", "achats.view_boncommande", "achats.view_bonreception", "referentiels.view_tiers"]
+FACTURE_SAISIE = FACTURE_LECTURE + ["achats.add_facturefournisseur", "achats.change_facturefournisseur"]
+FACTURES = {
+    "Achats - Acheteur": FACTURE_SAISIE,
+    "Achats - Responsable achats": FACTURE_SAISIE + ["achats.donner_bon_a_payer_facturefournisseur", "achats.payer_facturefournisseur"],
+    "Achats - Contrôleur de gestion": FACTURE_LECTURE,
+    "Achats - Direction financière": FACTURE_LECTURE + ["achats.payer_facturefournisseur"],
+}
 ROLES["Achats - Direction financière"] = LECTURE
 ROLES["Achats - Direction générale"] = LECTURE
+for _role, _droits in FACTURES.items():
+    ROLES[_role] = ROLES.get(_role, []) + _droits
 for _role, _droits in BUDGET.items():
     ROLES[_role] = ROLES.get(_role, []) + _droits
 

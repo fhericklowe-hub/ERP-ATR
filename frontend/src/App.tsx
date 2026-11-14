@@ -7,6 +7,7 @@ import DetailCommande from './achats/DetailCommande'
 import FormulaireCommande from './achats/FormulaireCommande'
 import ListeCommandes from './achats/ListeCommandes'
 import DetailReception from './achats/DetailReception'
+import FicheFacture, { ListeFactures } from './achats/Factures'
 import FormulaireReception from './achats/FormulaireReception'
 import ListeReceptions from './achats/ListeReceptions'
 import Formulaire from './achats/Formulaire'
@@ -95,6 +96,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/budget', texte: 'Demandes liées au budget', droit: 'achats.view_demandebudget' },
     { chemin: '/commandes', texte: 'Bons de commande', droit: 'achats.view_boncommande' },
     { chemin: '/receptions', texte: 'Bons de réception', droit: 'achats.view_bonreception' },
+    { chemin: '/factures', texte: 'Factures fournisseurs', droit: 'achats.view_facturefournisseur' },
     { chemin: '/fournisseurs', texte: 'Fournisseurs', droit: 'achats.view_boncommande' },
   ] },
   { titre: 'Stock', liens: [
@@ -253,6 +255,10 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (detail) return <Detail id={Number(detail[1])} moiId={moi.id} droits={moi.droits} />
   if (route.split('?')[0] === '/commandes') return <ListeCommandes key={route} />
   if (route === '/receptions') return <ListeReceptions />
+  if (route === '/factures') return <ListeFactures />
+  if (route.split('?')[0] === '/factures/nouvelle') return <FicheFacture key={route} commandeId={Number(new URLSearchParams(route.split('?')[1]).get('commande')) || undefined} />
+  const facture = route.match(/^\/factures\/(\d+)$/)
+  if (facture) return <FicheFacture key={route} id={Number(facture[1])} />
   if (route === '/budget') return <ListeBudget />
   if (route === '/budget/nouvelle') return <FormulaireBudget moi={moi} />
   const modifBudget = route.match(/^\/budget\/(\d+)\/modifier$/)

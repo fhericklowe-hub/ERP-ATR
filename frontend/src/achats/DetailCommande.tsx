@@ -114,6 +114,7 @@ export default function DetailCommande({ id }: { id: number }) {
             {b.statut === 'TRANSMIS' && b.etat_reception !== 'COMPLETE' && (
               <a className="bouton" href={`#/commandes/${b.id}/recevoir`}>Saisir une réception</a>
             )}
+            <a className="bouton secondaire" href={`#/factures/nouvelle?commande=${b.id}`}>Enregistrer une facture</a>
             {b.statut === 'TRANSMIS' && b.peut_preparer && (
               <button className="secondaire" disabled={enCours} onClick={() => agir('cloturer', { commentaire: texte })}>Clôturer la commande</button>
             )}
