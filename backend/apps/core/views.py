@@ -6,8 +6,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .api import VueMetier
-from .models import Service, Site, Utilisateur
-from .serializers import CompteSerializer, ServiceSerializer, SiteSerializer, UtilisateurSerializer
+from .export import ExportExcel
+from .models import Service, Site, Trace, Utilisateur
+from .serializers import CompteSerializer, TraceSerializer, ServiceSerializer, SiteSerializer, UtilisateurSerializer
 
 
 class SiteViewSet(VueMetier):
@@ -120,3 +121,15 @@ class PilotageView(APIView):
         if not request.user.has_perm("core.voir_pilotage"):
             raise exceptions.PermissionDenied()
         return Response(pilotage.tableau())
+
+
+class TraceViewSet(ExportExcel, viewsets.ReadOnlyModelViewSet):
+    """Journal des modifications, en lecture seule (droit « voir » le journal)."""
+
+    queryset = Trace.objects.select_related("utilisateur")
+    serializer_class = TraceSerializer
+    filterset_fields = {"action": ["exact"], "modele": ["exact"], "utilisateur": ["exact"], "date": ["gte", "lte"], "objet_id": ["exact"]}
+    search_fields = ["objet_libelle", "modele"]
+    export_titre, export_fichier = "Journal des modifications", "journal"
+    export_colonnes = [("Date", "date", "date"), ("Utilisateur", "utilisateur_nom"), ("Action", "action_libelle"), ("Type", "modele_libelle"),
+                       ("Objet", "objet_libelle")]

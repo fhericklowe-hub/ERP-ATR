@@ -499,3 +499,15 @@ la facture reçue (n°, date, échéance, montants HT et TTC) ; l'ERP la compare
 - Droits : acheteur et responsable achats saisissent ; le responsable achats donne le bon à payer ; responsable achats et
   direction financière marquent le paiement ; le contrôleur de gestion consulte. Export Excel de la liste.
 - Après mise à jour, `migrate` ajoute ces droits aux rôles existants.
+## Journal des modifications
+
+L'écran Administration > Journal (droit « voir le journal », donné au rôle « Administration - Comptes ») montre qui a créé,
+modifié ou supprimé quoi, et quand, avec pour chaque modification les champs touchés (avant → après). Filtres : recherche,
+action, utilisateur, dates ; export Excel.
+
+- Sont tracées toutes les écritures faites par un utilisateur connecté (application ou administration Django), sur tous les
+  modules. Ne sont pas tracés : les commandes en console (imports), les tâches de fond, les compteurs de numérotation, les
+  historiques propres aux documents (événements) et la simple connexion.
+- Les mots de passe et toutes les données du module RH ne sont jamais écrits : le journal garde seulement le nom des champs modifiés.
+- Le journal est en lecture seule, y compris pour l'administrateur dans l'écran. Il grossit avec l'usage ; une purge des
+  entrées anciennes pourra s'ajouter si besoin. Il est dans la base : il est donc compris dans les sauvegardes.
