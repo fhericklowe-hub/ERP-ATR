@@ -290,6 +290,12 @@ Rôles créés à l'installation : « Stock - Consultation », « Stock - Magasi
   `Code, Désignation, Unité, Quantité`, puis au besoin `Seuil, Rangement, Prix`. Les articles inconnus sont créés,
   le stock du magasin est mis à la quantité du fichier, les articles absents du fichier ne sont pas touchés.
   Le fichier est d'abord contrôlé ; une seule ligne en erreur et rien n'est importé.
+- **Export d'un logiciel de stock** (colonnes `Succursale`, `Constructeur`, `Référence`, `Désignation`, `Quantité`, `Casier`,
+  `PMP du stock`, `Val stk`, titres sous quelques lignes de titre) : l'écran propose d'associer chaque succursale à un magasin ;
+  les lignes d'un même article (plusieurs entrées en stock) sont additionnées, le prix est le prix moyen pondéré (valeur du
+  stock / quantité), le rangement est celui qui contient le plus de pièces, et le code de l'article est
+  `CONSTRUCTEUR-RÉFÉRENCE`. Un prix négatif dans le fichier est ignoré (signalé à l'écran) sans bloquer l'import.
+  Le fichier réel du stock ne doit jamais être déposé dans ce dépôt (public).
 - La même chose en ligne de commande :
   `python manage.py importer_stock stock.xlsx --magasin SIEGE --utilisateur <identifiant> [--simuler]`.
 
