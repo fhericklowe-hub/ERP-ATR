@@ -78,6 +78,28 @@ class TiersTests(APITestCase):
         self.assertEqual((r.data["ecrit"], Tiers.objects.count()), (False, 2))
         self.assertEqual(self.importer(classeur(titres=["Code", "Ville"])).status_code, 400)
 
+    def test_import_d_un_annuaire_avec_titres_au_dessus_et_numerotation(self):
+        wb = Workbook()
+        feuille = wb.active
+        feuille.append(["Contacts des fournisseurs - état au 05/11/2026"])
+        feuille.append(["Source : annuaire public"])
+        feuille.append([])
+        feuille.append(["N°", "Fournisseur (liste ATR)", "Type", "Téléphone", "Email", "Adresse", "Site web", "Statut"])
+        feuille.append([1, "Atelier Essai", "Fournisseur", "+225 27 00 00 01 / +225 07 00 00 02 / +225 05 00 00 03 / +225 01 00 00 04", "a@example.com; b@example.com", "Zone 4", "", "Complet"])
+        feuille.append([2, "Garage Essai", "Fournisseur", "", "", "", "", "Non trouvé"])
+        feuille.append([3, "Groupe Essai Bordeaux", "Groupe", "", "", "", "", "Hors périmètre"])
+        tampon = io.BytesIO()
+        wb.save(tampon)
+        r = self.importer(SimpleUploadedFile("annuaire.xlsx", tampon.getvalue()))
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual((r.data["lues"], r.data["crees"], r.data["ignorees"], r.data["erreurs"], r.data["ecrit"]), (2, 2, 1, [], True))
+        self.assertIn("Ligne 5 : plusieurs e-mails", r.data["avertissements"][0])
+        atelier = Tiers.objects.get(raison_sociale="Atelier Essai")
+        self.assertEqual(atelier.email, "a@example.com")
+        self.assertIn("+225 01 00 00 04", atelier.telephone)           # plusieurs numéros dans la case : rien n'est coupé
+        self.assertRegex(atelier.code, r"^T\d{5}$")                       # la colonne N° n'est pas un code
+        self.assertFalse(Tiers.objects.filter(raison_sociale__startswith="Groupe").exists())
+
     def test_contacts_suivent_les_droits_de_la_fiche(self):
         tiers = Tiers.objects.create(code="F-1", raison_sociale="Essai", est_fournisseur=True)
         corps = {"tiers": tiers.id, "nom": "Contact Essai", "fonction": "Commercial", "telephone": "0700000000"}

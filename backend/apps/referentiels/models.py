@@ -12,7 +12,7 @@ class Tiers(Horodate):
     est_client = models.BooleanField("client", default=False)
     est_fournisseur = models.BooleanField("fournisseur", default=False)
     numero_contribuable = models.CharField("n° contribuable", max_length=50, blank=True)
-    telephone = models.CharField("téléphone", max_length=30, blank=True)
+    telephone = models.CharField("téléphone", max_length=100, blank=True)
     email = models.EmailField(blank=True)
     adresse = models.TextField(blank=True)
     ville = models.CharField(max_length=100, blank=True)

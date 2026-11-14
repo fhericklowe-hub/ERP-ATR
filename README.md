@@ -115,6 +115,9 @@ disposition et dans le parc. Un site ne se supprime pas, il se désactive. Les s
 Raison sociale, puis au besoin Code, N° contribuable, Téléphone, E-mail, Adresse, Ville. Une fiche déjà connue (même
 code, ou à défaut même raison sociale) est mise à jour, une case vide ne change rien ; les autres sont créées. On
 contrôle d'abord le fichier : à la moindre ligne en erreur, rien n'est importé.
+Les titres peuvent se trouver sous quelques lignes de titre du classeur ; « Fournisseur (liste ATR) » ou « Nom Fournisseur »
+valent « Raison sociale » ; une colonne N° qui numérote simplement les lignes n'est pas prise pour un code ; les lignes dont
+le statut est « Hors périmètre » sont sautées ; plusieurs e-mails dans une case : le premier est gardé (signalé à l'écran).
 
 Le fichier des fournisseurs ou des clients ne doit jamais être déposé dans ce dépôt.
 

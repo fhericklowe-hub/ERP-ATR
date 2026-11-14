@@ -12,7 +12,7 @@ type Fiche = {
   telephone: string; email: string; adresse: string; ville: string; actif: boolean
 }
 type Saisie = Omit<Fiche, 'id' | 'contacts' | 'sites'>
-type Bilan = { lues: number; crees: number; modifies: number; inchanges: number; erreurs: string[]; simulation: boolean; ecrit: boolean }
+type Bilan = { lues: number; crees: number; modifies: number; inchanges: number; ignorees: number; avertissements: string[]; erreurs: string[]; simulation: boolean; ecrit: boolean }
 
 const MOTS = {
   fournisseur: { titre: 'Fournisseurs', un: 'fournisseur', nouveau: 'Nouveau fournisseur', base: '/fournisseurs', autre: 'Aussi client' },
@@ -298,8 +298,8 @@ export function ImportTiers({ qualite }: { qualite: Qualite }) {
       <h2>Importer les {mots.un}s depuis Excel</h2>
       <fieldset>
         <p className="aide">
-          Première feuille du classeur, titres en première ligne : <strong>Raison sociale</strong>, puis au besoin
-          Code, N° contribuable, Téléphone, E-mail, Adresse, Ville.
+          Première feuille du classeur, titres sur la première ligne utile : <strong>Raison sociale</strong> (ou « Fournisseur », « Nom »), puis au besoin
+          Code, N° contribuable, Téléphone, E-mail, Adresse, Ville. Une colonne N° qui numérote les lignes est ignorée ; les lignes au statut « Hors périmètre » sont sautées.
           Une fiche déjà connue (même code, ou à défaut même raison sociale) est mise à jour (une case vide ne change rien), les autres sont créées.
           Sans code, un numéro est attribué automatiquement.
         </p>
@@ -314,7 +314,9 @@ export function ImportTiers({ qualite }: { qualite: Qualite }) {
           <p role="status">
             {bilan.lues} ligne(s) lue(s) · {bilan.crees} {mots.un}(s) {bilan.ecrit ? 'créé(s)' : 'à créer'} ·{' '}
             {bilan.modifies} {bilan.ecrit ? 'modifié(s)' : 'à modifier'} · {bilan.inchanges} inchangé(s)
+            {bilan.ignorees > 0 && ` · ${bilan.ignorees} ignoré(s) (« hors périmètre »)`}
           </p>
+          {bilan.avertissements.length > 0 && <ul>{bilan.avertissements.map((x) => <li key={x} className="aide">{x}</li>)}</ul>}
           {bilan.erreurs.length > 0 && <ul>{bilan.erreurs.map((x) => <li key={x} className="erreur">{x}</li>)}</ul>}
         </fieldset>
       )}
