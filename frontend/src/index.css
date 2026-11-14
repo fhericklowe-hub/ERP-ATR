@@ -115,6 +115,13 @@ header nav a[aria-current] { opacity: 1; font-weight: 600; border-bottom: 2px so
 .pilotage dt { color: inherit; }
 .pilotage dd { margin: 0; text-align: right; }
 
+.jauge { display: inline-block; vertical-align: middle; width: 90px; height: 10px; border-radius: 5px; background: var(--bleu-clair); overflow: hidden; margin-right: 6px; }
+.jauge > span { display: block; height: 100%; background: var(--vert); }
+.jauge > span.moyen { background: var(--ocre); }
+.jauge > span.faible { background: #b45309; }
+.chiffre-cle { font-size: 1.1em; margin: 8px 0 0; }
+.chiffre-cle strong { font-size: 2em; color: var(--vert); }
+
 /* Habillage ATR */
 body { -webkit-font-smoothing: antialiased; }
 h2, h3 { color: var(--vert); font-weight: 800; }

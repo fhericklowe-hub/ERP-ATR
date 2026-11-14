@@ -395,6 +395,13 @@ Rôles : « Commercial - Consultation », « Commercial - Commercial » (ses pro
 Sur un devis accepté, « Préparer la mise à disposition » crée une fiche par matériel du parc cité dans les lignes.
 L'exploitation complète le lieu, les dates prévues, l'opérateur et les accessoires remis, puis enregistre :
 
+**Taux d'utilisation des équipements** (Exploitation, « Taux d'utilisation », droit de voir les mises à disposition et le parc) :
+sur une période au choix (le mois en cours par défaut), la part des jours où l'équipement est chez un client, du jour de
+livraison au jour du retour inclus (une mise à disposition en cours compte jusqu'à aujourd'hui). Un « taux sur disponible »
+retire les jours d'immobilisation par un ordre de réparation. Synthèses par activité, site et type, puis équipement par
+équipement (les moins utilisés d'abord), filtres site, activité et type, export Excel. Matériel réformé exclu ; matériel mis
+en service pendant la période compté depuis ce jour.
+
 - **la livraison** : personne qui reçoit le matériel chez le client, date, compteur, niveau de carburant. Le matériel
   doit être disponible ; il passe « en exploitation » chez le client ;
 - **le retour** : personne qui le restitue, compteur, carburant, réserves sur l'état. Le matériel redevient
