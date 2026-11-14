@@ -73,8 +73,11 @@ def technique():
 def commercial():
     from apps.commercial.models import Devis
     from apps.exploitation.models import MiseADisposition
+    from apps.exploitation.utilisation import calculer
+    from apps.technique.models import Materiel
 
     S = Devis.Statut
+    utilisation = calculer(_debut_du_mois(), datetime.date.today(), Materiel.objects.all())["total"]
     du_mois = Devis.objects.filter(date__gte=_debut_du_mois()).exclude(statut__in=[S.BROUILLON, S.ANNULE]).prefetch_related("lignes")
     acceptes = [d for d in du_mois if d.statut == S.ACCEPTE]
     return "Commercial et Exploitation", "/devis", [
@@ -82,6 +85,8 @@ def commercial():
         ("Montant des devis du mois (HT)", _fcfa(sum(d.totaux()["total_ht"] for d in du_mois)), False),
         ("Devis acceptés ce mois", f"{len(acceptes)} · {_fcfa(sum(d.totaux()['total_ht'] for d in acceptes))} HT", False),
         ("Matériels chez les clients", str(MiseADisposition.objects.filter(statut=MiseADisposition.Statut.EN_COURS).count()), False),
+        ("Taux d'utilisation des équipements (mois en cours)",
+         "–" if utilisation["taux"] is None else f"{utilisation['taux']} %".replace(".", ","), False),
     ]
 
 
