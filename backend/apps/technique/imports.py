@@ -1,9 +1,15 @@
 """Import du parc de matériels depuis un classeur Excel.
 
-Première feuille, première ligne = titres des colonnes, dans n'importe quel ordre. Obligatoires : n° de parc,
+Deux formes de classeur :
+
+1. Le classeur de l'exploitation, avec un onglet par site et par activité (ABJ-Transport, ABJ-Manutention, ABJ-Levage,
+   SP-…, FKE-…) : le site et l'activité se déduisent du nom de l'onglet, les titres sont cherchés dans les premières lignes,
+   les autres onglets (synthèse, hors exploitation, exclus, corrections, inventaire des dollies) sont laissés de côté.
+2. Un classeur simple : première feuille, première ligne = titres des colonnes, dans n'importe quel ordre. Obligatoires : n° de parc,
 désignation, type, site. Facultatives : marque, modèle, n° de série, immatriculation, année, capacité, activité,
 compteur heures, compteur km, mise en service. Un n° de parc déjà connu est mis à jour, les autres sont créés."""
 import datetime
+import re
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -11,6 +17,7 @@ from openpyxl import load_workbook
 
 from apps.achats.choix import Activite
 from apps.core.models import Site
+from apps.referentiels.models import Emplacement, Tiers
 from apps.stock.imports import _cle, _nombre
 
 from .models import Materiel
@@ -40,6 +47,27 @@ SYNONYMES = {"chariot": "CHARIOT", "chariot elevateur": "CHARIOT", "grue": "GRUE
              "groupe": "GROUPE", "groupe electrogene": "GROUPE", "compresseur": "GROUPE", "autre": "AUTRE"}
 LIGNES_MAX = 2000
 
+# ----- classeur de l'exploitation (un onglet par site et par activité)
+FEUILLE = re.compile(r"^(abj|sp|fke)\s*-\s*(transport|manutention|levage)$")
+SITES_DES_ONGLETS = {"abj": ("siege", "abidjan"), "sp": ("san pedro", "sanpedro"), "fke": ("ferke",)}
+ACTIVITES_DES_ONGLETS = {"transport": "TRANSPORT", "manutention": "MANUTENTION", "levage": "LEVAGE"}
+NATURES = {"RMQ": "REMORQUE", "DOL": "REMORQUE", "TRAC": "TRACTEUR", "VHL": "VEHICULE", "CHTH": "CHARIOT", "CHEL": "CHARIOT",
+           "CHGT": "CHARIOT", "CHTL": "CHARIOT", "MAG": "AUTRE", "CHRG": "AUTRE", "PELL": "AUTRE", "ZZCH": "AUTRE", "COMP": "GROUPE", "GE": "GROUPE",
+           "NACL": "NACELLE", "GRU": "GRUE"}
+ETATS = {"en mission": "EXPLOITE", "en exploitation": "EXPLOITE", "materiel loue exterieurement": "EXPLOITE",
+         "disponible": "DISPONIBLE", "disponible commercialement": "DISPONIBLE", "en reserve": "DISPONIBLE",
+         "en reserve // brassivoire": "DISPONIBLE", "nouvelle acquisition": "DISPONIBLE", "accessoire": "DISPONIBLE",
+         "en panne": "EN_PANNE", "hs": "EN_PANNE", "hors service": "EN_PANNE", "hors service /vnc": "EN_PANNE",
+         "accidente": "EN_PANNE", "en attente reparation": "EN_PANNE", "en attente de pieces": "EN_PANNE",
+         "hors exploitation": "EN_PANNE", "hors exploitation attente validation devis": "EN_PANNE",
+         "en maintenance": "REPARATION", "en reparation": "REPARATION"}
+TITRES_CLASSEUR = {
+    "code": "n parc", "numero_ie": "n materiel", "immatriculation": "immatriculation / identite", "numero_serie": "n serie",
+    "nature": "nature", "designation": "designation", "marque": "marque", "modele": "modele", "tonnage": "tonnage",
+    "capacite": "capacite", "annee": "annee / 1ere mec", "client": "client", "statut": "statut", "observations": "observations",
+    "localisation": "localisation",
+}
+
 
 def _date(valeur):
     if valeur in (None, ""):
@@ -62,9 +90,12 @@ def importer(utilisateur, fichier, simuler=False) -> dict:
     if not (utilisateur.has_perm("technique.add_materiel") and utilisateur.has_perm("technique.change_materiel")):
         raise PermissionDenied("Seul le chef d'atelier peut importer le parc.")
     try:
-        feuille = load_workbook(fichier, data_only=True, read_only=True).worksheets[0]
+        classeur = load_workbook(fichier, data_only=True, read_only=True)
+        feuille = classeur.worksheets[0]
     except Exception:
         raise ValidationError("Fichier illisible : il faut un classeur Excel (.xlsx).")
+    if any(FEUILLE.match(_cle(f.title)) for f in classeur.worksheets):
+        return _importer_classeur(utilisateur, classeur, simuler)
     lignes = feuille.iter_rows(values_only=True)
     try:
         titres = [_cle(str(c or "").replace("°", " ")) for c in next(lignes)]
@@ -150,6 +181,151 @@ def importer(utilisateur, fichier, simuler=False) -> dict:
                 bilan["crees" if nouveau else "modifies"] += 1
             except ValueError as e:
                 bilan["erreurs"].append(f"Ligne {n} : {e}.")
+        if simuler or bilan["erreurs"]:
+            transaction.set_rollback(True)
+    bilan["erreurs"] = bilan["erreurs"][:50]
+    bilan["ecrit"] = not simuler and not bilan["erreurs"]
+    return bilan
+
+
+def _t(cellule) -> str:
+    return _cle(re.sub(r"\([^)]*\)", " ", str(cellule or "").replace("°", " ")))
+
+
+def _capacite(tonnage, capacite, levage) -> str:
+    morceaux = []
+    for v, est_capacite in ((tonnage, False), (capacite, True)):
+        if v in (None, "") or (est_capacite and not levage):
+            continue
+        texte = (f"{v:g}" if isinstance(v, float) else str(v)).strip()
+        morceaux.append(f"{texte} t" if re.fullmatch(r"[\d.,]+", texte) else texte)
+    return " · ".join(morceaux)[:40]
+
+
+def _importer_classeur(utilisateur, classeur, simuler) -> dict:
+    """Classeur de l'exploitation : un matériel par ligne des onglets « site-activité »."""
+    sites = {}
+    for s in Site.objects.all():
+        sites[_cle(s.code)] = sites[_cle(s.nom)] = s
+    clients = {_cle(t.raison_sociale): t for t in Tiers.objects.filter(est_client=True)}
+    bilan = {"lues": 0, "crees": 0, "modifies": 0, "inchanges": 0, "erreurs": [], "avertissements": [], "simulation": simuler,
+             "feuilles": [], "feuilles_ignorees": []}
+    vus, codes_ie, statuts_inconnus, clients_inconnus, sans_code = set(), set(), {}, {}, 0
+    with transaction.atomic():
+        for feuille in classeur.worksheets:
+            onglet = FEUILLE.match(_cle(feuille.title))
+            if not onglet:
+                bilan["feuilles_ignorees"].append(feuille.title)
+                continue
+            prefixe, activite = onglet.group(1), ACTIVITES_DES_ONGLETS[onglet.group(2)]
+            site = next((sites[c] for c in SITES_DES_ONGLETS[prefixe] if c in sites), None)
+            if site is None:
+                bilan["erreurs"].append(f"Onglet {feuille.title} : aucun site de l'entreprise ne correspond "
+                                        f"(« {SITES_DES_ONGLETS[prefixe][0]} »). Créez-le dans l'administration.")
+                continue
+            lignes = feuille.iter_rows(values_only=True)
+            col, depart = None, 0
+            for depart, ligne in enumerate(lignes, start=1):
+                titres = [_t(c) for c in ligne]
+                if "n parc" in titres and "nature" in titres:
+                    col = {nom: titres.index(t) if t in titres else None for nom, t in TITRES_CLASSEUR.items()}
+                    break
+                if depart >= 10:
+                    break
+            if col is None:
+                bilan["erreurs"].append(f"Onglet {feuille.title} : titres introuvables (il faut au moins « N° parc » et « Nature »).")
+                continue
+            lues_onglet = 0
+            for n, ligne in enumerate(lignes, start=depart + 1):
+                def lire(nom):
+                    v = ligne[col[nom]] if col[nom] is not None and col[nom] < len(ligne) else None
+                    return v.strip() if isinstance(v, str) else v
+
+                code, numero_ie = str(lire("code") or "").strip(), str(lire("numero_ie") or "").strip()
+                if not code and not numero_ie and not lire("designation"):
+                    continue
+                lues_onglet += 1
+                bilan["lues"] += 1
+                if bilan["lues"] > LIGNES_MAX:
+                    raise ValidationError(f"Trop de lignes : {LIGNES_MAX} au plus par fichier.")
+                lieu = f"{feuille.title}, ligne {n}"
+                try:
+                    if not code:
+                        if not numero_ie:
+                            raise ValueError("ni n° de parc ni n° de matériel")
+                        code, sans_code = f"M{numero_ie}", sans_code + 1
+                    if len(code) > 30:
+                        raise ValueError("n° de parc trop long (30 caractères au plus)")
+                    if code.lower() in vus:
+                        raise ValueError(f"le n° de parc {code} figure deux fois")
+                    vus.add(code.lower())
+                    nature = str(lire("nature") or "").strip().upper()
+                    if nature not in NATURES:
+                        raise ValueError(f"nature inconnue (« {lire('nature') or ''} »)")
+                    if not lire("designation"):
+                        raise ValueError("désignation manquante")
+                    valeurs = {"type": NATURES[nature], "site": site, "activite": activite, "numero_ie": numero_ie[:20],
+                               "designation": str(lire("designation"))[:150]}
+                    for champ, longueur in (("marque", 60), ("modele", 60), ("numero_serie", 60), ("immatriculation", 30)):
+                        if lire(champ) not in (None, ""):
+                            valeurs[champ] = str(lire(champ))[:longueur]
+                    capacite = _capacite(lire("tonnage"), lire("capacite"), activite == "LEVAGE")
+                    if capacite:
+                        valeurs["capacite"] = capacite
+                    mec = lire("annee")
+                    if isinstance(mec, datetime.datetime):
+                        mec = mec.date()
+                    if isinstance(mec, datetime.date):
+                        valeurs["date_mise_en_service"], mec = mec, mec.year
+                    if isinstance(mec, (int, float)) and 1950 <= mec <= 2100:
+                        valeurs["annee"] = int(mec)
+                    notes = [str(lire("observations"))] if lire("observations") else []
+                    if lire("localisation"):
+                        notes.append(f"Localisation : {lire('localisation')}")
+                    statut = _cle(lire("statut"))
+                    if statut in ETATS:
+                        valeurs["etat"] = ETATS[statut]
+                    elif statut:
+                        statuts_inconnus[statut] = lire("statut")
+                        notes.append(f"Statut (fichier) : {lire('statut')}")
+                    client = _cle(lire("client"))
+                    if client in clients:
+                        valeurs["emplacement"] = (Emplacement.objects.filter(type="CLIENT", client=clients[client]).first()
+                                                  or Emplacement.objects.create(type="CLIENT", client=clients[client],
+                                                                                nom=clients[client].raison_sociale[:150]))
+                    elif client and not re.match(r"(base )?atr\b", client):
+                        clients_inconnus[client] = str(lire("client"))
+                        notes.append(f"Client (fichier) : {lire('client')}")
+                    if notes:
+                        valeurs["observations"] = " · ".join(notes)
+                    materiel = Materiel.objects.filter(code__iexact=code).first()
+                    nouveau = materiel is None
+                    materiel = materiel or Materiel(code=code, cree_par=utilisateur)
+                    if not nouveau and not numero_ie:
+                        valeurs.pop("numero_ie")
+                    if not (nouveau or any(getattr(materiel, c) != v for c, v in valeurs.items())):
+                        bilan["inchanges"] += 1
+                        continue
+                    for c, v in valeurs.items():
+                        setattr(materiel, c, v)
+                    materiel.modifie_par = utilisateur
+                    materiel.save()
+                    bilan["crees" if nouveau else "modifies"] += 1
+                except ValueError as e:
+                    bilan["erreurs"].append(f"{lieu} : {e}.")
+            bilan["feuilles"].append({"nom": feuille.title, "lues": lues_onglet})
+        if sans_code:
+            bilan["avertissements"].append(f"{sans_code} matériel(s) sans n° de parc : le code « M » suivi du n° de matériel "
+                                           "leur est donné, à remplacer plus tard par le vrai n° de parc.")
+        if statuts_inconnus:
+            bilan["avertissements"].append("Statut non reconnu (état laissé à « disponible », statut noté dans les observations) : "
+                                           + ", ".join(sorted(map(str, statuts_inconnus.values()))) + ".")
+        if clients_inconnus:
+            bilan["avertissements"].append(f"{len(clients_inconnus)} client(s) absents de l'annuaire (noms notés dans les "
+                                           "observations, matériel non placé chez eux) : " + ", ".join(sorted(clients_inconnus.values())[:15])
+                                           + (" …" if len(clients_inconnus) > 15 else "") + ".")
+        if not bilan["feuilles"] and not bilan["erreurs"]:
+            bilan["erreurs"].append("Aucun onglet exploitable.")
         if simuler or bilan["erreurs"]:
             transaction.set_rollback(True)
     bilan["erreurs"] = bilan["erreurs"][:50]

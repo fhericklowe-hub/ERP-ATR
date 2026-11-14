@@ -308,3 +308,57 @@ class TechniqueTests(APITestCase):
         self.assertEqual((r.data["ecrit"], len(r.data["erreurs"]), Materiel.objects.filter(code="NA-001").exists()), (False, 4, False))
         self.assertIn("Ligne 3", r.data["erreurs"][0])
         self.assertEqual(self.importer(self.chef, ["Colonne", "Autre"], ["a", "b"]).status_code, 400)
+
+    def test_import_du_classeur_de_l_exploitation(self):
+        """Un onglet par site et par activité : site et activité viennent du nom de l'onglet, titres sous un en-tête."""
+        from apps.referentiels.models import Tiers
+        Tiers.objects.create(code="C-ESSAI", raison_sociale="Client Essai", est_client=True)
+        wb = Workbook()
+        wb.active.title = "Synthèse"
+        wb.active.append(["Base matériels"])
+        for nom, titres in (("ABJ-Transport", ["N° parc", "N° matériel", "Immatriculation / Identité", "N° série", "Nature", "Désignation",
+                                               "Marque", "Client", "Statut", "Client BDD (à vérifier)"]),
+                            ("SP-Levage", ["N° parc", "N° matériel", "Nature", "Désignation", "Tonnage", "Capacité", "Année / 1ère MEC",
+                                           "Statut"]),
+                            ("Hors exploitation", ["N° parc", "Responsable"])):
+            f = wb.create_sheet(nom)
+            f.append([nom])
+            f.append(["note"])
+            f.append([])
+            f.append(titres)
+        wb["ABJ-Transport"].append(["RMQ1", 5001, "1234AB01", "SER1", "RMQ", "Remorque plateau", "LAS", "Client Essai", "En mission"])
+        wb["ABJ-Transport"].append(["TR1", 5002, None, None, "TRAC", "Tracteur", None, "Base ATR", "A reformer"])
+        wb["ABJ-Transport"].append([None, 5003, None, None, "VHL", "Pick-up", None, "Inconnu SA", "En panne"])
+        wb["SP-Levage"].append(["GRU1", 6001, "GRU", "Grue 50 t", "50T", "30M", datetime.datetime(2019, 5, 2), "Disponible"])
+        wb["Hors exploitation"].append(["X", "Y"])
+        fichier = lambda: self.classeur_multi(wb)
+        self.client.force_authenticate(self.chef)
+        r = self.client.post(f"{MATERIELS}importer/", {"fichier": fichier(), "simuler": "1"}, format="multipart")
+        self.assertEqual((r.data["crees"], r.data["ecrit"], r.data["erreurs"], r.data["feuilles_ignorees"]),
+                         (4, False, [], ["Synthèse", "Hors exploitation"]))
+        self.assertEqual(len(r.data["avertissements"]), 3)
+        r = self.client.post(f"{MATERIELS}importer/", {"fichier": fichier()}, format="multipart")
+        self.assertEqual((r.data["crees"], r.data["ecrit"]), (4, True))
+        rmq = Materiel.objects.get(code="RMQ1")
+        self.assertEqual((rmq.type, rmq.activite, rmq.site.code, rmq.etat, rmq.numero_ie, rmq.emplacement.client.code),
+                         ("REMORQUE", "TRANSPORT", "SIEGE", "EXPLOITE", "5001", "C-ESSAI"))
+        self.assertEqual(Materiel.objects.get(code="TR1").emplacement, None)
+        sans_code = Materiel.objects.get(code="M5003")
+        self.assertEqual((sans_code.etat, "Inconnu SA" in sans_code.observations), ("EN_PANNE", True))
+        grue = Materiel.objects.get(code="GRU1")
+        self.assertEqual((grue.type, grue.site.code, grue.capacite, grue.annee, grue.date_mise_en_service),
+                         ("GRUE", "SANPEDRO", "50T · 30M", 2019, datetime.date(2019, 5, 2)))
+        r = self.client.post(f"{MATERIELS}importer/", {"fichier": fichier()}, format="multipart")
+        self.assertEqual((r.data["crees"], r.data["modifies"], r.data["inchanges"]), (0, 0, 4))
+        # une nature inconnue arrête tout
+        wb["SP-Levage"].append(["GRU2", 6002, "ZZZ", "Engin"])
+        r = self.client.post(f"{MATERIELS}importer/", {"fichier": fichier()}, format="multipart")
+        self.assertEqual((r.data["ecrit"], len(r.data["erreurs"]), Materiel.objects.filter(code="GRU2").exists()), (False, 1, False))
+        self.assertIn("SP-Levage, ligne 6", r.data["erreurs"][0])
+
+    def classeur_multi(self, wb):
+        f = io.BytesIO()
+        wb.save(f)
+        f.seek(0)
+        f.name = "parc.xlsx"
+        return f

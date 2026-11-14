@@ -32,6 +32,8 @@ class Materiel(Horodate):
     code = models.CharField("n° de parc", max_length=30, unique=True)
     type = models.CharField(max_length=10, choices=Type.choices)
     designation = models.CharField("désignation", max_length=150)
+    numero_ie = models.CharField("n° dans IE", max_length=20, blank=True, db_index=True,
+                                 help_text="N° de matériel dans l'ancien système, pour s'y retrouver pendant la transition")
     marque = models.CharField(max_length=60, blank=True)
     modele = models.CharField("modèle", max_length=60, blank=True)
     numero_serie = models.CharField("n° de série", max_length=60, blank=True)
