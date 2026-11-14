@@ -11,3 +11,6 @@ class CoreConfig(AppConfig):
         from .roles import creer_roles
 
         post_migrate.connect(creer_roles, sender=self)
+        from .journal import brancher
+
+        brancher()
