@@ -17,6 +17,7 @@ import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demande
 import ImportStock from './stock/ImportStock'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
 import { DetailDevis, FormulaireDevis, ListeDevis } from './commercial/Devis'
+import FicheOpportunite, { ListeOpportunites } from './commercial/Opportunites'
 import { DetailMise, ListeMises } from './exploitation/Mises'
 import { DetailReleve, ListeReleves } from './exploitation/Releves'
 import Entretien from './technique/Entretien'
@@ -113,6 +114,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/entretien', texte: 'Entretien préventif', droit: 'technique.view_planentretien' },
   ] },
   { titre: 'Commercial', liens: [
+    { chemin: '/opportunites', texte: 'GO / NO GO', droit: 'commercial.view_opportunite' },
     { chemin: '/devis', texte: 'Devis de location', droit: 'commercial.view_devis' },
     { chemin: '/releves', texte: 'Relevés de location', droit: 'exploitation.view_relevelocation' },
     { chemin: '/clients', texte: 'Clients', droit: 'commercial.view_devis' },
@@ -181,7 +183,11 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const param = (nom: string) => new URLSearchParams(requete ?? '').get(nom) ?? undefined
   if (chemin === '/parc') return <Parc peutModifier={a('technique.change_materiel')} />
   if (chemin === '/devis') return <ListeDevis peutCreer={a('commercial.add_devis')} />
-  if (chemin === '/devis/nouveau') return <FormulaireDevis />
+  if (chemin === '/devis/nouveau') return <FormulaireDevis key={route} opportunite={Number(param('opportunite')) || undefined} />
+  if (chemin === '/opportunites') return <ListeOpportunites />
+  if (chemin === '/opportunites/nouvelle') return <FicheOpportunite key={route} />
+  const opportunite = chemin.match(/^\/opportunites\/(\d+)$/)
+  if (opportunite) return <FicheOpportunite key={route} id={Number(opportunite[1])} />
   const modifDevis = chemin.match(/^\/devis\/(\d+)\/modifier$/)
   if (modifDevis) return <FormulaireDevis id={Number(modifDevis[1])} />
   const devis = chemin.match(/^\/devis\/(\d+)$/)

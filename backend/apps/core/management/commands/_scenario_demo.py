@@ -50,8 +50,21 @@ def jouer(comptes, siege, service_technique):
     # Technique : un chariot en panne, avec son ordre de réparation.
     envoyer("mecanicien", "technique/ordres/", materiel=chariot.id, description="Fuite hydraulique au mât, levage impossible")
 
-    # Commercial : un devis de location envoyé au client.
-    devis = envoyer("commercial", "commercial/devis/", client=Tiers.objects.get(code="C-DEMO1").id, site=siege.id,
+    # Commercial : une opportunité validée (GO) puis un devis de location envoyé au client ; une autre fiche attend la finance.
+    client_demo = Tiers.objects.get(code="C-DEMO1").id
+
+    def fiche(nom, ca, marge):
+        return envoyer("commercial", "commercial/opportunites/", nom_affaire=nom, client=client_demo, site=siege.id, activite="LEVAGE",
+                       type_affaire="LOCATION", origine="CLIENT", phase="OFFRE", probabilite=70, ca_previsionnel=str(ca),
+                       marge_previsionnelle=str(marge), lieu="Port d'Abidjan", prochaine_etape="Remise du devis")
+
+    go = fiche("Location d'une grue mobile 50 t avec opérateur", 2250000, 600000)
+    for qui, etape in (("commercial", "soumettre"), ("responsable", "valider"), ("controleur", "valider"), ("responsable", "valider")):
+        envoyer(qui, f"commercial/opportunites/{go['id']}/{etape}/")
+    en_attente = fiche("Transport d'un transformateur de 40 t", 8500000, 1500000)
+    envoyer("commercial", f"commercial/opportunites/{en_attente['id']}/soumettre/")
+    envoyer("responsable", f"commercial/opportunites/{en_attente['id']}/valider/")
+    devis = envoyer("commercial", "commercial/devis/", opportunite=go["id"], client=client_demo, site=siege.id,
                     libelle="Location d'une grue mobile 50 t avec opérateur", type_loyer="JOUR", echeance="30 JOURS NETS",
                     mode_reglement="CHEQUE", lignes=[{"designation": "Grue mobile 50 t avec opérateur", "materiel": grue.id,
                                                       "quantite": "1", "prix_unitaire": "450000", "duree": "5"}])

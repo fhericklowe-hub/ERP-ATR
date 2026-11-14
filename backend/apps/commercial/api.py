@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from apps.achats.views import executer_transition
 
-from .models import Devis, LigneDevis
+from .models import Devis, LigneDevis, Opportunite
 from .pdf import pdf_devis
 
 
@@ -38,6 +38,7 @@ class DevisSerializer(serializers.ModelSerializer):
     client_nom = serializers.CharField(source="client.raison_sociale", read_only=True)
     site_nom = serializers.CharField(source="site.nom", read_only=True)
     commercial_nom = serializers.CharField(source="commercial.__str__", read_only=True)
+    opportunite_numero = serializers.CharField(source="opportunite.numero", read_only=True, default="")
     lignes = LigneSerializer(many=True)
     totaux = serializers.SerializerMethodField()
     expire = serializers.BooleanField(read_only=True)
@@ -46,7 +47,7 @@ class DevisSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Devis
-        fields = ["id", "numero", "statut", "statut_libelle", "expire", "date", "validite", "client", "client_nom", "contact",
+        fields = ["id", "numero", "opportunite", "opportunite_numero", "statut", "statut_libelle", "expire", "date", "validite", "client", "client_nom", "contact",
                   "libelle", "activite", "activite_libelle", "site", "site_nom", "commercial", "commercial_nom", "type_loyer",
                   "type_loyer_libelle", "date_debut", "date_retour", "lieu", "mode_facturation", "mode_facturation_libelle",
                   "echeance", "mode_reglement", "mode_reglement_libelle", "exonere_tva", "taux_tva", "conditions",
@@ -74,8 +75,21 @@ class DevisSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Ce tiers n'est pas un client actif.")
         return client
 
+    def validate_opportunite(self, o):
+        if self.instance and self.instance.opportunite_id != (o and o.id):
+            raise serializers.ValidationError("La fiche GO / NO GO d'un devis ne peut pas être changée.")
+        return o
+
     def validate(self, attrs):
         d = self.instance
+        if not d:
+            o = attrs.get("opportunite")
+            if not o:
+                raise serializers.ValidationError({"opportunite": "Un devis se fait sur une opportunité ayant reçu le GO : faites d'abord valider une fiche GO / NO GO."})
+            if o.statut != Opportunite.Statut.GO:
+                raise serializers.ValidationError({"opportunite": f"La fiche {o.numero} n'a pas reçu le GO ({o.get_statut_display()})."})
+            if o.client_id != attrs["client"].id:
+                raise serializers.ValidationError({"client": f"Le client du devis doit être celui de la fiche {o.numero}."})
         if d and d.statut != Devis.Statut.BROUILLON:
             raise serializers.ValidationError("Seul un devis en brouillon se modifie. Reprenez-le d'abord.")
         if d and not d.peut_agir(self._u()):
