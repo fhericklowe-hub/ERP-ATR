@@ -1,7 +1,7 @@
 import { type FormEvent, useRef, useState } from 'react'
 import { api } from '../api'
 
-type Bilan = { lues: number; crees: number; modifies: number; inchanges: number; erreurs: string[]; simulation: boolean; ecrit: boolean }
+type Bilan = { lues: number; crees: number; modifies: number; inchanges: number; erreurs: string[]; avertissements?: string[]; feuilles?: { nom: string; lues: number }[]; feuilles_ignorees?: string[]; simulation: boolean; ecrit: boolean }
 
 /** Parc de matériels depuis un classeur Excel. On contrôle d'abord, on importe ensuite. */
 export default function ImportParc() {
@@ -40,6 +40,10 @@ export default function ImportParc() {
           Marque, Modèle, N° de série, Immatriculation, Année, Capacité, Activité, Compteur heures, Compteur km, Mise en service.
           Un n° de parc déjà connu est mis à jour (une case vide ne change rien), les autres matériels sont créés.
         </p>
+        <p className="aide">
+          Le classeur de l'exploitation (onglets ABJ-Transport, ABJ-Manutention, ABJ-Levage, SP-…, FKE-…) est lu tel quel : le site et
+          l'activité viennent du nom de l'onglet, les autres onglets sont laissés de côté.
+        </p>
         <p className="aide">Types reconnus : chariot élévateur, grue, nacelle, camion, tracteur routier, remorque, véhicule léger, groupe électrogène, autre.</p>
         <label>Classeur Excel (.xlsx)
           <input ref={fichier} type="file" accept=".xlsx" required onChange={() => setBilan(null)} />
@@ -53,6 +57,13 @@ export default function ImportParc() {
             {bilan.lues} ligne(s) lue(s) · {bilan.crees} matériel(s) {bilan.ecrit ? 'créé(s)' : 'à créer'} ·{' '}
             {bilan.modifies} {bilan.ecrit ? 'modifié(s)' : 'à modifier'} · {bilan.inchanges} inchangé(s)
           </p>
+          {bilan.feuilles && bilan.feuilles.length > 0 && (
+            <p className="aide">
+              Onglets lus : {bilan.feuilles.map((f) => `${f.nom} (${f.lues})`).join(', ')}.
+              {bilan.feuilles_ignorees && bilan.feuilles_ignorees.length > 0 && ` Non lus : ${bilan.feuilles_ignorees.join(', ')}.`}
+            </p>
+          )}
+          {bilan.avertissements?.map((x) => <p key={x} className="aide">⚠ {x}</p>)}
           {bilan.erreurs.length > 0 && <ul>{bilan.erreurs.map((x) => <li key={x} className="erreur">{x}</li>)}</ul>}
         </fieldset>
       )}
