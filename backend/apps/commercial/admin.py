@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Devis, LigneDevis, ReglageCommercial
+from .models import Devis, LigneDevis, Opportunite, ReglageCommercial
 
 
 class LigneInline(admin.TabularInline):
@@ -19,6 +19,17 @@ class DevisAdmin(admin.ModelAdmin):
     readonly_fields = ["numero", "statut", "reference_client", "accepte_le", "motif"]
     autocomplete_fields = ["client", "commercial"]
     inlines = [LigneInline]
+
+
+@admin.register(Opportunite)
+class OpportuniteAdmin(admin.ModelAdmin):
+    """Consultation. Le circuit de validation se fait dans l'application."""
+
+    list_display = ["numero", "nom_affaire", "client", "commercial", "ca_previsionnel", "devise", "statut"]
+    list_filter = ["statut", "site", "activite"]
+    search_fields = ["numero", "nom_affaire", "client__raison_sociale"]
+    readonly_fields = ["numero", "statut"]
+    autocomplete_fields = ["client", "commercial"]
 
 
 @admin.register(ReglageCommercial)

@@ -15,11 +15,12 @@ type Devis = {
   site: number | ''; site_nom: string; commercial_nom: string; type_loyer: string; type_loyer_libelle: string
   date_debut: string | null; date_retour: string | null; lieu: string; mode_facturation: string; mode_facturation_libelle: string
   echeance: string; mode_reglement: string; mode_reglement_libelle: string; exonere_tva: boolean; taux_tva: string; conditions: string
+  opportunite: number | null; opportunite_numero: string
   reference_client: string; accepte_le: string | null; motif: string; lignes: Ligne[]
   totaux: { total_ht: string; taux_tva: string; total_tva: string; total_ttc: string; en_lettres: string }
   peut_agir: boolean; peut_gerer: boolean
 }
-type Saisie = Pick<Devis, 'client' | 'contact' | 'libelle' | 'activite' | 'site' | 'type_loyer' | 'date' | 'validite' | 'date_debut' | 'date_retour'
+type Saisie = Pick<Devis, 'opportunite' | 'client' | 'contact' | 'libelle' | 'activite' | 'site' | 'type_loyer' | 'date' | 'validite' | 'date_debut' | 'date_retour'
   | 'lieu' | 'mode_facturation' | 'echeance' | 'mode_reglement' | 'exonere_tva' | 'taux_tva' | 'conditions' | 'lignes'>
 
 const STATUTS = [['', 'Tous'], ['BROUILLON', 'Brouillons'], ['ENVOYE', 'Envoyés'], ['ACCEPTE', 'Acceptés'], ['REFUSE', 'Refusés'], ['ANNULE', 'Annulés']]
@@ -79,14 +80,17 @@ export function ListeDevis({ peutCreer }: { peutCreer: boolean }) {
   )
 }
 
-export function FormulaireDevis({ id }: { id?: number }) {
+type FicheGo = { id: number; numero: string; nom_affaire: string; client: number; client_nom: string; site: number; activite: string; lieu: string }
+
+export function FormulaireDevis({ id, opportunite }: { id?: number; opportunite?: number }) {
   const [clients, setClients] = useState<Tiers[]>([])
   const [sites, setSites] = useState<Site[]>([])
   const [materiels, setMateriels] = useState<Materiel[]>([])
   const [d, setD] = useState<Saisie>({
-    client: '', contact: '', libelle: '', activite: '', site: '', type_loyer: 'MOIS', date: aujourdhui(), validite: null, date_debut: null, date_retour: null,
+    opportunite: opportunite ?? null, client: '', contact: '', libelle: '', activite: '', site: '', type_loyer: 'MOIS', date: aujourdhui(), validite: null, date_debut: null, date_retour: null,
     lieu: '', mode_facturation: 'ECHU', echeance: '30 JOURS NETS', mode_reglement: 'VIREMENT', exonere_tva: false, taux_tva: '18', conditions: '', lignes: [ligneVide()],
   })
+  const [fiches, setFiches] = useState<FicheGo[]>([])
   const [nouveau, setNouveau] = useState<{ code: string; raison_sociale: string; adresse: string; ville: string; telephone: string; numero_contribuable: string } | null>(null)
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
@@ -95,8 +99,20 @@ export function FormulaireDevis({ id }: { id?: number }) {
     api<Page<Tiers>>('/tiers/?est_client=true&actif=true&page_size=200').then((p) => setClients(p.results)).catch((e: Error) => setErreur(e.message))
     api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined)
     api<Page<Materiel>>('/technique/materiels/?page_size=200').then((p) => setMateriels(p.results.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
+    if (!id) {
+      api<Page<FicheGo>>('/commercial/opportunites/?statut=GO&page_size=200').then((p) => {
+        setFiches(p.results)
+        const f = p.results.find((x) => x.id === opportunite)
+        if (f) setD((x) => ({ ...x, opportunite: f.id, client: f.client, site: f.site, activite: f.activite, libelle: x.libelle || f.nom_affaire, lieu: x.lieu || f.lieu }))
+      }).catch((e: Error) => setErreur(e.message))
+    }
     if (id) api<Devis>(`/commercial/devis/${id}/`).then((x) => setD({ ...x, lignes: x.lignes.map((l) => ({ ...l, quantite: String(Number(l.quantite)), prix_unitaire: String(Number(l.prix_unitaire)), remise: String(Number(l.remise)), duree: String(Number(l.duree)) })) })).catch((e: Error) => setErreur(e.message))
-  }, [id])
+  }, [id, opportunite])
+
+  const choisirFiche = (valeur: string) => {
+    const f = fiches.find((x) => x.id === Number(valeur))
+    setD((x) => (f ? { ...x, opportunite: f.id, client: f.client, site: f.site, activite: f.activite, libelle: x.libelle || f.nom_affaire, lieu: x.lieu || f.lieu } : { ...x, opportunite: null }))
+  }
 
   const champ = <K extends keyof Saisie>(k: K, v: Saisie[K]) => setD((x) => ({ ...x, [k]: v }))
   const ligne = (i: number, modif: Partial<Ligne>) => setD((x) => ({ ...x, lignes: x.lignes.map((l, j) => (j === i ? { ...l, ...modif } : l)) }))
@@ -139,11 +155,23 @@ export function FormulaireDevis({ id }: { id?: number }) {
     <form className="fiche" onSubmit={enregistrer}>
       <p><a href={id ? `#/devis/${id}` : '#/devis'}>← {id ? 'Retour au devis' : 'Devis'}</a></p>
       <h2>{id ? 'Modifier le devis' : 'Nouveau devis de location'}</h2>
+      {!id && (
+        <fieldset>
+          <legend>Fiche GO / NO GO</legend>
+          <label>Opportunité validée (GO)
+            <select required value={d.opportunite ?? ''} onChange={(e) => choisirFiche(e.target.value)}>
+              <option value="">Choisir…</option>
+              {fiches.map((f) => <option key={f.id} value={f.id}>{f.numero} · {f.nom_affaire} · {f.client_nom}</option>)}
+            </select>
+          </label>
+          {fiches.length === 0 && <p className="aide">Aucune opportunité n'a reçu le GO. <a href="#/opportunites/nouvelle">Faire une fiche GO / NO GO</a> : le devis se fait une fois le GO obtenu.</p>}
+        </fieldset>
+      )}
       <fieldset>
         <legend>Client</legend>
         <div className="grille">
           <label>Client
-            <select required value={d.client} onChange={(e) => champ('client', Number(e.target.value))}>
+            <select required disabled={!id && d.opportunite !== null} value={d.client} onChange={(e) => champ('client', Number(e.target.value))}>
               <option value="">Choisir…</option>
               {clients.map((c) => <option key={c.id} value={c.id}>{c.raison_sociale} ({c.code})</option>)}
             </select>
@@ -296,6 +324,7 @@ export function DetailDevis({ id, voitMises, peutPreparer, voitReleves, peutRele
       </div>
       <p className="statut">{d.statut_libelle}</p>
       <dl>
+        {d.opportunite && <><dt>Fiche GO / NO GO</dt><dd><a href={`#/opportunites/${d.opportunite}`}>{d.opportunite_numero}</a></dd></>}
         <dt>Client</dt><dd><strong>{d.client_nom}</strong>{d.contact && ` · ${d.contact}`}</dd>
         <dt>Libellé</dt><dd>{d.libelle}</dd>
         <dt>Date</dt><dd>{dateFr(d.date)}, valable jusqu'au {dateFr(d.validite)}</dd>

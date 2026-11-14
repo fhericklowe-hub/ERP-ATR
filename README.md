@@ -525,3 +525,18 @@ action, utilisateur, dates ; export Excel.
 - Les mots de passe et toutes les données du module RH ne sont jamais écrits : le journal garde seulement le nom des champs modifiés.
 - Le journal est en lecture seule, y compris pour l'administrateur dans l'écran. Il grossit avec l'usage ; une purge des
   entrées anciennes pourra s'ajouter si besoin. Il est dans la base : il est donc compris dans les sauvegardes.
+
+## Commercial : fiche GO / NO GO avant devis
+
+Commercial > GO / NO GO. Chaque fois qu'un commercial a une opportunité, il remplit une fiche (affaire, client, type, origine,
+phase, probabilité, CA et marge prévisionnels, appel d'offres, partenaire, risques) puis l'envoie en validation. La fiche est
+validée **dans l'ordre** par le responsable commercial, la finance, puis le DG. Chacun peut valider, renvoyer la fiche au
+commercial pour correction (commentaire obligatoire) ou prononcer le NO GO (motif obligatoire). Après les trois validations,
+la fiche est « GO » et le bouton « Établir le devis » ouvre le devis déjà rempli (client, agence, activité, libellé).
+
+- Un nouveau devis exige une fiche « GO », au nom du même client. Les devis déjà faits ne changent pas.
+- Rôles : « Commercial - Commercial » (saisit), « Commercial - Responsable » (étape 1), « Commercial - Validation finance »
+  (étape 2), « Commercial - Validation DG » (étape 3). Après mise à jour, `migrate` donne les droits aux rôles existants ; les
+  deux nouveaux rôles se créent seuls et sont à attribuer dans Administration > Comptes. Le compte `responsable` de la
+  démonstration cumule les rôles et le compte `controleur` valide l'étape finance.
+- Chaque étape garde son auteur, sa date et son commentaire. Export Excel de la liste.

@@ -19,9 +19,9 @@ from apps.referentiels.models import Article, Emplacement, Tiers, Unite
 COMPTES = {
     "responsable": ("Démo", "Responsable", "ACHATS", [
         "Achats - Demandeur", "Achats - Responsable achats", "Achats - Directeur technique", "Moyens généraux - Gestionnaire", "Moyens généraux - Demandeur",
-        "Stock - Responsable", "Technique - Chef d'atelier", "Commercial - Responsable", "Exploitation - Agent",
+        "Stock - Responsable", "Technique - Chef d'atelier", "Commercial - Responsable", "Commercial - Validation DG", "Exploitation - Agent",
         "RH - Gestionnaire", "RH - Salarié", "HSE - Responsable", "Direction - Tableau de bord", "Administration - Comptes"]),
-    "controleur": ("Démo", "Contrôleur", "FINANCES", ["Achats - Contrôleur de gestion", "RH - Salarié", "HSE - Déclarant"]),
+    "controleur": ("Démo", "Contrôleur", "FINANCES", ["Achats - Contrôleur de gestion", "Commercial - Validation finance", "RH - Salarié", "HSE - Déclarant"]),
     "acheteur": ("Démo", "Acheteur", "ACHATS", ["Achats - Acheteur", "Achats - Demandeur", "RH - Salarié", "HSE - Déclarant"]),
     "magasinier": ("Démo", "Magasinier", "STOCK", ["Achats - Magasinier", "Stock - Magasinier", "RH - Salarié", "HSE - Déclarant"]),
     "chef": ("Démo", "Chef d'atelier", "TECHNIQUE", [

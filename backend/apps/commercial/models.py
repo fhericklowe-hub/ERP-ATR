@@ -65,6 +65,9 @@ class Devis(Horodate):
         A_ECHOIR = "A_ECHOIR", "Terme à échoir"
         FIN = "FIN", "En fin de prestation"
 
+    opportunite = models.ForeignKey("commercial.Opportunite", null=True, blank=True, on_delete=models.PROTECT, related_name="devis",
+                                    verbose_name="fiche GO / NO GO",
+                                    help_text="Obligatoire pour un nouveau devis : l'opportunité doit avoir reçu le GO.")
     numero = models.CharField("n° de devis", max_length=20, unique=True, editable=False)
     statut = models.CharField(max_length=9, choices=Statut.choices, default=Statut.BROUILLON, editable=False)
     date = models.DateField(default=timezone.localdate)
@@ -210,3 +213,6 @@ class LigneDevis(models.Model):
     @property
     def montant_ht(self) -> Decimal:
         return arrondi(self.quantite * self.prix_net * self.duree)
+
+
+from .opportunite import DecisionOpportunite, Opportunite  # noqa: E402,F401

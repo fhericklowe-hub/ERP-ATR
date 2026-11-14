@@ -14,7 +14,7 @@ from apps.core.models import Site, Utilisateur
 from apps.referentiels.models import Tiers
 from apps.technique.models import Materiel
 
-from .models import Devis, ReglageCommercial
+from .models import Devis, Opportunite, ReglageCommercial
 
 DEVIS = "/api/commercial/devis/"
 
@@ -36,9 +36,11 @@ class DevisTests(APITestCase):
         self.client_a = Tiers.objects.create(code="50100", raison_sociale="Client Essai", est_client=True, adresse="Zone 4", ville="Abidjan")
         self.fournisseur = Tiers.objects.create(code="F001", raison_sociale="Fournisseur", est_fournisseur=True)
         self.grue = Materiel.objects.create(code="GR-001", type="GRUE", designation="Grue mobile 50 t", site=self.site)
+        self.go = Opportunite.objects.create(nom_affaire="Stockage Essai", client=self.client_a, site=self.site, commercial=self.commercial,
+                                             ca_previsionnel=1000000, marge_previsionnelle=200000, statut=Opportunite.Statut.GO)
 
     def corps(self, **champs):
-        return {"client": self.client_a.id, "libelle": "Mise à disposition d'un espace de stockage", "site": self.site.id,
+        return {"opportunite": self.go.id, "client": self.client_a.id, "libelle": "Mise à disposition d'un espace de stockage", "site": self.site.id,
                 "type_loyer": "MOIS", "echeance": "60 JOURS NETS", "mode_reglement": "CHEQUE",
                 "lignes": [{"designation": "Entrepôt de stockage 200 m2", "quantite": "1", "prix_unitaire": "800000", "duree": "1"}],
                 **champs}
