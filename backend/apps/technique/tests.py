@@ -362,3 +362,21 @@ class TechniqueTests(APITestCase):
         f.seek(0)
         f.name = "parc.xlsx"
         return f
+
+    def test_classement_des_couts_par_equipement(self):
+        ReglageAtelier.objects.create(taux_horaire=Decimal("2000"))
+        id = self.ouvrir().data["id"]
+        self.agir(self.mecano, id, "demarrer")
+        self.agir(self.mecano, id, "saisir_temps", heures="2")
+        annule = self.ouvrir().data["id"]
+        self.agir(self.chef, annule, "annuler", commentaire="Doublon")
+        url = "/api/technique/couts-parc/"
+        self.client.force_authenticate(self.chef)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual((len(r.data["lignes"]), r.data["lignes"][0]["code"], r.data["lignes"][0]["ordres"], r.data["total"]["total"]),
+                         (1, "CH-012", 1, Decimal("4000")))
+        self.assertEqual(self.client.get(f"{url}exporter/").status_code, 200)
+        self.assertEqual(self.client.get(url, {"debut": "2026-12-31", "fin": "2026-01-01"}).status_code, 400)
+        self.client.force_authenticate(self.mecano)                       # ne voit pas les coûts
+        self.assertEqual(self.client.get(url).status_code, 403)
