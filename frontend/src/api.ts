@@ -82,6 +82,18 @@ export async function api<T>(chemin: string, options: RequestInit = {}): Promise
 }
 
 /** Change le mot de passe de l'utilisateur connecté. Le serveur ferme ses autres sessions et renvoie de nouveaux jetons pour celle-ci. */
+/** Toutes les lignes d'une liste paginée (pour remplir une liste de choix ou un tableau complet), 5 000 au plus. */
+export async function apiTout<T>(chemin: string): Promise<T[]> {
+  const sep = chemin.includes('?') ? '&' : '?'
+  const lignes: T[] = []
+  for (let page = 1; page <= 25; page++) {
+    const p = await api<Page<T>>(`${chemin}${sep}page_size=200&page=${page}`)
+    lignes.push(...p.results)
+    if (lignes.length >= p.count || p.results.length === 0) break
+  }
+  return lignes
+}
+
 export async function changerMotDePasse(actuel: string, nouveau: string) {
   ecrire(await api<Jetons>('/moi/mot-de-passe/', { method: 'POST', body: JSON.stringify({ actuel, nouveau }) }))
 }

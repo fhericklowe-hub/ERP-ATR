@@ -15,6 +15,7 @@ import Liste from './achats/Liste'
 import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
 import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demandes'
 import ImportStock from './stock/ImportStock'
+import Carburant from './technique/Carburant'
 import CoutsParc from './technique/CoutsParc'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
 import { DetailDevis, FormulaireDevis, ListeDevis } from './commercial/Devis'
@@ -115,6 +116,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Technique', liens: [
     { chemin: '/parc', texte: 'Parc de matériels', droit: 'technique.view_materiel' },
     { chemin: '/ordres', texte: 'Ordres de réparation', droit: 'technique.view_ordrereparation' },
+    { chemin: '/carburant', texte: 'Carburant', droit: 'technique.view_pleincarburant' },
     { chemin: '/couts-parc', texte: 'Coûts par équipement', droit: 'technique.voir_couts_ordrereparation' },
     { chemin: '/entretien', texte: 'Entretien préventif', droit: 'technique.view_planentretien' },
   ] },
@@ -131,6 +133,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   ] },
   { titre: 'Transport', liens: [
     { chemin: '/transports', texte: 'Ordres de transport', droit: 'transport.view_ordretransport' },
+    { chemin: '/carburant', texte: 'Carburant', droit: 'technique.view_pleincarburant' },
     { chemin: '/transports-synthese', texte: 'Kilomètres et carburant', droit: 'transport.view_ordretransport' },
   ] },
   { titre: 'RH', liens: [
@@ -252,6 +255,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (materiel) return <HistoriqueMateriel seul id={Number(materiel[1])} />
   if (chemin === '/entretien') return <Entretien peutModifier={a('technique.change_planentretien')} peutOuvrir={a('technique.add_ordrereparation')} />
   if (chemin === '/couts-parc') return <CoutsParc />
+  if (chemin === '/carburant') return <Carburant peutSaisir={a('technique.add_pleincarburant')} />
   if (chemin === '/ordres') return <ListeOrdres key={route} materiel={param('materiel')} peutCreer={a('technique.add_ordrereparation')} />
   if (chemin === '/ordres/nouveau') return <FormulaireOrdre materiel={param('materiel')} />
   const ordre = chemin.match(/^\/ordres\/(\d+)$/)

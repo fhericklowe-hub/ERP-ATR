@@ -1,8 +1,9 @@
 """Rôles par défaut du module Technique. Ils restent modifiables dans l'administration."""
 
 LECTURE = ["core.view_site", "core.view_service", "core.view_utilisateur", "referentiels.view_emplacement",
-           "technique.view_materiel", "technique.view_ordrereparation", "technique.view_planentretien"]
-ATELIER = ["technique.add_ordrereparation", "technique.change_ordrereparation"]
+           "technique.view_materiel", "technique.view_ordrereparation", "technique.view_planentretien",
+           "technique.view_pleincarburant"]
+ATELIER = ["technique.add_ordrereparation", "technique.change_ordrereparation", "technique.add_pleincarburant"]
 
 ROLES = {
     "Technique - Consultation": LECTURE,
@@ -10,7 +11,7 @@ ROLES = {
     "Technique - Chef d'atelier": LECTURE + ATELIER + [
         "technique.add_materiel", "technique.change_materiel", "technique.piloter_ordrereparation",
         "technique.voir_couts_ordrereparation", "technique.view_reglageatelier", "technique.change_reglageatelier",
-        "technique.add_reglageatelier", "technique.add_planentretien", "technique.change_planentretien",
+        "technique.add_reglageatelier", "technique.add_planentretien", "technique.change_planentretien", "technique.change_pleincarburant",
     ],
 }
 
@@ -20,6 +21,17 @@ DROITS_ENTRETIEN = {
     "Technique - Mécanicien": ["technique.view_planentretien"],
     "Technique - Chef d'atelier": ["technique.view_planentretien", "technique.add_planentretien",
                                    "technique.change_planentretien"],
+}
+
+# Droits ajoutés avec les pleins de carburant, pour les rôles créés avant (ceux qui roulent ou livrent saisissent aussi).
+SAISIE_PLEIN = ["technique.view_pleincarburant", "technique.add_pleincarburant"]
+DROITS_CARBURANT = {
+    "Technique - Consultation": ["technique.view_pleincarburant"],
+    "Technique - Mécanicien": SAISIE_PLEIN,
+    "Technique - Chef d'atelier": SAISIE_PLEIN + ["technique.change_pleincarburant"],
+    "Transport - Consultation": ["technique.view_pleincarburant"],
+    "Transport - Agent": SAISIE_PLEIN,
+    "Exploitation - Agent": SAISIE_PLEIN,
 }
 
 

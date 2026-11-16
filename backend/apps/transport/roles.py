@@ -1,10 +1,11 @@
 """Rôles par défaut du module Transport. Ils restent modifiables dans l'administration."""
 
-LECTURE = ["core.view_site", "referentiels.view_tiers", "technique.view_materiel", "transport.view_ordretransport"]
+LECTURE = ["core.view_site", "referentiels.view_tiers", "technique.view_materiel", "technique.view_pleincarburant",
+           "transport.view_ordretransport"]
 
 ROLES = {
     "Transport - Consultation": LECTURE,
-    "Transport - Agent": LECTURE + ["transport.add_ordretransport", "transport.change_ordretransport"],
+    "Transport - Agent": LECTURE + ["technique.add_pleincarburant", "transport.add_ordretransport", "transport.change_ordretransport"],
 }
 
 
