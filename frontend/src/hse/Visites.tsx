@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Site } from '../api'
+import { api, apiTout, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
 import ActionsCorrectives, { type Action } from './Actions'
@@ -19,7 +19,7 @@ export function ListeVisites({ peutCreer }: { peutCreer: boolean }) {
   const [erreur, setErreur] = useState('')
   useEffect(() => { api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined) }, [])
   useEffect(() => {
-    api<Page<Visite>>(`/hse/visites/?${new URLSearchParams(filtre)}&page_size=100`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Visite>(`/hse/visites/?${new URLSearchParams(filtre)}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
   }, [filtre])
   return (
     <>

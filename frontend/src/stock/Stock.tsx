@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout, type Page } from '../api'
 import { dateHeureFr } from '../achats/types'
 import { type EtatStock, type LigneStock, type Magasin, type Mouvement, nombre } from './types'
 
@@ -27,7 +27,7 @@ export default function Stock() {
   }, [filtre])
   useEffect(charger, [charger])
   useEffect(() => {
-    api<Page<Magasin>>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p.results)).catch(() => undefined)
+    apiTout<Magasin>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p)).catch(() => undefined)
   }, [])
   useEffect(() => {
     if (action?.genre !== 'entree' || saisie.recherche.length < 2) return

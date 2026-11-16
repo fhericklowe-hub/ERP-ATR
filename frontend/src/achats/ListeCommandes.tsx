@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { apiTout } from '../api'
 import { type Commande, montant } from './commandes'
 import { dateFr } from './types'
 import BoutonExcel from '../BoutonExcel'
@@ -23,8 +23,8 @@ export default function ListeCommandes() {
   useEffect(() => {
     setBons(null)
     setErreur('')
-    api<Page<Commande>>(`/achats/bons-commande/?statut=${statut}`)
-      .then((p) => setBons(p.results))
+    apiTout<Commande>(`/achats/bons-commande/?statut=${statut}`)
+      .then(setBons)
       .catch((e: Error) => setErreur(e.message))
   }, [statut])
 

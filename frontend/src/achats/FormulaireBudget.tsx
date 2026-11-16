@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, type Page, type Service, type Site, type Tiers, type Utilisateur } from '../api'
+import { api, apiTout, type Page, type Service, type Site, type Tiers, type Utilisateur } from '../api'
 import { type DemandeBudget, type LigneBudgetaire, NATURES, type Projet, TYPES } from './budget'
 import { montant } from './commandes'
 
@@ -28,7 +28,7 @@ export default function FormulaireBudget({ moi, id }: { moi: Utilisateur; id?: n
       api<Page<Service>>('/services/?actif=true'),
       api<Projet[]>('/projets/?actif=true'),
       api<LigneBudgetaire[]>(`/achats/lignes-budgetaires/?actif=true&exercice=${new Date().getFullYear()}`),
-      api<Page<Tiers>>('/tiers/?est_client=true&actif=true').catch(() => ({ results: [] as Tiers[] })),
+      apiTout<Tiers>('/tiers/?est_client=true&actif=true').then((results) => ({ results })).catch(() => ({ results: [] as Tiers[] })),
       id ? api<DemandeBudget>(`/achats/demandes-budget/${id}/`) : null,
     ])
       .then(([si, se, pr, li, cl, demande]) => {

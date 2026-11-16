@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { apiTout } from '../api'
 import { montant } from './commandes'
 import type { Reception } from './receptions'
 import { dateFr } from './types'
@@ -14,8 +14,8 @@ export default function ListeReceptions() {
   useEffect(() => {
     setBons(null)
     setErreur('')
-    api<Page<Reception>>(`/achats/bons-reception/?statut=${statut}`)
-      .then((p) => setBons(p.results))
+    apiTout<Reception>(`/achats/bons-reception/?statut=${statut}`)
+      .then(setBons)
       .catch((e: Error) => setErreur(e.message))
   }, [statut])
 

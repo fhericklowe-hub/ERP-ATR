@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Service, type Utilisateur } from '../api'
+import { api, apiTout, type Page, type Service, type Utilisateur } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateHeureFr } from '../achats/types'
 import { type Magasin, nombre } from './types'
@@ -39,7 +39,7 @@ export function ListeDemandes() {
   const [statut, setStatut] = useState('')
   const [erreur, setErreur] = useState('')
   useEffect(() => {
-    api<Page<Demande>>(`/stock/demandes/?statut=${statut}`).then((p) => setDemandes(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Demande>(`/stock/demandes/?statut=${statut}`).then((p) => setDemandes(p)).catch((e: Error) => setErreur(e.message))
   }, [statut])
 
   return (
@@ -90,13 +90,13 @@ export function FormulaireDemande({ moi, numeroOr, materiel }: { moi: Utilisateu
   const [enCours, setEnCours] = useState(false)
 
   useEffect(() => {
-    api<Page<Magasin>>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p.results)).catch(() => undefined)
+    apiTout<Magasin>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p)).catch(() => undefined)
     api<Page<Service>>('/services/?actif=true').then((p) => setServices(p.results)).catch(() => undefined)
   }, [])
   const [ordres, setOrdres] = useState<{ numero: string; materiel_nom: string }[]>([])
   useEffect(() => {
     // Les ordres de réparation ouverts, proposés à la saisie du n° d'OR. Sans le droit de les voir, la saisie reste libre.
-    api<Page<{ numero: string; materiel_nom: string }>>('/technique/ordres/?ouvert=1&page_size=200').then((p) => setOrdres(p.results)).catch(() => undefined)
+    apiTout<{ numero: string; materiel_nom: string }>('/technique/ordres/?ouvert=1').then((p) => setOrdres(p)).catch(() => undefined)
   }, [])
   useEffect(() => {
     if (recherche.length < 2) return setTrouves([])

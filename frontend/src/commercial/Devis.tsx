@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, ouvrirFichier, type Page, type Site, type Tiers } from '../api'
+import { api, apiTout, ouvrirFichier, type Page, type Site, type Tiers } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { montant } from '../achats/commandes'
 import { dateFr } from '../achats/types'
@@ -40,7 +40,7 @@ export function ListeDevis({ peutCreer }: { peutCreer: boolean }) {
   const [filtre, setFiltre] = useState({ search: '', statut: '' })
   const [erreur, setErreur] = useState('')
   useEffect(() => {
-    api<Page<Devis>>(`/commercial/devis/?${new URLSearchParams(filtre)}&page_size=100`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Devis>(`/commercial/devis/?${new URLSearchParams(filtre)}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
   }, [filtre])
   return (
     <>
@@ -96,13 +96,13 @@ export function FormulaireDevis({ id, opportunite }: { id?: number; opportunite?
   const [enCours, setEnCours] = useState(false)
 
   useEffect(() => {
-    api<Page<Tiers>>('/tiers/?est_client=true&actif=true&page_size=200').then((p) => setClients(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Tiers>('/tiers/?est_client=true&actif=true').then((p) => setClients(p)).catch((e: Error) => setErreur(e.message))
     api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined)
-    api<Page<Materiel>>('/technique/materiels/?page_size=200').then((p) => setMateriels(p.results.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
+    apiTout<Materiel>('/technique/materiels/').then((p) => setMateriels(p.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
     if (!id) {
-      api<Page<FicheGo>>('/commercial/opportunites/?statut=GO&page_size=200').then((p) => {
-        setFiches(p.results)
-        const f = p.results.find((x) => x.id === opportunite)
+      apiTout<FicheGo>('/commercial/opportunites/?statut=GO').then((p) => {
+        setFiches(p)
+        const f = p.find((x) => x.id === opportunite)
         if (f) setD((x) => ({ ...x, opportunite: f.id, client: f.client, site: f.site, activite: f.activite, libelle: x.libelle || f.nom_affaire, lieu: x.lieu || f.lieu }))
       }).catch((e: Error) => setErreur(e.message))
     }
@@ -279,7 +279,7 @@ export function DetailDevis({ id, voitMises, peutPreparer, voitReleves, peutRele
   }, [id])
   useEffect(charger, [charger])
   const chargerMises = useCallback(() => {
-    if (voitMises) api<Page<Mise>>(`/exploitation/mises-a-disposition/?devis=${id}&page_size=100`).then((p) => setMises(p.results)).catch(() => undefined)
+    if (voitMises) apiTout<Mise>(`/exploitation/mises-a-disposition/?devis=${id}`).then((p) => setMises(p)).catch(() => undefined)
   }, [id, voitMises])
   useEffect(chargerMises, [chargerMises])
 

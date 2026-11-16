@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Service, type Site } from '../api'
+import { api, apiTout, type Page, type Service, type Site } from '../api'
 import { type Bien, CATEGORIES_BIEN, ETATS_BIEN } from './types'
 
 type Saisie = Pick<Bien, 'categorie' | 'designation' | 'marque' | 'modele' | 'numero_serie' | 'immatriculation' | 'site' | 'emplacement'
@@ -20,7 +20,7 @@ export default function Biens({ peutModifier }: { peutModifier: boolean }) {
   const [erreur, setErreur] = useState('')
 
   const charger = useCallback(() => {
-    api<Page<Bien>>(`/moyens/biens/?${new URLSearchParams(filtre)}&page_size=200`).then((p) => setBiens(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Bien>(`/moyens/biens/?${new URLSearchParams(filtre)}`).then((p) => setBiens(p)).catch((e: Error) => setErreur(e.message))
   }, [filtre])
   useEffect(charger, [charger])
   useEffect(() => {

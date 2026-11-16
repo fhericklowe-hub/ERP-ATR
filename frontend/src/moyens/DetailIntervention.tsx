@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Tiers } from '../api'
+import { api, apiTout, type Page, type Tiers } from '../api'
 import { montant } from '../achats/commandes'
 import { dateFr, dateHeureFr } from '../achats/types'
 import type { Intervention } from './types'
@@ -23,7 +23,7 @@ export default function DetailIntervention({ id }: { id: number }) {
       setAffectation({ intervenant: String(x.intervenant ?? ''), prestataire: String(x.prestataire ?? ''), date_prevue: x.date_prevue ?? '' })
       if (x.peut_traiter) {
         api<Page<Personne>>('/utilisateurs/?is_active=true&page_size=200').then((p) => setPersonnes(p.results)).catch(() => undefined)
-        api<Page<Tiers>>('/tiers/?est_fournisseur=true&actif=true').then((p) => setPrestataires(p.results)).catch(() => undefined)
+        apiTout<Tiers>('/tiers/?est_fournisseur=true&actif=true').then((p) => setPrestataires(p)).catch(() => undefined)
       }
     }).catch((e: Error) => setErreur(e.message))
   }, [id])

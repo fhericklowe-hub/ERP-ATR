@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout } from '../api'
 import { dateFr } from '../achats/types'
 
 type Dotation = {
@@ -26,7 +26,7 @@ export default function Epi({ peutModifier }: { peutModifier: boolean }) {
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
   const charger = useCallback(() => {
-    api<Page<Dotation>>(`/hse/epi/?${new URLSearchParams(filtre)}&page_size=200`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Dotation>(`/hse/epi/?${new URLSearchParams(filtre)}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
     api<Dotation[]>('/hse/epi/renouvellements/').then(setARenouveler).catch(() => undefined)
   }, [filtre])
   useEffect(charger, [charger])

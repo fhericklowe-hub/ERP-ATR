@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout, type Page } from '../api'
 import BoutonExcel from '../BoutonExcel'
 import { montant } from './commandes'
 import { dateFr } from './types'
@@ -26,7 +26,7 @@ export function ListeFactures() {
   const [erreur, setErreur] = useState('')
   useEffect(() => {
     setListe(null)
-    api<Page<Facture>>(`/achats/factures/?statut=${statut}&page_size=200`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Facture>(`/achats/factures/?statut=${statut}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
   }, [statut])
   return (
     <>
