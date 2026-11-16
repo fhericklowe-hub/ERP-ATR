@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout, type Page } from '../api'
 import { dateFr } from '../achats/types'
 import { nombre } from '../stock/types'
 import { type Materiel, type Plan } from './types'
@@ -37,7 +37,7 @@ export default function Entretien({ peutModifier, peutOuvrir }: { peutModifier: 
   }, [filtre.search, filtre.vue])
   useEffect(charger, [charger])
   useEffect(() => {
-    if (peutModifier) api<Page<Materiel>>('/technique/materiels/?page_size=200').then((p) => setMateriels(p.results.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
+    if (peutModifier) apiTout<Materiel>('/technique/materiels/').then((p) => setMateriels(p.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
   }, [peutModifier])
 
   async function enregistrer(e: FormEvent) {

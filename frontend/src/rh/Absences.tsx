@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout, type Page } from '../api'
 import { dateFr } from '../achats/types'
 import { nombre } from '../stock/types'
 
@@ -82,7 +82,7 @@ export function FormulaireAbsence({ pourAutrui }: { pourAutrui: boolean }) {
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
   useEffect(() => {
-    if (pourAutrui) api<Page<Personne>>('/rh/salaries/?statut=ACTIF&page_size=200').then((p) => setPersonnes(p.results)).catch(() => undefined)
+    if (pourAutrui) apiTout<Personne>('/rh/salaries/?statut=ACTIF').then((p) => setPersonnes(p)).catch(() => undefined)
   }, [pourAutrui])
   useEffect(() => {
     api<Solde>(`/rh/absences/solde/${s.salarie ? `?salarie=${s.salarie}` : ''}`).then(setSolde).catch(() => setSolde(null))

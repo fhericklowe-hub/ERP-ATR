@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Site, type Tiers } from '../api'
+import { api, apiTout, type Page, type Site, type Tiers } from '../api'
 import BoutonExcel from '../BoutonExcel'
 import { montant } from '../achats/commandes'
 import { dateHeureFr } from '../achats/types'
@@ -40,7 +40,7 @@ export function ListeOpportunites() {
   const [filtre, setFiltre] = useState({ search: '', statut: '' })
   const [erreur, setErreur] = useState('')
   useEffect(() => {
-    api<Page<Fiche>>(`/commercial/opportunites/?${new URLSearchParams(filtre)}&page_size=200`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Fiche>(`/commercial/opportunites/?${new URLSearchParams(filtre)}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
   }, [filtre])
   return (
     <>
@@ -100,7 +100,7 @@ export default function FicheOpportunite({ id }: { id?: number }) {
   }, [id])
   useEffect(charger, [charger])
   useEffect(() => {
-    api<Page<Tiers>>('/tiers/?est_client=true&actif=true&page_size=200').then((p) => setClients(p.results)).catch(() => undefined)
+    apiTout<Tiers>('/tiers/?est_client=true&actif=true').then((p) => setClients(p)).catch(() => undefined)
     api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined)
   }, [])
 

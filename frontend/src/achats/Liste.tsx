@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { apiTout } from '../api'
 import { type Demande, URGENCES, dateFr, dateHeureFr } from './types'
 import BoutonExcel from '../BoutonExcel'
 
@@ -21,8 +21,8 @@ export default function Liste() {
 
   useEffect(() => {
     setDemandes(null)
-    api<Page<Demande>>(`/achats/demandes/?statut=${statut}`)
-      .then((p) => setDemandes(p.results))
+    apiTout<Demande>(`/achats/demandes/?statut=${statut}`)
+      .then(setDemandes)
       .catch((e: Error) => setErreur(e.message))
   }, [statut])
 

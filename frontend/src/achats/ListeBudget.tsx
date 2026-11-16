@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { apiTout } from '../api'
 import { type DemandeBudget, STATUTS, TYPES } from './budget'
 import { montant } from './commandes'
 import { dateFr } from './types'
@@ -13,8 +13,8 @@ export default function ListeBudget() {
   useEffect(() => {
     setDemandes(null)
     setErreur('')
-    api<Page<DemandeBudget>>(`/achats/demandes-budget/?statut=${statut}&type=${type}`)
-      .then((p) => setDemandes(p.results))
+    apiTout<DemandeBudget>(`/achats/demandes-budget/?statut=${statut}&type=${type}`)
+      .then(setDemandes)
       .catch((e: Error) => setErreur(e.message))
   }, [statut, type])
 

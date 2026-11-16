@@ -1,5 +1,5 @@
 import { type ChangeEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout, type Page } from '../api'
 import type { Commande } from './commandes'
 import { type Acheteur, type Demande, URGENCES, dateFr, dateHeureFr } from './types'
 import PiecesJointes from '../PiecesJointes'
@@ -21,7 +21,7 @@ export default function Detail({ id, moiId, droits }: { id: number; moiId: numbe
   const validee = d?.statut === 'VALIDEE'
   useEffect(() => {
     if (validee && droits.includes('achats.view_boncommande'))
-      api<Page<Commande>>(`/achats/bons-commande/?demande=${id}`).then((p) => setCommandes(p.results)).catch(() => {})
+      apiTout<Commande>(`/achats/bons-commande/?demande=${id}`).then((p) => setCommandes(p)).catch(() => {})
   }, [validee, droits, id])
   const peutCommander = droits.includes('achats.add_boncommande')
 

@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout, type Page } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { montant as enChiffres } from '../achats/commandes'
 import { dateFr, dateHeureFr } from '../achats/types'
@@ -20,7 +20,7 @@ export function ListeOrdres({ materiel, peutCreer }: { materiel?: string; peutCr
     const q = new URLSearchParams(filtre)
     if (materiel) q.set('materiel', materiel)
     const t = setTimeout(() => {
-      api<Page<Ordre>>(`/technique/ordres/?${q}`).then((p) => setOrdres(p.results)).catch((e: Error) => setErreur(e.message))
+      apiTout<Ordre>(`/technique/ordres/?${q}`).then((p) => setOrdres(p)).catch((e: Error) => setErreur(e.message))
     }, 200)
     return () => clearTimeout(t)
   }, [filtre, materiel])
@@ -78,7 +78,7 @@ export function FormulaireOrdre({ materiel }: { materiel?: string }) {
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
   useEffect(() => {
-    api<Page<Materiel>>('/technique/materiels/?page_size=200').then((p) => setMateriels(p.results.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
+    apiTout<Materiel>('/technique/materiels/').then((p) => setMateriels(p.filter((m) => m.etat !== 'REFORME'))).catch(() => undefined)
   }, [])
 
   async function envoyer(e: FormEvent) {

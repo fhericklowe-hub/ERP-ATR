@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Page, telechargerFichier } from '../api'
+import { api, apiTout, telechargerFichier } from '../api'
 import { montant } from '../achats/commandes'
 import { dateFr } from '../achats/types'
 import { type Magasin, nombre } from './types'
@@ -26,7 +26,7 @@ export default function ValeurStock() {
 
   const requete = (valeurs: Record<string, string>) => new URLSearchParams(Object.entries(valeurs).filter(([, v]) => v))
   useEffect(() => {
-    api<Page<Magasin>>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p.results)).catch(() => undefined)
+    apiTout<Magasin>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p)).catch(() => undefined)
   }, [])
   useEffect(() => {
     if (!filtre.date) return

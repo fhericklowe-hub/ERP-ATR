@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout } from '../api'
 import type { Magasin } from './types'
 
 type Succursale = { code: string; articles: number; quantite: string; magasin: number | null }
@@ -15,7 +15,7 @@ export default function ImportStock() {
   const [enCours, setEnCours] = useState(false)
   const fichier = useRef<HTMLInputElement>(null)
   useEffect(() => {
-    api<Page<Magasin>>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p.results)).catch(() => undefined)
+    apiTout<Magasin>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p)).catch(() => undefined)
   }, [])
 
   async function envoyer(simuler: boolean, e?: FormEvent) {

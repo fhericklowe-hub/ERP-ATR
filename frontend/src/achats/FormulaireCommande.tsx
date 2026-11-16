@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, type Page, type Service, type Site, type Tiers } from '../api'
+import { api, apiTout, type Page, type Service, type Site, type Tiers } from '../api'
 import { arrondi, type Commande, DEVISES, type LigneCommande, montant } from './commandes'
 import type { DemandeBudget } from './budget'
 import type { Demande } from './types'
@@ -26,7 +26,7 @@ export default function FormulaireCommande({ demandeId, budgetId, id }: { demand
 
   useEffect(() => {
     Promise.all([
-      api<Page<Tiers>>('/tiers/?est_fournisseur=true&actif=true'),
+      apiTout<Tiers>('/tiers/?est_fournisseur=true&actif=true').then((results) => ({ results })),
       api<Page<Site>>('/sites/?actif=true'),
       api<Page<Service>>('/services/?actif=true'),
       id ? api<Commande>(`/achats/bons-commande/${id}/`) : null,

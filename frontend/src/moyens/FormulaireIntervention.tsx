@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, type Page, type Service, type Site, type Utilisateur } from '../api'
+import { api, apiTout, type Page, type Service, type Site, type Utilisateur } from '../api'
 import { type Bien, CATEGORIES, type Intervention } from './types'
 
 type Saisie = Pick<Intervention, 'service' | 'site' | 'lieu' | 'bien' | 'categorie' | 'priorite' | 'objet' | 'description'>
@@ -31,7 +31,7 @@ export default function FormulaireIntervention({ moi, id }: { moi: Utilisateur; 
   // Les biens proposés sont ceux du site choisi.
   useEffect(() => {
     if (!d.site) return setBiens([])
-    api<Page<Bien>>(`/moyens/biens/?site=${d.site}&page_size=200`).then((p) => setBiens(p.results.filter((b) => b.etat !== 'REFORME'))).catch(() => setBiens([]))
+    apiTout<Bien>(`/moyens/biens/?site=${d.site}`).then((p) => setBiens(p.filter((b) => b.etat !== 'REFORME'))).catch(() => setBiens([]))
   }, [d.site])
 
   const champ = <K extends keyof Saisie>(k: K, v: Saisie[K]) => setD((x) => ({ ...x, [k]: v }))

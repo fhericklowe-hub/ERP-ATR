@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, ouvrirFichier, type Page, type Service, type Tiers } from '../api'
+import { api, apiTout, ouvrirFichier, type Page, type Service, type Tiers } from '../api'
 import type { Compte, DemandeBudget, Devis, LigneBudgetaire } from './budget'
 import { montant } from './commandes'
 import { dateFr, dateHeureFr } from './types'
@@ -19,7 +19,7 @@ function Consultation({ d, onChange }: { d: DemandeBudget; onChange: (d: Demande
   const [enCours, setEnCours] = useState(false)
 
   useEffect(() => {
-    api<Page<Tiers>>('/tiers/?est_fournisseur=true&actif=true').then((p) => setFournisseurs(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Tiers>('/tiers/?est_fournisseur=true&actif=true').then((p) => setFournisseurs(p)).catch((e: Error) => setErreur(e.message))
   }, [])
 
   const ligne = (i: number, modif: Partial<Devis>) => setDevis((x) => x.map((l, j) => (j === i ? { ...l, ...modif } : l)))

@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Site } from '../api'
+import { api, apiTout, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
 import ActionsCorrectives, { type Action, lienOrigine } from './Actions'
@@ -33,7 +33,7 @@ export function ListeEvenements({ peutTraiter }: { peutTraiter: boolean }) {
     api<Page<Action>>('/hse/actions/?miennes=1&statut=A_FAIRE&page_size=50').then((p) => setMiennes(p.results)).catch(() => undefined)
   }, [peutTraiter])
   useEffect(() => {
-    api<Page<Evenement>>(`/hse/evenements/?${new URLSearchParams(filtre)}&page_size=100`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Evenement>(`/hse/evenements/?${new URLSearchParams(filtre)}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
   }, [filtre])
   return (
     <>
@@ -91,7 +91,7 @@ export function FormulaireEvenement({ id }: { id?: number }) {
   const [enCours, setEnCours] = useState(false)
   useEffect(() => {
     api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined)
-    api<Page<Materiel>>('/technique/materiels/?page_size=300').then((p) => setMateriels(p.results)).catch(() => undefined)
+    apiTout<Materiel>('/technique/materiels/').then((p) => setMateriels(p)).catch(() => undefined)
     if (id) api<Evenement>(`/hse/evenements/${id}/`).then((e) => {
       setS({ type: e.type, gravite: e.gravite, date: new Date(new Date(e.date).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), site: e.site, lieu: e.lieu, description: e.description, personnes: e.personnes, materiel: e.materiel, mesures_immediates: e.mesures_immediates, jours_arret: e.jours_arret })
       setPret(true)

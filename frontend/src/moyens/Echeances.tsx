@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { api, apiTout } from '../api'
 import { montant } from '../achats/commandes'
 import { dateFr } from '../achats/types'
 import { type Bien, type Echeance, RECURRENCES, TYPES_ECHEANCE } from './types'
@@ -35,11 +35,11 @@ export default function Echeances() {
     else q.set('statut', vue)
     if (vue === 'FAITE' || vue === 'ANNULEE') q.set('ordering', '-date_echeance')
     if (type) q.set('type', type)
-    api<Page<Echeance>>(`/moyens/echeances/?${q}`).then((p) => setListe(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Echeance>(`/moyens/echeances/?${q}`).then((p) => setListe(p)).catch((e: Error) => setErreur(e.message))
   }, [vue, type])
   useEffect(charger, [charger])
   useEffect(() => {
-    api<Page<Bien>>('/moyens/biens/?page_size=200').then((p) => setBiens(p.results.filter((b) => b.etat !== 'REFORME'))).catch(() => undefined)
+    apiTout<Bien>('/moyens/biens/').then((p) => setBiens(p.filter((b) => b.etat !== 'REFORME'))).catch(() => undefined)
   }, [])
 
   async function enregistrer(e: FormEvent) {

@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Site } from '../api'
+import { api, apiTout, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
 import { BlocSolde, type Solde } from './Absences'
@@ -110,7 +110,7 @@ export function FormulaireSalarie({ id }: { id?: number }) {
   const [enCours, setEnCours] = useState(false)
   const { sites, services } = useListes()
   useEffect(() => {
-    api<Page<Salarie>>('/rh/salaries/?statut=ACTIF&page_size=200').then((p) => setCollegues(p.results)).catch(() => undefined)
+    apiTout<Salarie>('/rh/salaries/?statut=ACTIF').then((p) => setCollegues(p)).catch(() => undefined)
     api<Page<Compte>>('/utilisateurs/?is_active=true&page_size=200').then((p) => setComptes(p.results)).catch(() => undefined)
     if (id) api<Salarie>(`/rh/salaries/${id}/`).then((x) => { setS(Object.fromEntries(Object.keys(vide()).map((k) => [k, x[k as keyof Saisie]])) as Saisie); setPret(true) }).catch((e: Error) => setErreur(e.message))
   }, [id])

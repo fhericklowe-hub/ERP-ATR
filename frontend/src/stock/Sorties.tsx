@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { api, ouvrirFichier, type Page, type Service } from '../api'
+import { api, apiTout, ouvrirFichier, type Page, type Service } from '../api'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr, dateHeureFr } from '../achats/types'
 import { type EtatStock, type LigneStock, type Magasin, type Sortie, nombre } from './types'
@@ -13,7 +13,7 @@ export function ListeSorties({ peutSortir }: { peutSortir: boolean }) {
   const [erreur, setErreur] = useState('')
   useEffect(() => {
     const t = setTimeout(() => {
-      api<Page<Sortie>>(`/stock/sorties/?search=${encodeURIComponent(recherche)}`).then((p) => setSorties(p.results)).catch((e: Error) => setErreur(e.message))
+      apiTout<Sortie>(`/stock/sorties/?search=${encodeURIComponent(recherche)}`).then((p) => setSorties(p)).catch((e: Error) => setErreur(e.message))
     }, 200)
     return () => clearTimeout(t)
   }, [recherche])
@@ -68,7 +68,7 @@ export function FormulaireSortie() {
   const [enCours, setEnCours] = useState(false)
 
   useEffect(() => {
-    api<Page<Magasin>>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p.results)).catch(() => undefined)
+    apiTout<Magasin>('/emplacements/?type=SITE&actif=true').then((p) => setMagasins(p)).catch(() => undefined)
     api<Page<Personne>>('/utilisateurs/?is_active=true&page_size=200').then((p) => setPersonnes(p.results)).catch(() => undefined)
     api<Page<Service>>('/services/?actif=true').then((p) => setServices(p.results)).catch(() => undefined)
   }, [])

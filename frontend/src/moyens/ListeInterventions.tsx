@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, type Page } from '../api'
+import { apiTout } from '../api'
 import { dateFr } from '../achats/types'
 import { type Intervention, STATUTS } from './types'
 
@@ -11,8 +11,8 @@ export default function ListeInterventions() {
   useEffect(() => {
     setDemandes(null)
     setErreur('')
-    api<Page<Intervention>>(`/moyens/interventions/?statut=${statut}&ordering=priorite,-cree_le`)
-      .then((p) => setDemandes(p.results))
+    apiTout<Intervention>(`/moyens/interventions/?statut=${statut}&ordering=priorite,-cree_le`)
+      .then(setDemandes)
       .catch((e: Error) => setErreur(e.message))
   }, [statut])
 

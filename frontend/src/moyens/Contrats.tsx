@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Site, type Tiers } from '../api'
+import { api, apiTout, type Page, type Site, type Tiers } from '../api'
 import { montant } from '../achats/commandes'
 import PiecesJointes from '../PiecesJointes'
 import { dateFr } from '../achats/types'
@@ -24,13 +24,13 @@ export default function Contrats() {
   const [erreur, setErreur] = useState('')
 
   const charger = useCallback(() => {
-    api<Page<Contrat>>(`/moyens/contrats/?${new URLSearchParams(filtre)}&page_size=200`).then((p) => setContrats(p.results)).catch((e: Error) => setErreur(e.message))
+    apiTout<Contrat>(`/moyens/contrats/?${new URLSearchParams(filtre)}`).then((p) => setContrats(p)).catch((e: Error) => setErreur(e.message))
   }, [filtre])
   useEffect(charger, [charger])
   useEffect(() => {
     api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined)
-    api<Page<Tiers>>('/tiers/?est_fournisseur=true&actif=true&page_size=200').then((p) => setTiers(p.results)).catch(() => undefined)
-    api<Page<Bien>>('/moyens/biens/?page_size=200').then((p) => setBiens(p.results.filter((b) => b.etat !== 'REFORME'))).catch(() => undefined)
+    apiTout<Tiers>('/tiers/?est_fournisseur=true&actif=true').then((p) => setTiers(p)).catch(() => undefined)
+    apiTout<Bien>('/moyens/biens/').then((p) => setBiens(p.filter((b) => b.etat !== 'REFORME'))).catch(() => undefined)
   }, [])
 
   async function enregistrer(e: FormEvent) {
