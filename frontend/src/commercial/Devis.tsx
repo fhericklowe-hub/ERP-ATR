@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, ouvrirFichier, type Page, type Site, type Tiers } from '../api'
@@ -172,10 +173,7 @@ export function FormulaireDevis({ id, opportunite }: { id?: number; opportunite?
         <legend>Client</legend>
         <div className="grille">
           <label>Client
-            <select required disabled={!id && d.opportunite !== null} value={d.client} onChange={(e) => champ('client', Number(e.target.value))}>
-              <option value="">Choisir…</option>
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.raison_sociale} ({c.code})</option>)}
-            </select>
+            <ChoixListe required disabled={!id && d.opportunite !== null} value={String(d.client)} onChange={(v) => champ('client', Number(v))} options={clients.map((c) => ({ id: c.id, libelle: `${c.raison_sociale} (${c.code})` }))} />
           </label>
           <label>Interlocuteur (facultatif)<input maxLength={150} value={d.contact} onChange={(e) => champ('contact', e.target.value)} /></label>
         </div>

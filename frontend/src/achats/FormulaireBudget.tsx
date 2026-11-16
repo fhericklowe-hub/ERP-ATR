@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Service, type Site, type Tiers, type Utilisateur } from '../api'
 import { type DemandeBudget, type LigneBudgetaire, NATURES, type Projet, TYPES } from './budget'
@@ -152,10 +153,7 @@ export default function FormulaireBudget({ moi, id }: { moi: Utilisateur; id?: n
                   <input value={d.numero_contrat} onChange={(e) => champ('numero_contrat', e.target.value)} />
                 </label>
                 <label>Client
-                  <select value={d.client ?? ''} onChange={(e) => champ('client', e.target.value ? Number(e.target.value) : null)}>
-                    <option value="">Aucun</option>
-                    {clients.map((c) => <option key={c.id} value={c.id}>{c.raison_sociale}</option>)}
-                  </select>
+                  <ChoixListe vide="Aucun" value={String(d.client ?? '')} onChange={(v) => champ('client', v ? Number(v) : null)} options={clients.map((c) => ({ id: c.id, libelle: c.raison_sociale }))} />
                 </label>
                 <label>Loyer mensuel (XOF)
                   <input type="number" min="0" step="1" value={d.loyer_mensuel ?? ''} onChange={(e) => champ('loyer_mensuel', e.target.value)} />

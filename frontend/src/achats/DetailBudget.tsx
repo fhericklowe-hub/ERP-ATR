@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { useCallback, useEffect, useState } from 'react'
 import { api, apiTout, ouvrirFichier, type Page, type Service, type Tiers } from '../api'
 import type { Compte, DemandeBudget, Devis, LigneBudgetaire } from './budget'
@@ -52,10 +53,7 @@ function Consultation({ d, onChange }: { d: DemandeBudget; onChange: (d: Demande
       {devis.map((x, i) => (
         <div className="ligne devis" key={i}>
           <label>Fournisseur
-            <select value={x.fournisseur} onChange={(e) => ligne(i, { fournisseur: Number(e.target.value) })}>
-              <option value="">Choisir…</option>
-              {fournisseurs.map((f) => <option key={f.id} value={f.id}>{f.raison_sociale}</option>)}
-            </select>
+            <ChoixListe value={String(x.fournisseur)} onChange={(v) => ligne(i, { fournisseur: Number(v) })} options={fournisseurs.map((f) => ({ id: f.id, libelle: f.raison_sociale }))} />
           </label>
           <label>N° de devis
             <input value={x.numero} onChange={(e) => ligne(i, { numero: e.target.value })} />

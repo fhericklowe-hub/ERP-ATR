@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page } from '../api'
 import { dateFr } from '../achats/types'
@@ -117,7 +118,7 @@ export function FormulaireAbsence({ pourAutrui }: { pourAutrui: boolean }) {
         <div className="grille">
           {pourAutrui && (
             <label>Salarié
-              <select value={s.salarie} onChange={(e) => setS({ ...s, salarie: e.target.value })}><option value="">Moi-même</option>{personnes.map((p) => <option key={p.id} value={p.id}>{p.nom_complet} ({p.matricule})</option>)}</select>
+              <ChoixListe vide="Moi-même" value={String(s.salarie)} onChange={(v) => setS({ ...s, salarie: v })} options={personnes.map((p) => ({ id: p.id, libelle: `${p.nom_complet} (${p.matricule})` }))} />
             </label>
           )}
           <label>Absence<select value={s.type} onChange={(e) => setS({ ...s, type: e.target.value })}>{TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>

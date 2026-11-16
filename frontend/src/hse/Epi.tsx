@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout } from '../api'
 import { dateFr } from '../achats/types'
@@ -74,7 +75,7 @@ export default function Epi({ peutModifier }: { peutModifier: boolean }) {
             <legend>Remise d'un équipement</legend>
             {salaries.length === 0 && <p className="aide">Aucun salarié en poste : les salariés se créent dans RH, Personnel.</p>}
             <div className="grille">
-              <label>Salarié<select required value={s.salarie} onChange={(e) => setS({ ...s, salarie: e.target.value })}><option value="">Choisir</option>{salaries.map((x) => <option key={x.id} value={x.id}>{x.nom} ({x.matricule}) · {x.site_nom}</option>)}</select></label>
+              <label>Salarié<ChoixListe required value={String(s.salarie)} onChange={(v) => setS({ ...s, salarie: v })} options={salaries.map((x) => ({ id: x.id, libelle: `${x.nom} (${x.matricule}) · ${x.site_nom}` }))} /></label>
               <label>Équipement<select value={s.equipement} onChange={(e) => setS({ ...s, equipement: e.target.value })}>{EQUIPEMENTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
               <label>Modèle, taille ou pointure<input maxLength={100} value={s.precision} onChange={(e) => setS({ ...s, precision: e.target.value })} /></label>
               <label>Quantité<input type="number" min="1" max="99" required value={s.quantite} onChange={(e) => setS({ ...s, quantite: Number(e.target.value) })} /></label>

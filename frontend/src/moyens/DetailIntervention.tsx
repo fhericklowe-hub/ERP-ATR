@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Tiers } from '../api'
 import { montant } from '../achats/commandes'
@@ -80,10 +81,7 @@ export default function DetailIntervention({ id }: { id: number }) {
               </select>
             </label>
             <label>Prestataire
-              <select value={affectation.prestataire} onChange={(e) => setAffectation({ ...affectation, prestataire: e.target.value })}>
-                <option value="">Aucun</option>
-                {prestataires.map((p) => <option key={p.id} value={p.id}>{p.raison_sociale}</option>)}
-              </select>
+              <ChoixListe vide="Aucun" value={String(affectation.prestataire)} onChange={(v) => setAffectation({ ...affectation, prestataire: v })} options={prestataires.map((p) => ({ id: p.id, libelle: p.raison_sociale }))} />
             </label>
             <label>Date prévue
               <input type="date" value={affectation.date_prevue} onChange={(e) => setAffectation({ ...affectation, date_prevue: e.target.value })} />

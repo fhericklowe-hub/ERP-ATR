@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Site, type Tiers } from '../api'
 import BoutonExcel from '../BoutonExcel'
@@ -154,10 +155,7 @@ export default function FicheOpportunite({ id }: { id?: number }) {
           <div className="grille">
             <label>Nom de l'affaire<input required maxLength={200} value={d.nom_affaire} onChange={(e) => champ('nom_affaire', e.target.value)} /></label>
             <label>Client
-              <select required value={d.client} onChange={(e) => champ('client', Number(e.target.value))}>
-                <option value="">Choisir…</option>
-                {clients.map((c) => <option key={c.id} value={c.id}>{c.raison_sociale} ({c.code})</option>)}
-              </select>
+              <ChoixListe required value={String(d.client)} onChange={(v) => champ('client', Number(v))} options={clients.map((c) => ({ id: c.id, libelle: `${c.raison_sociale} (${c.code})` }))} />
             </label>
             <label>Agence
               <select required value={d.site} onChange={(e) => champ('site', Number(e.target.value))}>
