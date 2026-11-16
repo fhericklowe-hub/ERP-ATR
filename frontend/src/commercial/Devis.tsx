@@ -1,3 +1,4 @@
+import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, ouvrirFichier, type Page, type Site, type Tiers } from '../api'
 import PiecesJointes from '../PiecesJointes'
@@ -223,13 +224,10 @@ export function FormulaireDevis({ id, opportunite }: { id?: number; opportunite?
         {d.lignes.map((l, i) => (
           <div className="ligne devis" key={i}>
             <label>Matériel du parc
-              <select value={l.materiel ?? ''} onChange={(e) => {
-                const m = materiels.find((x) => String(x.id) === e.target.value)
+              <ChoixMateriel vide="Aucun" options={materiels} value={String(l.materiel ?? '')} onChange={(v) => {
+                const m = materiels.find((x) => String(x.id) === v)
                 ligne(i, { materiel: m ? m.id : null, designation: l.designation || (m ? m.designation : '') })
-              }}>
-                <option value="">Aucun</option>
-                {materiels.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.designation}</option>)}
-              </select>
+              }} />
             </label>
             <label>Désignation<input required maxLength={200} value={l.designation} onChange={(e) => ligne(i, { designation: e.target.value })} /></label>
             <label>Qté<input required type="number" min="0.01" step="0.01" value={l.quantite} onChange={(e) => ligne(i, { quantite: e.target.value })} /></label>

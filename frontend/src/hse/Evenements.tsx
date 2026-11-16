@@ -1,3 +1,4 @@
+import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Site } from '../api'
 import PiecesJointes from '../PiecesJointes'
@@ -126,7 +127,7 @@ export function FormulaireEvenement({ id }: { id?: number }) {
           <label>Date et heure<input type="datetime-local" required max={maintenant()} value={s.date} onChange={(e) => setS({ ...s, date: e.target.value })} /></label>
           <label>Site<select required value={s.site} onChange={(e) => setS({ ...s, site: Number(e.target.value) || '' })}><option value="">Choisir</option>{sites.map((x) => <option key={x.id} value={x.id}>{x.nom}</option>)}</select></label>
           <label>Lieu précis<input maxLength={200} placeholder="Atelier, quai, chantier du client…" value={s.lieu} onChange={(e) => setS({ ...s, lieu: e.target.value })} /></label>
-          <label>Matériel en cause<select value={s.materiel ?? ''} onChange={(e) => setS({ ...s, materiel: Number(e.target.value) || null })}><option value="">Aucun</option>{materiels.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.designation}</option>)}</select></label>
+          <label>Matériel en cause<ChoixMateriel vide="Aucun" options={materiels} value={String(s.materiel ?? '')} onChange={(v) => setS({ ...s, materiel: Number(v) || null })} /></label>
           {s.type === 'ACCIDENT' && <label>Jours d'arrêt de travail<input type="number" min="0" max="3650" value={s.jours_arret} onChange={(e) => setS({ ...s, jours_arret: Number(e.target.value) })} /></label>}
         </div>
         <label>Ce qui s'est passé<textarea required rows={4} value={s.description} onChange={(e) => setS({ ...s, description: e.target.value })} /></label>
