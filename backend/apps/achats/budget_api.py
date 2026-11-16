@@ -5,6 +5,8 @@ from rest_framework import exceptions, mixins, permissions, serializers, viewset
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.export import ExportExcel
+
 from .budget import DemandeBudget, DevisDemande, EvenementBudget, LigneBudgetaire
 from .pdf_budget import pdf_demande_budget
 from .views import executer_transition
@@ -21,12 +23,21 @@ CHAMPS_CONTROLE = {"service_impute", "compte", "ligne_budgetaire", "prevu_budget
 
 class LigneBudgetaireSerializer(serializers.ModelSerializer):
     service_nom = serializers.CharField(source="service.nom", read_only=True)
+    compte_libelle = serializers.SerializerMethodField()
     engage = serializers.SerializerMethodField()
     disponible = serializers.SerializerMethodField()
+    en_cours = serializers.SerializerMethodField()
 
     class Meta:
         model = LigneBudgetaire
-        fields = ["id", "exercice", "service", "service_nom", "intitule", "compte", "montant", "actif", "engage", "disponible"]
+        fields = ["id", "exercice", "service", "service_nom", "intitule", "compte", "compte_libelle", "montant", "actif", "engage",
+                  "disponible", "en_cours"]
+
+    def get_compte_libelle(self, obj) -> str:
+        return f"{obj.compte.numero} · {obj.compte.libelle}" if obj.compte_id else ""
+
+    def get_en_cours(self, obj) -> str:
+        return str(obj.en_cours())
 
     def get_engage(self, obj) -> str:
         return str(obj.engage())
@@ -35,11 +46,16 @@ class LigneBudgetaireSerializer(serializers.ModelSerializer):
         return str(obj.disponible())
 
 
-class LigneBudgetaireViewSet(viewsets.ModelViewSet):
+class LigneBudgetaireViewSet(ExportExcel, viewsets.ModelViewSet):
     """Lignes budgétaires, tenues par le contrôle de gestion."""
 
+    export_titre, export_fichier = "Suivi du budget", "suivi-budget"
+    export_colonnes = [("Exercice", "exercice", "nombre"), ("Service", "service_nom"), ("Intitulé", "intitule"),
+                       ("Compte", "compte_libelle"), ("Budget", "montant", "nombre"), ("Engagé", "engage", "nombre"),
+                       ("En cours de validation", "en_cours", "nombre"), ("Disponible", "disponible", "nombre"),
+                       ("Active", "actif", "oui_non")]
     serializer_class = LigneBudgetaireSerializer
-    queryset = LigneBudgetaire.objects.select_related("service")
+    queryset = LigneBudgetaire.objects.select_related("service", "compte")
     filterset_fields = ["exercice", "service", "actif"]
     search_fields = ["intitule"]
     pagination_class = None
