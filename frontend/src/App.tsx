@@ -15,6 +15,7 @@ import Liste from './achats/Liste'
 import { DetailSortie, FormulaireSortie, ListeSorties } from './stock/Sorties'
 import { DetailDemande, FormulaireDemande, ListeDemandes } from './stock/Demandes'
 import ImportStock from './stock/ImportStock'
+import SuiviBudget from './achats/SuiviBudget'
 import Carburant from './technique/Carburant'
 import CoutsParc from './technique/CoutsParc'
 import { DetailOrdre, FormulaireOrdre, ListeOrdres } from './technique/Ordres'
@@ -101,6 +102,7 @@ const MENU: { titre: string; liens: Lien[] }[] = [
   { titre: 'Achats', liens: [
     { chemin: '/', texte: "Demandes d'achat", droit: 'achats.view_demandeachat', aussi: ['/demandes'] },
     { chemin: '/budget', texte: 'Demandes liées au budget', droit: 'achats.view_demandebudget' },
+    { chemin: '/suivi-budget', texte: 'Suivi du budget', droit: 'achats.view_lignebudgetaire' },
     { chemin: '/commandes', texte: 'Bons de commande', droit: 'achats.view_boncommande' },
     { chemin: '/receptions', texte: 'Bons de réception', droit: 'achats.view_bonreception' },
     { chemin: '/factures', texte: 'Factures fournisseurs', droit: 'achats.view_facturefournisseur' },
@@ -292,6 +294,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const facture = route.match(/^\/factures\/(\d+)$/)
   if (facture) return <FicheFacture key={route} id={Number(facture[1])} />
   if (route === '/budget') return <ListeBudget />
+  if (route === '/suivi-budget') return <SuiviBudget peutModifier={!!moi && moi.droits.includes('achats.change_lignebudgetaire')} />
   if (route === '/budget/nouvelle') return <FormulaireBudget moi={moi} />
   const modifBudget = route.match(/^\/budget\/(\d+)\/modifier$/)
   if (modifBudget) return <FormulaireBudget moi={moi} id={Number(modifBudget[1])} />

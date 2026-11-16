@@ -226,7 +226,9 @@ fournisseurs par les achats, puis responsable achats, contrôle de gestion, dire
 cas, direction générale (investissement, montant au-dessus du seuil, hors budget ou dépassement de la ligne).
 
 - Le seuil (1 000 000 par défaut) se règle dans l'administration, fiche Société.
-- Les lignes budgétaires se saisissent dans l'administration ou par l'API (rôle contrôleur de gestion).
+- Les lignes budgétaires se saisissent dans l'écran « Suivi du budget » (rôle contrôleur de gestion). Cet écran
+  montre, par exercice et par service, le montant alloué, le consommé (demandes validées), l'en-cours
+  (demandes en circuit) et le disponible, avec un export Excel.
 - Les comptes de charge sont créés à l'installation. Les projets et codes analytiques se chargent depuis le
   classeur de l'entreprise, qui ne doit pas être ajouté au dépôt :
   `python manage.py importer_projets chemin/vers/le-classeur.xlsx`

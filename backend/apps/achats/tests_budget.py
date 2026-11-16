@@ -226,3 +226,10 @@ class DemandeBudgetTests(APITestCase):
         r = self.client.post("/api/achats/lignes-budgetaires/", ligne, format="json")
         self.assertEqual(r.status_code, 201, r.data)
         self.assertEqual(Decimal(r.data["disponible"]), 5000000)
+        # une demande en cours de circuit sur la ligne : pas encore engagée, mais annoncée
+        demande = self.creer()
+        DemandeBudget.objects.filter(pk=demande["id"]).update(ligne_budgetaire=r.data["id"], statut="ATT_CDG", montant=750000)
+        self.client.force_authenticate(self.controleur)
+        suivi = {l["intitule"]: l for l in self.client.get("/api/achats/lignes-budgetaires/", {"exercice": 2026}).data}["Carburant"]
+        self.assertEqual((Decimal(suivi["en_cours"]), Decimal(suivi["engage"]), Decimal(suivi["disponible"])), (750000, 0, 5000000))
+        self.assertEqual(self.client.get("/api/achats/lignes-budgetaires/exporter/").status_code, 200)

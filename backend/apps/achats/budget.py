@@ -49,6 +49,12 @@ class LigneBudgetaire(Horodate):
     def disponible(self, sauf=None) -> Decimal:
         return self.montant - self.engage(sauf)
 
+    def en_cours(self) -> Decimal:
+        """Total des demandes en cours de circuit sur cette ligne : pas encore engagé, mais à prévoir."""
+        S = DemandeBudget.Statut
+        demandes = self.demandes.exclude(statut__in=[S.BROUILLON, S.VALIDEE, S.REFUSEE])
+        return demandes.aggregate(t=Sum("montant"))["t"] or Decimal(0)
+
 
 class DemandeBudget(Horodate):
     class Type(models.TextChoices):
