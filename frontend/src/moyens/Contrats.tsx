@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Site, type Tiers } from '../api'
 import { montant } from '../achats/commandes'
@@ -71,10 +72,7 @@ export default function Contrats() {
               <input required value={c.objet} placeholder="Exemple : assurance flotte automobile" onChange={(e) => champ('objet', e.target.value)} />
             </label>
             <label>Prestataire ou bailleur
-              <select required value={c.prestataire} onChange={(e) => champ('prestataire', Number(e.target.value))}>
-                <option value="">Choisir…</option>
-                {tiers.map((t) => <option key={t.id} value={t.id}>{t.raison_sociale}</option>)}
-              </select>
+              <ChoixListe required value={String(c.prestataire)} onChange={(v) => champ('prestataire', Number(v))} options={tiers.map((t) => ({ id: t.id, libelle: t.raison_sociale }))} />
             </label>
             <label>Référence ou n° de police
               <input value={c.reference} onChange={(e) => champ('reference', e.target.value)} />

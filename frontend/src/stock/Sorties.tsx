@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, apiTout, ouvrirFichier, type Page, type Service } from '../api'
 import PiecesJointes from '../PiecesJointes'
@@ -135,12 +136,8 @@ export function FormulaireSortie() {
         {lignes.map((l, i) => (
           <div className="ligne sortie" key={i}>
             <label>Article
-              <select required value={l.article} disabled={!d.magasin} onChange={(e) => ligne(i, 'article', e.target.value)}>
-                <option value="">{d.magasin ? 'Choisir…' : "Choisir d'abord le magasin"}</option>
-                {stock.filter((s) => String(s.article) === l.article || !lignes.some((x) => x.article === String(s.article))).map((s) => (
-                  <option key={s.article} value={s.article}>{s.code} · {s.designation} ({nombre(s.quantite)} {s.unite} en stock)</option>
-                ))}
-              </select>
+              <ChoixListe required disabled={!d.magasin} vide={d.magasin ? 'Choisir…' : "Choisir d'abord le magasin"} value={l.article} onChange={(v) => ligne(i, 'article', v)}
+                options={stock.filter((s) => String(s.article) === l.article || !lignes.some((x) => x.article === String(s.article))).map((s) => ({ id: s.article, libelle: `${s.code} · ${s.designation} (${nombre(s.quantite)} ${s.unite} en stock)` }))} />
             </label>
             <label>Quantité
               <input type="number" required min="0.01" step="0.01" max={enStock(l.article)?.quantite} value={l.quantite} onChange={(e) => ligne(i, 'quantite', e.target.value)} />

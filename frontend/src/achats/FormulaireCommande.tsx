@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import { type FormEvent, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Service, type Site, type Tiers } from '../api'
 import { arrondi, type Commande, DEVISES, type LigneCommande, montant } from './commandes'
@@ -98,10 +99,7 @@ export default function FormulaireCommande({ demandeId, budgetId, id }: { demand
         <legend>Fournisseur</legend>
         <div className="grille">
           <label>Fournisseur
-            <select required value={c.fournisseur} onChange={(e) => champ('fournisseur', Number(e.target.value))}>
-              <option value="">Choisir…</option>
-              {fournisseurs.map((f) => <option key={f.id} value={f.id}>{f.raison_sociale} ({f.code})</option>)}
-            </select>
+            <ChoixListe required value={String(c.fournisseur)} onChange={(v) => champ('fournisseur', Number(v))} options={fournisseurs.map((f) => ({ id: f.id, libelle: `${f.raison_sociale} (${f.code})` }))} />
           </label>
           <label>N° de devis / commande fournisseur
             <input value={c.reference_fournisseur} onChange={(e) => champ('reference_fournisseur', e.target.value)} />

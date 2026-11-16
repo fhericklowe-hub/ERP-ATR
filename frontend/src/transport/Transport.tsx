@@ -1,3 +1,4 @@
+import ChoixListe from '../ChoixListe'
 import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Site, type Tiers } from '../api'
@@ -107,7 +108,7 @@ export function FormulaireTransport() {
       <fieldset>
         <legend>Client et marchandise</legend>
         <div className="grille">
-          <label>Client<select required value={f.client} onChange={(e) => maj('client', e.target.value)}><option value="">Choisir…</option>{clients.map((c) => <option key={c.id} value={c.id}>{c.raison_sociale}</option>)}</select></label>
+          <label>Client<ChoixListe required value={String(f.client)} onChange={(v) => maj('client', v)} options={clients.map((c) => ({ id: c.id, libelle: c.raison_sociale }))} /></label>
           <label>Référence du client (BL, booking, conteneur)<input maxLength={80} value={f.reference_client} onChange={(e) => maj('reference_client', e.target.value)} /></label>
           <label>Agence<select required value={f.site} onChange={(e) => maj('site', e.target.value)}><option value="">Choisir…</option>{sites.map((s) => <option key={s.id} value={s.id}>{s.nom}</option>)}</select></label>
           <label>Marchandise<input maxLength={200} value={f.marchandise} onChange={(e) => maj('marchandise', e.target.value)} /></label>
