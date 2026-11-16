@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .pieces_api import PieceJointeViewSet
+from .recherche import RechercheView
 from .views import AccueilView, CompteViewSet, MoiView, MonMotDePasseView, PilotageView, ServiceViewSet, SiteViewSet, TraceViewSet, UtilisateurViewSet
 
 router = DefaultRouter()
@@ -13,4 +14,4 @@ router.register("pieces-jointes", PieceJointeViewSet)
 router.register("journal", TraceViewSet)
 
 urlpatterns = [path("moi/", MoiView.as_view(), name="moi"), path("moi/mot-de-passe/", MonMotDePasseView.as_view(), name="mon-mot-de-passe"), path("accueil/", AccueilView.as_view(), name="accueil"),
-               path("pilotage/", PilotageView.as_view(), name="pilotage"), *router.urls]
+               path("pilotage/", PilotageView.as_view(), name="pilotage"), path("recherche/", RechercheView.as_view(), name="recherche"), *router.urls]

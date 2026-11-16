@@ -1,3 +1,4 @@
+import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page } from '../api'
 import { dateFr } from '../achats/types'
@@ -84,10 +85,7 @@ export default function Entretien({ peutModifier, peutOuvrir }: { peutModifier: 
           <legend>Opération</legend>
           <div className="grille">
             <label>Matériel
-              <select required disabled={!!s.id} value={s.materiel} onChange={(e) => champ('materiel', e.target.value)}>
-                <option value="">Choisir…</option>
-                {materiels.map((x) => <option key={x.id} value={x.id}>{x.code} · {x.designation}</option>)}
-              </select>
+              <ChoixMateriel required disabled={!!s.id} options={materiels} value={String(s.materiel)} onChange={(v) => champ('materiel', v)} />
             </label>
             <label>Opération<input required maxLength={120} placeholder="Vidange moteur et filtres" value={s.intitule} onChange={(e) => champ('intitule', e.target.value)} /></label>
           </div>

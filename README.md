@@ -589,3 +589,10 @@ la fiche est « GO » et le bouton « Établir le devis » ouvre le devis déjà
   deux nouveaux rôles se créent seuls et sont à attribuer dans Administration > Comptes. Le compte `responsable` de la
   démonstration cumule les rôles et le compte `controleur` valide l'étape finance.
 - Chaque étape garde son auteur, sa date et son commentaire. Export Excel de la liste.
+
+## Recherche globale
+
+La zone « Rechercher… » du bandeau cherche un numéro de document, un numéro de parc, une immatriculation, un nom
+de client, de fournisseur ou de salarié dans toutes les rubriques. Chaque utilisateur ne voit que les résultats
+des rubriques auxquelles ses rôles donnent accès. Dans les formulaires, le choix d'un matériel se fait en tapant
+quelques lettres dès que le parc dépasse quinze matériels.

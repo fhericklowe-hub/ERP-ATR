@@ -1,3 +1,4 @@
+import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Site, type Tiers } from '../api'
 import BoutonExcel from '../BoutonExcel'
@@ -121,8 +122,8 @@ export function FormulaireTransport() {
           <label>Lieu de chargement<input required maxLength={200} value={f.origine} onChange={(e) => maj('origine', e.target.value)} /></label>
           <label>Lieu de livraison<input required maxLength={200} value={f.destination} onChange={(e) => maj('destination', e.target.value)} /></label>
           <label>Départ prévu le<input type="date" required value={f.date_prevue} onChange={(e) => maj('date_prevue', e.target.value)} /></label>
-          <label>Tracteur ou camion<select required value={f.tracteur} onChange={(e) => maj('tracteur', e.target.value)}><option value="">Choisir…</option>{tracteurs.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.designation}</option>)}</select></label>
-          <label>Remorque<select value={f.remorque} onChange={(e) => maj('remorque', e.target.value)}><option value="">Sans remorque</option>{engins.REMORQUE.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.designation}</option>)}</select></label>
+          <label>Tracteur ou camion<ChoixMateriel required options={tracteurs} value={String(f.tracteur)} onChange={(v) => maj('tracteur', v)} /></label>
+          <label>Remorque<ChoixMateriel vide="Sans remorque" options={engins.REMORQUE} value={String(f.remorque)} onChange={(v) => maj('remorque', v)} /></label>
           <label>Chauffeur<input required maxLength={120} value={f.chauffeur} onChange={(e) => maj('chauffeur', e.target.value)} /></label>
         </div>
         <label>Observations<textarea value={f.observations} onChange={(e) => maj('observations', e.target.value)} /></label>

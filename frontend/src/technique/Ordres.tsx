@@ -1,3 +1,4 @@
+import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page } from '../api'
 import PiecesJointes from '../PiecesJointes'
@@ -100,10 +101,7 @@ export function FormulaireOrdre({ materiel }: { materiel?: string }) {
       <fieldset>
         <div className="grille">
           <label>Matériel
-            <select required value={d.materiel} onChange={(e) => setD({ ...d, materiel: e.target.value })}>
-              <option value="">Choisir…</option>
-              {materiels.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.designation}{m.immatriculation && ` · ${m.immatriculation}`}</option>)}
-            </select>
+            <ChoixMateriel required options={materiels} value={String(d.materiel)} onChange={(v) => setD({ ...d, materiel: v })} />
           </label>
           <label>Type
             <select value={d.type} onChange={(e) => setD({ ...d, type: e.target.value, immobilisant: e.target.value !== 'PREVENTIF' && e.target.value !== 'AMELIO' })}>

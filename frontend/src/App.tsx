@@ -32,6 +32,7 @@ import ImportParc from './technique/ImportParc'
 import Parc from './technique/Parc'
 import Accueil from './Accueil'
 import Pilotage from './Pilotage'
+import Recherche from './Recherche'
 import Comptes from './Comptes'
 import MonCompte from './MonCompte'
 import Journal from './Journal'
@@ -197,6 +198,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (route === '/stock') return <Stock />
   const [chemin, requete] = route.split('?')
   const param = (nom: string) => new URLSearchParams(requete ?? '').get(nom) ?? undefined
+  if (chemin === '/recherche') return <Recherche mot={param('q') ?? ''} />
   if (chemin === '/parc') return <Parc peutModifier={a('technique.change_materiel')} />
   if (chemin === '/devis') return <ListeDevis peutCreer={a('commercial.add_devis')} />
   if (chemin === '/devis/nouveau') return <FormulaireDevis key={route} opportunite={Number(param('opportunite')) || undefined} />
@@ -235,7 +237,7 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   const salarie = chemin.match(/^\/personnel\/(\d+)$/)
   if (salarie) return <DetailSalarie id={Number(salarie[1])} />
   for (const qualite of ['fournisseur', 'client'] as const) {
-    if (chemin === `/${qualite}s`) return <ListeTiers key={qualite} qualite={qualite} peutCreer={a('referentiels.add_tiers')} peutModifier={a('referentiels.change_tiers')} />
+    if (chemin === `/${qualite}s`) return <ListeTiers key={qualite + (param('recherche') ?? '')} recherche={param('recherche')} qualite={qualite} peutCreer={a('referentiels.add_tiers')} peutModifier={a('referentiels.change_tiers')} />
     if (chemin === `/${qualite}s/import`) return a('referentiels.add_tiers') ? <ImportTiers key={qualite} qualite={qualite} /> : <p>L'import est réservé à ceux qui créent les fiches.</p>
   }
   if (chemin === '/articles') return <Articles peutCreer={a('referentiels.add_article')} peutModifier={a('referentiels.change_article')} />
@@ -352,6 +354,17 @@ export default function App() {
             <a key={m.titre} href={`#${m.liens[0].chemin}`} aria-current={m === moduleActif ? 'page' : undefined}>{m.titre}</a>
           ))}
         </nav>
+        {moi && !imposeChangement && (
+          <form className="chercher" role="search" onSubmit={(e) => {
+            e.preventDefault()
+            const champ = e.currentTarget.elements.namedItem('q') as HTMLInputElement
+            if (champ.value.trim().length >= 2) location.hash = `#/recherche?q=${encodeURIComponent(champ.value.trim())}`
+            champ.value = ''
+            champ.blur()
+          }}>
+            <input name="q" type="search" placeholder="Rechercher…" aria-label="Rechercher dans tout l'ERP" />
+          </form>
+        )}
         <span>{moi && <a href="#/mon-compte" title="Mon compte, mon mot de passe">{`${moi.first_name} ${moi.last_name}`.trim() || moi.username}</a>}</span>
         <button onClick={quitter}>Se déconnecter</button>
       </header>

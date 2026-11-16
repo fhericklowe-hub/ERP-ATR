@@ -24,11 +24,11 @@ const vide = (qualite: Qualite): Saisie => ({
 })
 
 /** Fournisseurs ou clients : la même fiche, vue selon la qualité. Une fiche ne se supprime pas, elle se désactive. */
-export function ListeTiers({ qualite, peutCreer, peutModifier }: { qualite: Qualite; peutCreer: boolean; peutModifier: boolean }) {
+export function ListeTiers({ qualite, peutCreer, peutModifier, recherche }: { qualite: Qualite; peutCreer: boolean; peutModifier: boolean; recherche?: string }) {
   const mots = MOTS[qualite]
   const [liste, setListe] = useState<Fiche[] | null>(null)
   const [total, setTotal] = useState(0)
-  const [filtre, setFiltre] = useState({ search: '', actif: 'true' })
+  const [filtre, setFiltre] = useState({ search: recherche ?? '', actif: recherche ? '' : 'true' })
   const [fiche, setFiche] = useState<(Saisie & { id?: number; contacts?: Contact[]; sites?: SiteClient[] }) | null>(null)
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)

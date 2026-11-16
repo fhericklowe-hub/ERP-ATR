@@ -1,3 +1,4 @@
+import ChoixMateriel from '../ChoixMateriel'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, apiTout, type Page, type Site } from '../api'
 import BoutonExcel from '../BoutonExcel'
@@ -59,7 +60,7 @@ export default function Carburant({ peutSaisir }: { peutSaisir: boolean }) {
           <fieldset>
             <legend>Saisir un plein</legend>
             <div className="grille">
-              <label>Matériel<select required value={f.materiel} onChange={(e) => maj('materiel', e.target.value)}><option value="">Choisir…</option>{engins.map((m) => <option key={m.id} value={m.id}>{m.code} · {m.designation}</option>)}</select></label>
+              <label>Matériel<ChoixMateriel required options={engins} value={String(f.materiel)} onChange={(v) => maj('materiel', v)} /></label>
               <label>Date<input type="date" required max={jour(new Date())} value={f.date} onChange={(e) => maj('date', e.target.value)} /></label>
               <label>Litres<input type="number" required min="0.1" step="0.1" value={f.litres} onChange={(e) => maj('litres', e.target.value)} /></label>
               <label>Montant payé (XOF)<input type="number" min="0" step="1" value={f.montant} onChange={(e) => maj('montant', e.target.value)} /></label>
