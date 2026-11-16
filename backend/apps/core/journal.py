@@ -10,7 +10,7 @@ from decimal import Decimal
 from django.apps import apps
 from django.db.models.signals import post_delete, post_save, pre_save
 
-APPLICATIONS = {"achats", "commercial", "core", "exploitation", "hse", "moyens", "referentiels", "rh", "stock", "technique"}
+APPLICATIONS = {"achats", "commercial", "core", "exploitation", "hse", "moyens", "referentiels", "rh", "stock", "technique", "transport"}
 IGNORES = {"core.trace", "core.compteur"}  # le journal lui-même, les compteurs de numérotation
 CONFIDENTIELS = {"rh"}  # applications dont les valeurs ne sont pas écrites
 CHAMPS_SECRETS = {"password"}

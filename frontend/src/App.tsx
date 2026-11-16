@@ -23,6 +23,7 @@ import { DetailMise, ListeMises } from './exploitation/Mises'
 import { DetailReleve, ListeReleves } from './exploitation/Releves'
 import Disponibilite from './exploitation/Disponibilite'
 import Utilisation from './exploitation/Utilisation'
+import { DetailTransport, FormulaireTransport, ListeTransports, SyntheseTransport } from './transport/Transport'
 import Entretien from './technique/Entretien'
 import HistoriqueMateriel from './technique/Historique'
 import ImportParc from './technique/ImportParc'
@@ -127,6 +128,10 @@ const MENU: { titre: string; liens: Lien[] }[] = [
     { chemin: '/mises', texte: 'Mises à disposition', droit: 'exploitation.view_miseadisposition' },
     { chemin: '/disponibilite', texte: 'Disponibilité', droit: 'exploitation.view_miseadisposition' },
     { chemin: '/utilisation', texte: 'Taux d\'utilisation', droit: 'exploitation.view_miseadisposition' },
+  ] },
+  { titre: 'Transport', liens: [
+    { chemin: '/transports', texte: 'Ordres de transport', droit: 'transport.view_ordretransport' },
+    { chemin: '/transports-synthese', texte: 'Kilomètres et carburant', droit: 'transport.view_ordretransport' },
   ] },
   { titre: 'RH', liens: [
     { chemin: '/personnel', texte: 'Personnel', droit: 'rh.view_salarie' },
@@ -234,6 +239,11 @@ function Page({ moi, route }: { moi: Utilisateur; route: string }) {
   if (releve) return <DetailReleve id={Number(releve[1])} />
   if (chemin === '/mises') return <ListeMises />
   if (chemin === '/utilisation') return <Utilisation />
+  if (chemin === '/transports') return <ListeTransports peutCreer={a('transport.add_ordretransport')} />
+  if (chemin === '/transports/nouveau') return <FormulaireTransport />
+  if (chemin === '/transports-synthese') return <SyntheseTransport />
+  const transport = chemin.match(/^\/transports\/(\d+)$/)
+  if (transport) return <DetailTransport id={Number(transport[1])} />
   if (chemin === '/disponibilite') return <Disponibilite />
   const mise = chemin.match(/^\/mises\/(\d+)$/)
   if (mise) return <DetailMise id={Number(mise[1])} peutOuvrirOr={a('technique.add_ordrereparation')} />

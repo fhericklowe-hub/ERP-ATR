@@ -1,6 +1,6 @@
 # ERP
 
-ERP sur mesure : Achats, Moyens généraux, Stock et logistique, Technique, Commercial, Exploitation, RH, HSE, Finances.
+ERP sur mesure : Achats, Moyens généraux, Stock et logistique, Technique, Commercial, Exploitation, Transport, RH, HSE.
 
 ## Organisation du dépôt
 
@@ -421,6 +421,22 @@ signés et les photos se joignent à la fiche. Un retour prévu dépassé est si
 
 Rôles : « Exploitation - Consultation » et « Exploitation - Agent ». Les rôles du Commercial voient les mises à
 disposition de leurs devis.
+
+## Transport : ordres de transport
+
+Un ordre de transport (`OT-2026-0001`) décrit un trajet pour un client : lieux de chargement et de livraison, marchandise,
+poids, date de départ prévue, tracteur ou camion du parc, remorque éventuelle, chauffeur, prix HT facultatif. Circuit :
+
+- **planifié** : l'ordre se modifie librement ;
+- **en route** : au départ on relève le compteur du tracteur (il ne peut pas reculer). Un tracteur en panne, en réparation ou
+  réformé ne part pas, et un tracteur ou une remorque déjà sur un ordre en route n'en prend pas un second ;
+- **livré** : compteur à l'arrivée, carburant consommé (facultatif), réserves. Les kilomètres parcourus et la consommation aux
+  100 km sont calculés, et le compteur de la fiche du tracteur est mis à jour ;
+- **annulé**, avec un motif, tant que l'ordre n'est pas livré.
+
+« Kilomètres et carburant » donne, sur une période, les trajets, les kilomètres, le carburant et la consommation par tracteur
+et par chauffeur. La liste s'exporte vers Excel ; la lettre de voiture, le bon signé et les tickets se joignent à l'ordre.
+Rôles : « Transport - Consultation » et « Transport - Agent ». Le chauffeur est saisi par son nom, sans lien avec les dossiers RH.
 
 ## Commercial : relevé de location
 
