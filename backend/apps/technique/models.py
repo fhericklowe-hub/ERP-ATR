@@ -281,3 +281,4 @@ class OrdreReparation(Horodate):
 
 from .couts import ReglageAtelier, TempsPasse  # noqa: E402,F401  (modèles déclarés dans couts.py)
 from .entretien import PlanEntretien  # noqa: E402,F401
+from .carburant import PleinCarburant  # noqa: E402,F401

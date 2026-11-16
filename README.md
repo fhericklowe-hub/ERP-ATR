@@ -338,6 +338,10 @@ achats » et « Achats - Contrôleur de gestion ».
   l'annuaire place le matériel chez lui, et le n° de matériel de IE est gardé. Les autres onglets sont laissés de côté.
   Un matériel sans n° de parc reçoit le code `M` + son n° de matériel. Contrôle d'abord, écriture ensuite, rien n'est écrit
   si une ligne est en erreur ; rejouer le fichier ne change rien.
+- **Carburant** (Technique et Transport, « Carburant ») : saisie des pleins (matériel, date, litres, montant, compteur
+  heures ou km, station, conducteur, ticket). Le compteur relevé met la fiche du matériel à jour. Par équipement et par
+  période : litres, montant, distance ou heures parcourues et consommation (l/100 km ou l/h), calculée entre le premier et
+  le dernier compteur relevés. Saisie par l'atelier, le transport et l'exploitation ; correction par le chef d'atelier.
 - **Coûts par équipement** (Technique, droit de voir les coûts) : sur une période (l'année en cours par défaut), les
   équipements classés du plus au moins coûteux en réparation (main-d'œuvre + pièces, ordres annulés exclus), filtres site et
   type, export Excel. Sert à décider d'une réforme ou d'un remplacement.

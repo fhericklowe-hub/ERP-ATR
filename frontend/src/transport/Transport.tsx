@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { api, type Page, type Site, type Tiers } from '../api'
+import { api, apiTout, type Page, type Site, type Tiers } from '../api'
 import BoutonExcel from '../BoutonExcel'
 import PiecesJointes from '../PiecesJointes'
 import { montant } from '../achats/commandes'
@@ -78,10 +78,10 @@ export function FormulaireTransport() {
   const [erreur, setErreur] = useState('')
   const [enCours, setEnCours] = useState(false)
   useEffect(() => {
-    api<Page<Tiers>>('/tiers/?est_client=true&actif=true&page_size=500').then((p) => setClients(p.results)).catch(() => undefined)
+    apiTout<Tiers>('/tiers/?est_client=true&actif=true').then(setClients).catch(() => undefined)
     api<Page<Site>>('/sites/?actif=true').then((p) => setSites(p.results)).catch(() => undefined)
     for (const type of ['TRACTEUR', 'CAMION', 'REMORQUE']) {
-      api<Page<Engin>>(`/technique/materiels/?type=${type}&page_size=500`).then((p) => setEngins((e) => ({ ...e, [type]: p.results.filter((m) => m.etat !== 'REFORME') }))).catch(() => undefined)
+      apiTout<Engin>(`/technique/materiels/?type=${type}`).then((l) => setEngins((e) => ({ ...e, [type]: l.filter((m) => m.etat !== 'REFORME') }))).catch(() => undefined)
     }
   }, [])
   const maj = (c: string, v: string) => setF({ ...f, [c]: v })
