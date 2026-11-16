@@ -26,3 +26,20 @@ class DonneesDemoTests(APITestCase):
         for identifiant, titre in attendus.items():
             self.client.force_authenticate(Utilisateur.objects.get(username=identifiant))
             self.assertIn(titre, [x["titre"] for x in self.client.get("/api/accueil/").data], identifiant)
+
+
+class VerifierInstallationTests(__import__("django.test", fromlist=["TestCase"]).TestCase):
+    def test_signale_les_points_bloquants_sans_rien_modifier(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        from apps.core.models import Utilisateur
+        call_command("donnees_demo", verbosity=0)
+        avant = Utilisateur.objects.count()
+        sortie = StringIO()
+        call_command("verifier_installation", stdout=sortie)
+        texte = sortie.getvalue()
+        self.assertIn("[BLOQUANT]  Comptes de démonstration encore ouverts", texte)
+        self.assertIn("point(s) bloquant(s)", texte)
+        self.assertEqual(Utilisateur.objects.count(), avant)
