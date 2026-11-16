@@ -66,6 +66,10 @@ docker compose exec backend python manage.py createsuperuser
 
 L'application répond ensuite sur le port 80 du serveur.
 
+La marche complète, de la préparation du serveur à l'ouverture aux utilisateurs, est dans
+[docs/MISE-EN-PRODUCTION.md](docs/MISE-EN-PRODUCTION.md). Avant l'ouverture, `python manage.py verifier_installation`
+liste ce qui est prêt et ce qui manque, sans rien modifier.
+
 ## Mettre à jour le serveur
 
 Après une nouvelle version (nouveaux fichiers dans le dossier du projet), lancer `mettre-a-jour.bat` sur le serveur. Il :
